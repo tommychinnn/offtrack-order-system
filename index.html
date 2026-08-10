@@ -2980,9 +2980,9 @@ async function openOrder(uuid) {
 
   // Contract toggle
   const hasContract = !!o.has_contract;
-  document.getElementById('contract-detail').style.display = hasContract ? '' : 'none';
-  document.getElementById('contract-yes-btn').classList.toggle('sel', hasContract);
-  document.getElementById('contract-no-btn').classList.toggle('sel', !hasContract);
+  document.getElementById('contract-detail')?.style && (document.getElementById('contract-detail').style.display = hasContract ? '' : 'none');
+  document.getElementById('contract-yes-btn')?.classList.toggle('sel', hasContract);
+  document.getElementById('contract-no-btn')?.classList.toggle('sel', !hasContract);
 
   // Customer notes — read-only display above tabs
   const custNotes = o.customers?.notes || '';
