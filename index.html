@@ -5231,10 +5231,12 @@ function closeTravelerModal() {
   document.getElementById('traveler-modal').style.display = 'none';
 }
 
+let _editTravIsMain = false;
 async function editTraveler(travId) {
   const { data: t, error } = await sb.from('travelers').select('*').eq('id', travId).maybeSingle();
   if (error || !t) { showToast('❌ 无法加载旅客资料'); return; }
   _editTravId = travId;
+  _editTravIsMain = !!t.is_main;
   document.getElementById('trav-modal-title').textContent = '编辑旅客';
   document.getElementById('trav-title').value = t.title || 'Mr';
   document.getElementById('trav-name').value = t.name || '';
@@ -5265,6 +5267,14 @@ async function saveTraveler() {
     ({ error } = await sb.from('travelers').insert({ ...payload, order_id: _currentOrder.id }));
   }
   if (error) { showToast('❌ 保存失败: ' + error.message); return; }
+  // Sync main traveler name to customer record
+  if (isEditing && _editTravIsMain && _currentOrder.customer_id) {
+    await sb.from('customers').update({ name }).eq('id', _currentOrder.customer_id);
+    _currentOrder.customers = { ..._currentOrder.customers, name };
+    document.getElementById('detail-oh-customer').textContent = name;
+    document.getElementById('detail-breadcrumb').textContent = (_currentOrder.order_no || '') + ' · ' + name;
+    document.getElementById('sc-customer')?.textContent && (document.getElementById('sc-customer').textContent = name);
+  }
   showToast(isEditing ? '✅ 旅客资料已更新' : '✅ 旅客已添加');
   const continueAdd = !isEditing && document.getElementById('trav-continue').checked;
   _editTravId = null;
