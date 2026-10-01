@@ -1332,7 +1332,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                 <tbody>
                   <tr>
                     <td>成人 (A)</td>
-                    <td style="text-align:center"><input type="number" value="2" min="0" class="inline-num" id="cr-qty-A" style="width:60px;text-align:center" oninput="calcPaxTotal()"/></td>
+                    <td style="text-align:center"><input type="number" value="2" min="0" class="inline-num" id="cr-qty-A" style="width:60px;text-align:center" oninput="autoCalcIns(); calcPaxTotal()"/></td>
                     <td style="text-align:right"><input type="number" placeholder="2800" class="inline-num" id="cr-price-A" style="width:90px;text-align:right" oninput="calcPaxTotal()"/></td>
                     <td id="cr-sub-A" style="text-align:right;font-weight:700;color:#9CA3AF">—</td>
                   </tr>
@@ -1344,7 +1344,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                   </tr>
                   <tr>
                     <td>老人 (E)</td>
-                    <td style="text-align:center"><input type="number" value="0" min="0" class="inline-num" id="cr-qty-E" style="width:60px;text-align:center" oninput="calcPaxTotal()"/></td>
+                    <td style="text-align:center"><input type="number" value="0" min="0" class="inline-num" id="cr-qty-E" style="width:60px;text-align:center" oninput="autoCalcIns(); calcPaxTotal()"/></td>
                     <td style="text-align:right"><input type="number" placeholder="2600" class="inline-num" id="cr-price-E" style="width:90px;text-align:right" oninput="calcPaxTotal()"/></td>
                     <td id="cr-sub-E" style="text-align:right;font-weight:700;color:#9CA3AF">—</td>
                   </tr>
@@ -1355,7 +1355,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                   </tr>
                   <tr>
                     <td style="color:#6B7280;font-size:11px">− 折扣</td>
-                    <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right">扣减</td>
+                    <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right"><select id="cr-discount-type" style="font-size:10px;padding:2px 4px;border-radius:4px;border:1px solid #E5E7EB;color:#4B5563"><option value="KOL Promo">KOL Promo</option><option value="老顾客优惠">老顾客优惠</option><option value="Fair优惠">Fair优惠</option><option value="Others">Others</option></select></td>
                     <td style="text-align:right"><input type="number" id="cr-discount" class="inline-num" placeholder="0" style="width:90px;text-align:right" oninput="calcPaxTotal()"/></td>
                   </tr>
                 </tbody>
@@ -1383,7 +1383,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                   </tr>
                   <tr>
                     <td style="color:#6B7280;font-size:11px">− 折扣</td>
-                    <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right">扣减</td>
+                    <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right"><select id="cr-tot-discount-type" style="font-size:10px;padding:2px 4px;border-radius:4px;border:1px solid #E5E7EB;color:#4B5563"><option value="KOL Promo">KOL Promo</option><option value="老顾客优惠">老顾客优惠</option><option value="Fair优惠">Fair优惠</option><option value="Others">Others</option></select></td>
                     <td style="text-align:right"><input type="number" id="cr-tot-discount" class="inline-num" placeholder="0" style="width:90px;text-align:right" oninput="calcTotalMode()"/></td>
                   </tr>
                 </tbody>
@@ -1408,7 +1408,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                 </select>
               </div>
               <div class="form-group"><label>底价 (外币)</label><input type="number" id="cr-cost-foreign" placeholder="25000" class="inline-num" style="width:100%" oninput="crCalcCostRM()"/></div>
-              <div class="form-group"><label>汇率 (1外币 = RM)</label><input type="number" id="cr-cost-rate" placeholder="0.592" step="0.001" class="inline-num" style="width:100%" oninput="crCalcCostRM()"/></div>
+              <div class="form-group"><label>汇率 (1外币 = RM)</label><input type="number" id="cr-cost-rate" placeholder="0.62" step="0.001" class="inline-num" style="width:100%" oninput="crCalcCostRM()"/></div>
               <div class="form-group">
                 <label>估算 RM</label>
                 <div id="cr-cost-rm" style="font-size:14px;font-weight:800;color:#D97706;padding:8px 0">—</div>
@@ -1427,7 +1427,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             <div id="ins-detail">
               <div class="form-grid">
                 <div class="form-group"><label>需要保险人数</label><input type="number" placeholder="2" id="ins-pax"/></div>
-                <div class="form-group"><label>保险公司</label><input type="text" placeholder="例：Allianz" id="ins-company"/></div>
+                <div class="form-group"><label>保险公司</label><input type="text" placeholder="Chubb Insurance" id="ins-company" value="Chubb Insurance"/></div>
               </div>
               <div style="font-size:11px;color:#9CA3AF;margin-top:4px">保险总保费请在上方价格表填写</div>
             </div>
@@ -1745,7 +1745,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                   </tr>
                   <tr>
                     <td style="color:#6B7280;font-size:11px">− 折扣</td>
-                    <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right">扣减</td>
+                    <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right"><select id="det-tot-discount-type" class="editable-field" disabled style="font-size:10px;padding:2px 4px;border-radius:4px;border:1px solid #E5E7EB;color:#4B5563;width:auto"><option value="KOL Promo">KOL Promo</option><option value="老顾客优惠">老顾客优惠</option><option value="Fair优惠">Fair优惠</option><option value="Others">Others</option></select></td>
                     <td style="text-align:right"><input class="editable-field" id="det-tot-discount" type="number" min="0" value="0" readonly style="width:85px;text-align:right;padding:4px 6px" oninput="detCalcTotal()"/></td>
                   </tr>
                 </tbody>
@@ -1789,7 +1789,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                 </tr>
                 <tr>
                   <td style="color:#6B7280;font-size:11px">− 折扣</td>
-                  <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right">扣减</td>
+                  <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right"><select id="price-discount-type" class="editable-field" disabled style="font-size:10px;padding:2px 4px;border-radius:4px;border:1px solid #E5E7EB;color:#4B5563;width:auto"><option value="KOL Promo">KOL Promo</option><option value="老顾客优惠">老顾客优惠</option><option value="Fair优惠">Fair优惠</option><option value="Others">Others</option></select></td>
                   <td style="text-align:right"><input class="editable-field" id="price-discount" type="number" min="0" value="0" readonly style="width:85px;text-align:right;padding:4px 6px" oninput="calcTotal()"/></td>
                 </tr>
               </tbody>
@@ -1823,7 +1823,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                   </select>
                 </div>
                 <div class="form-group"><label>底价 (外币)</label><input class="editable-field" id="cost-foreign" type="number" value="25784" readonly oninput="calcCostRM()"/></div>
-                <div class="form-group"><label>汇率 (1 外币 = RM)</label><input class="editable-field" id="cost-rate" type="number" value="0.592" step="0.001" readonly oninput="calcCostRM()"/></div>
+                <div class="form-group"><label>汇率 (1 外币 = RM)</label><input class="editable-field" id="cost-rate" type="number" value="0.62" step="0.001" readonly oninput="calcCostRM()"/></div>
                 <div class="form-group">
                   <label>估算 RM</label>
                   <div id="cost-rm-display" style="font-size:14px;font-weight:800;color:#D97706;padding:8px 0">≈ RM 15,264</div>
@@ -1876,7 +1876,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
           <div style="padding-bottom:12px">
             <table class="pay-table">
               <thead>
-                <tr><th>#</th><th>日期</th><th>类型</th><th style="text-align:right">金额 (RM)</th><th>Bank</th><th>备注</th></tr>
+                <tr><th>#</th><th>日期</th><th>类型</th><th style="text-align:right">金额 (RM)</th><th>Bank</th><th>GSH</th><th>备注</th></tr>
               </thead>
               <tbody id="det-payin-tbody">
                 <tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:24px;font-size:12px">⏳ 加载中...</td></tr>
@@ -1991,7 +1991,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
         <div class="ov-section" style="margin-bottom:12px">
           <div class="ov-section-title">⑧ 文件</div>
           <div style="padding:14px">
-            <input type="file" id="det-file-input" style="display:none" accept=".pdf,.jpg,.jpeg,.png" onchange="handleDetFileSelected(this)"/>
+            <input type="file" id="det-file-input" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" onchange="handleDetFileSelected(this)"/>
 
             <!-- A: Supplier 报价单 -->
             <div class="file-section">
@@ -2374,6 +2374,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
       </div>
       <div class="form-group"><label>公司名称 / 备注</label><input type="text" id="sup-edit-notes" placeholder="可选"/></div>
       <div class="form-group" id="sup-seq-row"><label>起始订单序号 <span style="font-size:10px;color:#9CA3AF;font-weight:400">（首个订单编号后缀，例：1 = EC001）</span></label><input type="number" id="sup-edit-first-seq" value="1" min="1" style="width:120px"/></div>
+      <div class="form-group" id="sup-next-seq-row" style="display:none"><label>下一个订单序号 <span style="font-size:10px;color:#9CA3AF;font-weight:400">（下一个订单将使用此编号）</span></label><input type="number" id="sup-edit-next-seq" value="1" min="1" style="width:120px"/></div>
     </div>
     <div class="modal-footer">
       <button class="tb-btn btn-ghost" onclick="closeSupplierModal()">取消</button>
@@ -2677,13 +2678,13 @@ async function loadOrders() {
     .select(`
       id, order_no, status, source, kol_name, special_notes, date_tbd,
       depart_date, end_date, created_at, td_id, has_contract,
-      pax_total, price_total, insurance_total, discount, selling_price,
+      pax_total, price_total, insurance_total, discount, discount_type, selling_price,
       cost_currency, cost_foreign, cost_rm,
       customers ( name, salutation, notes ),
       supplier_salespersons ( name ),
       regions ( city ),
       users ( name ),
-      payins ( amount_rm ),
+      payins ( amount_rm, gsh_check ),
       payouts ( amount_rm, amount_foreign, currency ),
       insurance ( id )
     `)
@@ -2732,7 +2733,9 @@ function buildOrderRow(o) {
   const sp        = o.supplier_salespersons?.name || '—';
   const tdName    = o.users?.name || '—';
   const total     = parseFloat(o.selling_price) || 0;
-  const paid      = (o.payins || []).reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
+  // Only count GSH-verified payments toward paid amount (Bug #5 fix)
+  // gsh_check: 'pending' (default), 'verified', 'issue' - only 'verified' counts
+  const paid      = (o.payins || []).filter(p => p.gsh_check === 'verified').reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
   const paidOut   = (o.payouts || []).reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
   const balance   = total - paid;
   const cost      = parseFloat(o.cost_rm) || 0;
@@ -2895,7 +2898,7 @@ async function openOrder(uuid) {
     id, order_no, status, source, kol_name, special_notes, date_tbd,
     depart_date, end_date, created_at, has_contract,
     td_id, region_id, supplier_id, supplier_salesperson_id, customer_id,
-    pax_total, price_total, selling_price, insurance_total, discount,
+    pax_total, price_total, selling_price, insurance_total, discount, discount_type,
     cost_currency, cost_foreign, cost_rm, pricing_mode,
     customers ( name, salutation, notes ),
     supplier_salespersons ( name ),
@@ -3053,6 +3056,7 @@ async function openOrder(uuid) {
     if (o.price_total != null) document.getElementById('det-total-price').value = o.price_total;
     if (o.insurance_total != null) document.getElementById('det-tot-insurance').value = o.insurance_total;
     if (o.discount != null) document.getElementById('det-tot-discount').value = o.discount;
+    if (o.discount_type) { const el = document.getElementById('det-tot-discount-type'); if (el) el.value = o.discount_type; }
     detCalcTotal();
   } else {
     const pax = parseInt(o.pax_total) || 0;
@@ -3066,6 +3070,7 @@ async function openOrder(uuid) {
     document.getElementById('price-E').value = '';
     if (o.insurance_total != null) document.getElementById('price-insurance').value = o.insurance_total;
     if (o.discount != null) document.getElementById('price-discount').value = o.discount;
+    if (o.discount_type) { const el = document.getElementById('price-discount-type'); if (el) el.value = o.discount_type; }
     calcTotal();
   }
   // Customer notes — read-only display
@@ -3095,29 +3100,39 @@ async function loadDetailPayins() {
   tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:24px;font-size:12px">⏳ 加载中...</td></tr>';
 
   const { data, error } = await sb.from('payins')
-    .select('id, date, payment_type, amount_rm, bank, finance_note, invoice_status, checked')
+    .select('id, date, payment_type, amount_rm, bank, finance_note, invoice_status, gsh_check')
     .eq('order_id', _currentOrder.id)
     .order('date', { ascending: true });
 
   if (error || !data?.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:24px;font-size:12px">暂无入账记录</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9CA3AF;padding:24px;font-size:12px">暂无入账记录</td></tr>';
     return;
   }
   const fmt = n => (parseFloat(n)||0).toLocaleString('en-MY', {minimumFractionDigits:0,maximumFractionDigits:0});
-  const total = data.reduce((s,r) => s + (parseFloat(r.amount_rm)||0), 0);
-  tbody.innerHTML = data.map((r, i) => `
-    <tr>
+  // Only verified payments count toward total
+  const verifiedTotal = data.filter(r=>r.gsh_check==='verified').reduce((s,r) => s + (parseFloat(r.amount_rm)||0), 0);
+  const pendingTotal = data.filter(r=>r.gsh_check!=='verified').reduce((s,r) => s + (parseFloat(r.amount_rm)||0), 0);
+  const gshStyles = {
+    pending:  { bg: '#FEF3C7', color: '#D97706', label: '⏳' },
+    verified: { bg: '#D1FAE5', color: '#059669', label: '✅' },
+    issue:    { bg: '#FEE2E2', color: '#DC2626', label: '❌' }
+  };
+  tbody.innerHTML = data.map((r, i) => {
+    const gs = gshStyles[r.gsh_check] || gshStyles.pending;
+    return `<tr>
       <td style="color:#9CA3AF;font-size:11px">#${i+1}</td>
       <td>${r.date || '—'}</td>
       <td><span class="chip chip-deposit" style="font-size:10px">${r.payment_type || '—'}</span></td>
       <td style="text-align:right;font-weight:800">${fmt(r.amount_rm)}</td>
       <td style="font-size:11px;color:#6B7280">${r.bank || '—'}</td>
+      <td><span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:${gs.bg};color:${gs.color}">${gs.label}</span></td>
       <td style="font-size:11px;color:#6B7280">${r.finance_note || '—'}</td>
-    </tr>`).join('') +
+    </tr>`;
+  }).join('') +
     `<tr class="pay-summary-row">
-      <td colspan="3" style="font-size:11px;color:#6B7280">合计</td>
-      <td style="text-align:right;font-weight:800;color:#059669">RM ${fmt(total)}</td>
-      <td colspan="2"></td>
+      <td colspan="3" style="font-size:11px;color:#6B7280">已核实</td>
+      <td style="text-align:right;font-weight:800;color:#059669">RM ${fmt(verifiedTotal)}</td>
+      <td colspan="3" style="font-size:10px;color:#9CA3AF">${pendingTotal > 0 ? '(待核实 RM '+fmt(pendingTotal)+')' : ''}</td>
     </tr>`;
 }
 
@@ -3569,6 +3584,7 @@ async function saveEditMode() {
     pricing_mode: isPaxMode ? 'per_pax' : 'total',
     pax_total: paxTotal, price_total: priceTotal,
     insurance_total: insTotal, discount: discountVal, selling_price: sellingPrice,
+    discount_type: (isPaxMode ? document.getElementById('price-discount-type')?.value : document.getElementById('det-tot-discount-type')?.value) || 'KOL Promo',
     cost_foreign: costForeign, cost_rm: costRM,
   }).eq('id', _currentOrder.id);
 
@@ -3661,7 +3677,7 @@ async function loadDashboard() {
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0,10);
 
   let dashQuery = sb.from('orders')
-    .select('id,order_no,status,depart_date,end_date,date_tbd,selling_price,cost_rm,customers(name),regions(city),payins(amount_rm)')
+    .select('id,order_no,status,depart_date,end_date,date_tbd,selling_price,cost_rm,customers(name),regions(city),payins(amount_rm,gsh_check)')
     .order('depart_date', { ascending: true });
   if (currentUser.roleKey === 'td' && currentUser.id) dashQuery = dashQuery.eq('td_id', currentUser.id);
   const { data: orders } = await dashQuery;
@@ -3686,16 +3702,16 @@ async function loadDashboard() {
   document.getElementById('dash-month').textContent = thisMonth.length;
   document.getElementById('dash-14d').textContent = upcoming.length;
 
-  // Balance unpaid
+  // Balance unpaid - only count GSH-verified payments
   const withBalance = orders.filter(o => {
     const total = parseFloat(o.selling_price)||0;
-    const paid = (o.payins||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
+    const paid = (o.payins||[]).filter(p=>p.gsh_check==='verified').reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
     return total > 0 && paid < total;
   });
   document.getElementById('dash-balance').textContent = withBalance.length;
   const totalBalance = withBalance.reduce((s,o)=>{
     const total=parseFloat(o.selling_price)||0;
-    const paid=(o.payins||[]).reduce((ss,p)=>ss+(parseFloat(p.amount_rm)||0),0);
+    const paid=(o.payins||[]).filter(p=>p.gsh_check==='verified').reduce((ss,p)=>ss+(parseFloat(p.amount_rm)||0),0);
     return s+(total-paid);
   },0);
   document.getElementById('dash-balance-sub').textContent = `总 RM ${fmt(totalBalance)}`;
@@ -3881,7 +3897,7 @@ async function loadReport() {
   document.getElementById('rpt-completed-tbody').innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:#9CA3AF">⏳ 加载中...</td></tr>';
 
   let query = sb.from('orders')
-    .select('id, order_no, status, created_at, depart_date, end_date, pax_total, selling_price, cost_rm, customers(name), regions(city), payins(amount_rm), payouts(amount_rm)')
+    .select('id, order_no, status, created_at, depart_date, end_date, pax_total, selling_price, cost_rm, customers(name), regions(city), payins(amount_rm,gsh_check), payouts(amount_rm)')
     .neq('status', 'cancelled')
     .order('created_at', { ascending: false });
   if (fromVal) query = query.gte('created_at', fromVal);
@@ -3908,9 +3924,10 @@ async function loadReport() {
   orders.forEach(o => {
     const revenue   = parseFloat(o.selling_price)||0;
     const cost      = parseFloat(o.cost_rm)||0;
-    const paid      = (o.payins||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
+    // Only count GSH-verified payments (gsh_check === 'verified')
+    const paid      = (o.payins||[]).filter(p=>p.gsh_check==='verified').reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
     const paidOut   = (o.payouts||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
-    const estProfit = revenue - cost;
+    const estProfit = revenue - cost - (parseFloat(o.insurance_total) || 0);
     const actProfit = paid - paidOut;
     const pax       = parseInt(o.pax_total)||0;
     const departMon = (o.depart_date||'').slice(0,7);
@@ -3993,17 +4010,36 @@ async function loadReport() {
   }
 }
 
+let _payinsCache = [];
+
 async function loadPayIns() {
   const tbody = document.getElementById('payin-tbody');
   const isTD = currentUser.roleKey === 'td';
   let query = sb.from('payins')
-    .select(`id,amount_rm,date,payment_type,bank,invoice_status,receipt_url,orders${isTD?'!inner':''}(order_no,td_id,customers(name))`)
+    .select(`id,amount_rm,date,payment_type,bank,invoice_status,receipt_url,gsh_check,checked,orders${isTD?'!inner':''}(order_no,td_id,customers(name))`)
     .order('date', { ascending: false });
   if (isTD) query = query.eq('orders.td_id', currentUser.id);
   const { data, error } = await query;
   if (error) { tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:40px;color:#DC2626">加载失败</td></tr>'; return; }
   if (!data||!data.length) { tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:40px;color:#9CA3AF">暂无入账记录</td></tr>'; return; }
 
+  _payinsCache = data;
+  
+  // Populate month filter from data
+  const months = [...new Set(data.map(r => (r.date||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  const monthSel = document.getElementById('payin-month-filter');
+  if (monthSel) {
+    monthSel.innerHTML = '<option value="">全部月份</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
+  }
+  
+  renderPayIns(data);
+}
+
+function renderPayIns(data) {
+  const tbody = document.getElementById('payin-tbody');
+  if (!data||!data.length) { tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:40px;color:#9CA3AF">暂无入账记录</td></tr>'; return; }
+
+  const canChangeGsh = ['master','operation','finance'].includes(currentUser.roleKey);
   const fmt = v=>(v||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
   let total=0; const thisMonth=new Date().toISOString().slice(0,7); let monthTotal=0;
   tbody.innerHTML = data.map(r => {
@@ -4013,19 +4049,47 @@ async function loadPayIns() {
       ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#EEF6F3;color:#059669">✅ Done</span>'
       : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#FFFBEB;color:#D97706">⏳ Not Yet</span>';
     const receipt = r.receipt_url ? `<a href="${r.receipt_url}" target="_blank"><div style="width:32px;height:32px;background:#F0F2F7;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">🧾</div></a>` : '<span style="color:#9CA3AF">—</span>';
-    return `<tr style="border-bottom:1px solid #F0F2F7">
-      <td style="padding:10px 12px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#059669"></span></td>
+    
+    // GSH check status: 'pending' (yellow), 'verified' (green), 'issue' (red)
+    const gshStat = r.gsh_check || 'pending';
+    const gshStyles = {
+      pending:  { bg: '#FEF3C7', color: '#D97706', border: '#FDE68A', label: '⏳ Pending', dot: '#D97706' },
+      verified: { bg: '#D1FAE5', color: '#059669', border: '#A7F3D0', label: '✅ Verified', dot: '#059669' },
+      issue:    { bg: '#FEE2E2', color: '#DC2626', border: '#FECACA', label: '❌ Issue', dot: '#DC2626' }
+    };
+    const gs = gshStyles[gshStat] || gshStyles.pending;
+    const gshDisplay = `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:${gs.bg};color:${gs.color}">${gs.label}</span>`;
+    
+    // GSH toggle button - only for Finance/Master/Operation roles
+    const nextGshStatus = gshStat === 'pending' ? 'verified' : gshStat === 'verified' ? 'issue' : 'pending';
+    const gshBtn = canChangeGsh 
+      ? `<button onclick="cycleGshStatus('${r.id}','${nextGshStatus}')" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid ${gs.border};background:${gs.bg};color:${gs.color};cursor:pointer;white-space:nowrap">${gshStat === 'pending' ? '核实' : gshStat === 'verified' ? '标记问题' : '重置'}</button>`
+      : `<span style="font-size:10px;color:#9CA3AF">—</span>`;
+    
+    // Finance check status (separate from GSH bank check)
+    const checkStat = r.checked || 'unchecked';
+    const checkStyles = {
+      unchecked: { bg: '#F3F4F6', color: '#6B7280', border: '#E2E6EA', label: '未检查' },
+      checked:   { bg: '#EEF6F3', color: '#059669', border: '#059669', label: '已检查' },
+      issue:     { bg: '#FEF2F2', color: '#DC2626', border: '#DC2626', label: '有问题' }
+    };
+    const cs = checkStyles[checkStat] || checkStyles.unchecked;
+    const nextCheckStatus = checkStat === 'unchecked' ? 'checked' : checkStat === 'checked' ? 'issue' : 'unchecked';
+    const checkBtn = `<button onclick="cyclePayinCheck('${r.id}','${nextCheckStatus}')" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid ${cs.border};background:${cs.bg};color:${cs.color};cursor:pointer;white-space:nowrap">${cs.label}</button>`;
+    
+    return `<tr style="border-bottom:1px solid #F0F2F7" data-order="${(r.orders?.order_no||'').toLowerCase()}" data-customer="${(r.orders?.customers?.name||'').toLowerCase()}" data-type="${r.payment_type||''}" data-month="${(r.date||'').slice(0,7)}" data-gsh="${gshStat}">
+      <td style="padding:10px 12px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${gs.dot}"></span></td>
       <td style="padding:10px 12px;color:#6B7280;font-size:12px">${r.date||'—'}</td>
       <td style="padding:10px 12px"><a href="#" onclick="showPage('detail')" style="color:#3B7A68;font-weight:700;text-decoration:none">${r.orders?.order_no||'—'}</a></td>
       <td style="padding:10px 12px"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:#EEF6F3;color:#059669">${r.payment_type||'入账'}</span></td>
       <td style="padding:10px 12px;text-align:right;font-weight:900;color:#059669">${fmt(amt)}</td>
       <td style="padding:10px 12px;color:#6B7280;font-size:12px">${r.bank||'—'}</td>
       <td style="padding:10px 12px">${receipt}</td>
+      <td style="padding:10px 12px">${gshBtn}</td>
       <td style="padding:10px 12px">${invStatus}</td>
-      <td style="padding:10px 12px">—</td>
-      <td class="check-col" style="padding:8px 12px"><button onclick="cycleCheck(this)" data-state="0" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid #E2E6EA;background:#F3F4F6;color:#6B7280;cursor:pointer;white-space:nowrap">未检查</button></td>
+      <td class="check-col" style="padding:8px 12px">${checkBtn}</td>
       <td style="padding:10px 12px;color:#9CA3AF;font-size:11px">—</td>
-      <td style="padding:8px 12px;white-space:nowrap"><button class="edit-payin-btn" style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #3B7A68;background:#EEF6F3;color:#3B7A68;cursor:pointer" onclick="openEditPayIn('${r.id}')">✏️ 编辑</button></td>
+      <td style="padding:8px 12px;white-space:nowrap"><button class="edit-payin-btn" style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #3B7A68;background:#EEF6F3;color:#3B7A68;cursor:pointer" onclick="openEditPayIn('${r.id}')">✏️ 编辑</button> <button style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #DC2626;background:#FEF2F2;color:#DC2626;cursor:pointer" onclick="deletePayIn('${r.id}')">🗑️ 删除</button></td>
     </tr>`;
   }).join('');
   document.getElementById('payin-stat-month').textContent = 'RM '+fmt(monthTotal);
@@ -4033,6 +4097,54 @@ async function loadPayIns() {
   document.getElementById('payin-stat-count').textContent = data.length+' 笔';
   document.getElementById('payin-tfoot-count').textContent = '共 '+data.length+' 笔';
   document.getElementById('payin-tfoot-total').textContent = fmt(total);
+  
+  // Re-apply filters after render
+  filterPayIns();
+}
+
+async function cycleGshStatus(payinId, newStatus) {
+  // Only Finance/Master/Operation can change GSH status
+  if (!['master','operation','finance'].includes(currentUser.roleKey)) {
+    showToast('❌ 只有 Finance 或管理员可以修改核实状态');
+    return;
+  }
+  const { error } = await sb.from('payins').update({ gsh_check: newStatus }).eq('id', payinId);
+  if (error) { showToast('❌ 更新失败: ' + error.message); return; }
+  const msgs = { verified: '✅ 已标记为核实', issue: '❌ 已标记为有问题', pending: '⏳ 已重置为待核实' };
+  showToast(msgs[newStatus] || '✅ 状态已更新');
+  await loadPayIns();
+}
+
+async function cyclePayinCheck(payinId, newStatus) {
+  const { error } = await sb.from('payins').update({ checked: newStatus }).eq('id', payinId);
+  if (error) { showToast('❌ 更新失败: ' + error.message); return; }
+  const msgs = { checked: '✅ 已检查', issue: '❌ 标记有问题', unchecked: '⏳ 已重置' };
+  showToast(msgs[newStatus] || '✅ 状态已更新');
+  await loadPayIns();
+}
+
+function filterPayIns() {
+  const search = document.getElementById('payin-search')?.value?.toLowerCase()?.trim() || '';
+  const typeFilter = document.getElementById('payin-type-filter')?.value || '';
+  const monthFilter = document.getElementById('payin-month-filter')?.value || '';
+  const gshFilter = document.getElementById('payin-gsh-filter')?.value || '';
+  
+  const rows = document.querySelectorAll('#payin-tbody tr[data-order]');
+  rows.forEach(row => {
+    const order = row.dataset.order || '';
+    const customer = row.dataset.customer || '';
+    const type = row.dataset.type || '';
+    const month = row.dataset.month || '';
+    const gsh = row.dataset.gsh || '';
+    
+    let show = true;
+    if (search && !order.includes(search) && !customer.includes(search)) show = false;
+    if (typeFilter && type !== typeFilter) show = false;
+    if (monthFilter && month !== monthFilter) show = false;
+    if (gshFilter && gsh !== gshFilter) show = false;
+    
+    row.style.display = show ? '' : 'none';
+  });
 }
 
 async function loadPayOuts() {
@@ -4113,7 +4225,7 @@ async function loadSuppliers() {
       <td>${spCount} 人</td>
       <td><span class="chip chip-confirmed" style="font-size:10px">活跃</span></td>
       <td style="white-space:nowrap">
-        <button class="file-btn" style="font-size:10px;padding:2px 7px" onclick="event.stopPropagation();showSupplierModal('${s.id}','${safeCode}','${safeCur}','${safeNote}')">编辑</button>
+        <button class="file-btn" style="font-size:10px;padding:2px 7px" onclick="event.stopPropagation();showSupplierModal('${s.id}','${safeCode}','${safeCur}','${safeNote}','',${s.next_order_seq||1})">编辑</button>
         <button class="file-btn" style="font-size:10px;padding:2px 7px;color:#DC2626;border-color:#DC2626;margin-left:3px" onclick="event.stopPropagation();deleteSupplier('${s.id}','${safeCode}')">删除</button>
         <span id="arr-${detailId}" style="color:#9CA3AF;font-size:13px;margin-left:6px">▼</span>
       </td>
@@ -4976,6 +5088,7 @@ async function submitOrder() {
     price_total: priceTotal || null,
     insurance_total: insTotal || null,
     discount: discount || null,
+    discount_type: (isPax ? document.getElementById('cr-discount-type')?.value : document.getElementById('cr-tot-discount-type')?.value) || 'KOL Promo',
     selling_price: sellingPrice || null,
     cost_currency: costCurrency,
     cost_foreign: costForeign,
@@ -5003,6 +5116,15 @@ function setPriceMode(mode) {
 
 let _paxSell = 0, _paxCost = 0;
 // ── CREATE ORDER JS ──
+function autoCalcIns() {
+  const qA = parseFloat(document.getElementById('cr-qty-A')?.value) || 0;
+  const qE = parseFloat(document.getElementById('cr-qty-E')?.value) || 0;
+  const ins = qA * 88 + qE * 233;
+  const insEl = document.getElementById('cr-insurance');
+  if (insEl) insEl.value = ins > 0 ? ins : '';
+  const paxEl = document.getElementById('ins-pax');
+  if (paxEl) paxEl.value = (qA + qE) > 0 ? (qA + qE) : '';
+}
 function calcPaxTotal() {
   const g = id => parseFloat(document.getElementById(id)?.value) || 0;
   const stA = g('cr-qty-A') * g('cr-price-A');
@@ -5062,7 +5184,11 @@ function crCalcCostRM() {
   crCalcProfit();
 }
 function crCalcProfit() {
-  const profit = _paxSell - _paxCost;
+  const isPax = document.getElementById('price-mode-pax')?.style.display !== 'none';
+  const ins = isPax
+    ? (parseFloat(document.getElementById('cr-insurance')?.value) || 0)
+    : (parseFloat(document.getElementById('cr-tot-insurance')?.value) || 0);
+  const profit = _paxSell - _paxCost - ins;
   const fe = document.getElementById('final-sell-price');
   const pe = document.getElementById('est-profit');
   const fmt = n => 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
@@ -5439,14 +5565,16 @@ function toggleSupplierDetail(id) {
 function showAddSupplierModal() { showSupplierModal(); }
 
 // ── SUPPLIER CRUD ──
-function showSupplierModal(id, code, currency, notes, firstSeq) {
+function showSupplierModal(id, code, currency, notes, firstSeq, nextSeq) {
   document.getElementById('sup-edit-id').value = id || '';
   document.getElementById('sup-edit-code').value = code || '';
   document.getElementById('sup-edit-currency').value = currency || 'CNY';
   document.getElementById('sup-edit-notes').value = notes || '';
   document.getElementById('sup-edit-first-seq').value = firstSeq || 1;
-  // Hide seq field when editing (already set at creation)
+  document.getElementById('sup-edit-next-seq').value = nextSeq || 1;
+  // Show first-seq for new, next-seq for edit
   document.getElementById('sup-seq-row').style.display = id ? 'none' : '';
+  document.getElementById('sup-next-seq-row').style.display = id ? '' : 'none';
   document.getElementById('sup-modal-title').textContent = id ? '编辑 Supplier' : '添加 Supplier';
   document.getElementById('sup-modal').classList.add('open');
   document.getElementById('sup-edit-code').focus();
@@ -5459,7 +5587,8 @@ async function saveSupplier() {
   const notes    = document.getElementById('sup-edit-notes').value.trim();
   if (!code) { alert('请填写 Supplier 代号'); return; }
   if (id) {
-    const { error } = await sb.from('suppliers').update({ supplier_code: code, currency, notes }).eq('id', id);
+    const nextSeq = parseInt(document.getElementById('sup-edit-next-seq').value) || 1;
+    const { error } = await sb.from('suppliers').update({ supplier_code: code, currency, notes, next_order_seq: nextSeq }).eq('id', id);
     if (error) { alert('保存失败: ' + error.message); return; }
   } else {
     const firstSeq = parseInt(document.getElementById('sup-edit-first-seq').value) || 1;
@@ -5553,7 +5682,12 @@ async function doLogin() {
   btn.disabled = true; btn.textContent = '登入中...';
   const { error: authError } = await sb.auth.signInWithPassword({ email, password: pw });
   if (authError) {
-    err.textContent = '❌ 账号或密码错误，请重试';
+    // Show specific message for unconfirmed email
+    if (authError.message?.toLowerCase().includes('email not confirmed')) {
+      err.textContent = '❌ 账号邮箱未验证，请联系管理员';
+    } else {
+      err.textContent = '❌ 登入失败: ' + (authError.message || '账号或密码错误');
+    }
     err.style.display = 'block';
     btn.disabled = false; btn.textContent = '登入 →';
     return;
@@ -6063,6 +6197,7 @@ async function submitPayIn() {
   const amt     = parseFloat(document.getElementById('pi-amount').value);
   const bank    = document.getElementById('pi-bank').value;
   const invStat = document.getElementById('pi-invoice-status').value || null;
+  const gshCheck = document.getElementById('pi-gsh').value || 'pending';
   const notes   = document.getElementById('pi-notes').value.trim() || null;
   if (!date || !orderNo || !type || !amt || !bank) { showToast('⚠️ 请填写日期、订单号、类型、金额、Bank'); return; }
 
@@ -6083,7 +6218,7 @@ async function submitPayIn() {
     orderId = ord.id;
   }
 
-  const row = { order_id: orderId, date, payment_type: type, amount_rm: amt, bank };
+  const row = { order_id: orderId, date, payment_type: type, amount_rm: amt, bank, gsh_check: gshCheck };
   if (invStat) row.invoice_status = invStat;
   if (notes)   row.finance_note = notes;
   if (receiptUrl) row.receipt_url = receiptUrl;
@@ -6189,6 +6324,14 @@ function cycleCheck(btn) {
   btn.textContent=s.label; btn.style.background=s.bg; btn.style.color=s.color; btn.style.borderColor=s.border;
 }
 
+async function deletePayIn(id) {
+  if (!confirm('确定要删除这笔入账记录吗？此操作无法撤销。')) return;
+  const { error } = await sb.from('payins').delete().eq('id', id);
+  if (error) { showToast('❌ 删除失败: ' + error.message); return; }
+  showToast('✅ 入账记录已删除');
+  loadDetailPayins();
+}
+
 /* ── Edit pay-in ── */
 let _editPayInId = null;
 async function openEditPayIn(id) {
@@ -6201,6 +6344,7 @@ async function openEditPayIn(id) {
   document.getElementById('epi-amount').value = r.amount_rm || '';
   document.getElementById('epi-bank').value = r.bank || '';
   document.getElementById('epi-invoice-status').value = r.invoice_status || '';
+  document.getElementById('epi-gsh').value = r.gsh_check || 'pending';
   document.getElementById('epi-notes').value = r.finance_note || '';
   const info = document.getElementById('epi-receipt-info');
   if (info) info.innerHTML = r.receipt_url ? `<a href="${r.receipt_url}" target="_blank" style="font-size:11px;color:#3B7A68;font-weight:700">📎 查看当前收据</a>` : '<span style="font-size:11px;color:#9CA3AF">暂无收据</span>';
@@ -6214,6 +6358,7 @@ async function submitEditPayIn() {
   const amt  = parseFloat(document.getElementById('epi-amount').value);
   const bank = document.getElementById('epi-bank').value;
   const invStat = document.getElementById('epi-invoice-status').value || null;
+  const gshCheck = document.getElementById('epi-gsh').value || 'pending';
   const notes   = document.getElementById('epi-notes').value.trim() || null;
   if (!date || !amt || !bank) { showToast('⚠️ 请填写日期、金额、Bank'); return; }
   const receiptFile = document.getElementById('epi-receipt-file')?.files[0];
@@ -6223,7 +6368,7 @@ async function submitEditPayIn() {
     receiptUrl = await uploadToStorage(receiptFile, 'receipts');
     if (!receiptUrl) return;
   }
-  const upd = { date, payment_type: type, amount_rm: amt, bank, invoice_status: invStat, finance_note: notes };
+  const upd = { date, payment_type: type, amount_rm: amt, bank, invoice_status: invStat, gsh_check: gshCheck, finance_note: notes };
   if (receiptUrl) upd.receipt_url = receiptUrl;
   const { error } = await sb.from('payins').update(upd).eq('id', _editPayInId);
   if (error) { showToast('❌ 更新失败: ' + error.message); return; }
@@ -6651,11 +6796,10 @@ async function submitEditPayOut() {
     <!-- Filters -->
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
       <div class="compact-filter" style="margin-bottom:0;flex:1;min-width:0">
-        <input type="text" placeholder="搜索订单号 / 顾客名…"/>
-        <select><option>全部状态</option><option>待确认</option><option>已确认</option><option>有问题 🔴</option></select>
-        <select><option>全部 TD</option><option>YXX - 媛媛</option><option>YXX - 焜焜</option><option>YXX - 葵葵</option></select>
-        <select><option>全部月份</option><option>2026-08</option><option>2026-07</option><option>2026-06</option><option>2026-05</option></select>
-        <select><option>全部类型</option><option>第一笔定金</option><option>第二笔定金</option><option>尾款</option><option>全款</option></select>
+        <input type="text" id="payin-search" placeholder="搜索订单号 / 顾客名…" oninput="filterPayIns()"/>
+        <select id="payin-gsh-filter" onchange="filterPayIns()"><option value="">全部状态</option><option value="pending">⏳ 待核实</option><option value="verified">✅ 已核实</option><option value="issue">❌ 有问题</option></select>
+        <select id="payin-month-filter" onchange="filterPayIns()"><option value="">全部月份</option></select>
+        <select id="payin-type-filter" onchange="filterPayIns()"><option value="">全部类型</option><option value="第一笔定金">第一笔定金</option><option value="第二笔定金">第二笔定金</option><option value="尾款">尾款</option><option value="全款">全款</option></select>
       </div>
       <button class="tb-btn btn-primary" style="flex-shrink:0;font-size:11px;padding:5px 12px" onclick="openPayInModal()">＋ 新增入账</button>
     </div>
@@ -6817,9 +6961,9 @@ async function submitEditPayOut() {
         <div class="mf-group">
           <label>GSH 核对银行</label>
           <select id="pi-gsh">
-            <option value="">— 未处理</option>
-            <option value="done">✅ Done</option>
-            <option value="not-yet">⏳ Not Yet</option>
+            <option value="pending">⏳ Pending</option>
+            <option value="verified">✅ Verified</option>
+            <option value="issue">❌ Issue</option>
           </select>
         </div>
         <div class="mf-group">
@@ -6827,7 +6971,7 @@ async function submitEditPayOut() {
           <select id="pi-invoice-status">
             <option value="">— 未处理</option>
             <option value="done">✅ Done</option>
-            <option value="not-yet">⏳ Not Yet</option>
+            <option value="not_yet">⏳ Not Yet</option>
           </select>
         </div>
       </div>
@@ -7284,9 +7428,9 @@ async function submitEditPayOut() {
         <div class="mf-group">
           <label>GSH 核对银行</label>
           <select id="epi-gsh">
-            <option value="">— 未处理</option>
-            <option value="done">✅ Done</option>
-            <option value="not-yet">⏳ Not Yet</option>
+            <option value="pending">⏳ Pending</option>
+            <option value="verified">✅ Verified</option>
+            <option value="issue">❌ Issue</option>
           </select>
         </div>
         <div class="mf-group">
@@ -7294,7 +7438,7 @@ async function submitEditPayOut() {
           <select id="epi-invoice-status">
             <option value="">— 未处理</option>
             <option value="done">✅ Done</option>
-            <option value="not-yet">⏳ Not Yet</option>
+            <option value="not_yet">⏳ Not Yet</option>
           </select>
         </div>
       </div>
@@ -7467,7 +7611,7 @@ async function submitEditPayOut() {
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 12px;border:1.5px dashed #D1D5DB;border-radius:8px;background:#FAFBFF;font-size:12px;color:#6B7280">
           <span>📎</span>
           <span id="gfu-file-name">选择文件（PDF · JPG · PNG）</span>
-          <input type="file" id="gfu-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="document.getElementById('gfu-file-name').textContent=this.files[0]?.name||'选择文件'"/>
+          <input type="file" id="gfu-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" style="display:none" onchange="document.getElementById('gfu-file-name').textContent=this.files[0]?.name||'选择文件'"/>
         </label>
       </div>
     </div>
