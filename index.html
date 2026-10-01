@@ -1185,8 +1185,14 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             <div class="form-section-title">旅游地区</div>
             <div class="form-group">
               <label>主要地区 <span class="req">*</span></label>
-              <input type="text" id="cr-region-search" placeholder="🔍 搜索地区..." autocomplete="off" style="margin-bottom:4px" oninput="filterRegionSelect('cr-region-search','cr-region')"/>
-              <select id="cr-region"><option value="">— 选择地区 —</option></select>
+              <div style="position:relative">
+                <input type="text" id="cr-region-display" placeholder="🔍 搜索或选择地区..." autocomplete="off"
+                  oninput="regionDropdown('cr-region-display','cr-region','cr-region-dd')"
+                  onfocus="regionDropdown('cr-region-display','cr-region','cr-region-dd')"
+                  onblur="setTimeout(()=>{const d=document.getElementById('cr-region-dd');if(d)d.style.display='none'},200)"/>
+                <div id="cr-region-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #3B7A68;border-radius:6px;z-index:200;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.12)"></div>
+                <input type="hidden" id="cr-region"/>
+              </div>
             </div>
           </div>
           <div class="form-section">
@@ -1659,10 +1665,15 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                 </select>
               </div>
               <div class="form-group"><label>旅游地区</label>
-                <input id="det-region-search" class="editable-field" type="text" placeholder="🔍 搜索地区..." readonly autocomplete="off" style="margin-bottom:4px;border:1.5px solid #F0F2F7;background:#FAFBFC;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:600;width:100%;box-sizing:border-box" oninput="filterRegionSelect('det-region-search','det-region-id')"/>
-                <select id="det-region-id" class="editable-field" disabled style="border:1.5px solid #F0F2F7;background:#FAFBFC;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:600;font-family:'Nunito',sans-serif;color:#374151;width:100%">
-                  <option value="">—</option>
-                </select>
+                <div style="position:relative">
+                  <input id="det-region-display" class="editable-field" type="text" placeholder="🔍 搜索或选择地区..." readonly autocomplete="off"
+                    oninput="regionDropdown('det-region-display','det-region-id','det-region-dd')"
+                    onfocus="regionDropdown('det-region-display','det-region-id','det-region-dd')"
+                    onblur="setTimeout(()=>{const d=document.getElementById('det-region-dd');if(d)d.style.display='none'},200)"
+                    style="border:1.5px solid #F0F2F7;background:#FAFBFC;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:600;width:100%;box-sizing:border-box"/>
+                  <div id="det-region-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #3B7A68;border-radius:6px;z-index:200;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.12)"></div>
+                  <input type="hidden" id="det-region-id"/>
+                </div>
               </div>
               <div class="form-group">
                 <label style="display:flex;align-items:center;gap:8px">出发日期
@@ -3042,7 +3053,9 @@ async function openOrder(uuid) {
     el.innerHTML = `<option value="${val || ''}">${label || '—'}</option>`;
   };
   setSelectCurrent('det-td-id',          o.td_id || '',                    tdName);
-  setSelectCurrent('det-region-id',      o.region_id || '',                region);
+  // Region combobox: set hidden value + display text
+  const regHidden = document.getElementById('det-region-id'); if (regHidden) regHidden.value = o.region_id || '';
+  const regDisp = document.getElementById('det-region-display'); if (regDisp) regDisp.value = region || '';
   setSelectCurrent('det-supplier-id',    o.supplier_id || '',              supCode || supplierLabel);
   setSelectCurrent('det-salesperson-id', o.supplier_salesperson_id || '',  spName);
 
@@ -3500,13 +3513,14 @@ async function toggleEditMode() {
   // Load salespersons for current supplier
   _loadDetailSalespersons(curSupId, _currentOrder.supplier_salesperson_id);
 
-  // Load regions
+  // Load regions for combobox
   const { data: regions } = await sb.from('regions').select('id, city').order('city');
   _regionsData = regions || [];
-  const regSel = document.getElementById('det-region-id');
+  // Set current region in combobox display
   const curRegId = _currentOrder.region_id || '';
-  regSel.innerHTML = '<option value="">— 选择地区 —</option>' +
-    (regions || []).map(r => `<option value="${r.id}"${r.id === curRegId ? ' selected' : ''}>${r.city}</option>`).join('');
+  const curRegCity = (_regionsData.find(r => r.id === curRegId)?.city) || (_currentOrder.regions?.city) || '';
+  const regHid = document.getElementById('det-region-id'); if (regHid) regHid.value = curRegId;
+  const regDis = document.getElementById('det-region-display'); if (regDis) regDis.value = curRegCity;
 
   // Load TDs (all staff can be TD)
   const { data: tds } = await sb.from('users').select('id, name').order('name');
@@ -5061,25 +5075,36 @@ function selectMode(el, group) {
 let _crSuppliers = [];
 let _regionsData = [];
 
-function filterRegionSelect(inputId, selectId) {
-  const q = (document.getElementById(inputId)?.value || '').toLowerCase();
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
+function regionDropdown(displayId, valueId, ddId) {
+  const q = (document.getElementById(displayId)?.value || '').toLowerCase();
+  const dd = document.getElementById(ddId);
+  if (!dd) return;
   const filtered = q ? _regionsData.filter(r => r.city.toLowerCase().includes(q)) : _regionsData;
-  const curVal = sel.value;
-  sel.innerHTML = '<option value="">— 选择地区 —</option>' +
-    filtered.map(r => `<option value="${r.id}"${r.id === curVal ? ' selected' : ''}>${r.city}</option>`).join('');
+  if (!filtered.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = filtered.map(r =>
+    `<div onmousedown="selectRegion('${r.id}','${r.city}','${displayId}','${valueId}','${ddId}')"
+      style="padding:8px 12px;cursor:pointer;font-size:12px;font-weight:600;border-bottom:1px solid #F0F2F7"
+      onmouseover="this.style.background='#EEF6F3'" onmouseout="this.style.background=''">${r.city}</div>`
+  ).join('');
+  dd.style.display = 'block';
+}
+
+function selectRegion(id, city, displayId, valueId, ddId) {
+  const dispEl = document.getElementById(displayId);
+  const valEl  = document.getElementById(valueId);
+  const dd     = document.getElementById(ddId);
+  if (dispEl) dispEl.value = city;
+  if (valEl)  valEl.value  = id;
+  if (dd)     dd.style.display = 'none';
 }
 
 async function initCreateForm() {
   // Load regions → cr-region
   const { data: regions } = await sb.from('regions').select('id,city').order('city');
   _regionsData = regions || [];
-  const regionSel = document.getElementById('cr-region');
-  if (regionSel && regions) {
-    regionSel.innerHTML = '<option value="">— 选择地区 —</option>' +
-      regions.map(r => `<option value="${r.id}">${r.city}</option>`).join('');
-  }
+  // Clear create-form combobox
+  const crDisp = document.getElementById('cr-region-display'); if (crDisp) crDisp.value = '';
+  const crVal  = document.getElementById('cr-region');         if (crVal)  crVal.value  = '';
   // Load suppliers + salespersons → sup-select
   const { data: sups } = await sb.from('suppliers')
     .select('id,supplier_code,next_order_seq,supplier_salespersons(id,name)')
