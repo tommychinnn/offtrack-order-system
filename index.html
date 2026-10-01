@@ -484,13 +484,11 @@ body[data-active-role="master"] [data-role~="master"]{display:flex}
 body[data-active-role="operation"] [data-role~="operation"]{display:flex}
 body[data-active-role="td"] [data-role~="td"]{display:flex}
 body[data-active-role="finance"] [data-role~="finance"]{display:flex}
-body[data-active-role="gsh"] [data-role~="gsh"]{display:flex}
 .nav-item[data-role]{display:none}
 body[data-active-role="master"] .nav-item[data-role~="master"]{display:flex}
 body[data-active-role="operation"] .nav-item[data-role~="operation"]{display:flex}
 body[data-active-role="td"] .nav-item[data-role~="td"]{display:flex}
 body[data-active-role="finance"] .nav-item[data-role~="finance"]{display:flex}
-body[data-active-role="gsh"] .nav-item[data-role~="gsh"]{display:flex}
 
 /* ── ORDERS QUERY BAR (master/operation/finance only) ── */
 .ord-query-row{display:none;align-items:center;gap:8px;flex-wrap:wrap;width:100%;border-top:1px solid #F0F2F7;padding-top:10px;margin-top:4px}
@@ -710,10 +708,10 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section">主菜单</div>
-    <div class="nav-item" data-role="master operation td finance gsh" data-page="dashboard" onclick="showPage('dashboard')"><span class="icon">📊</span>Dashboard</div>
-    <div class="nav-item" data-role="master operation td finance gsh" data-page="orders" onclick="showPage('orders')"><span class="icon">📋</span>订单管理<span class="badge">3</span></div>
+    <div class="nav-item" data-role="master operation td finance" data-page="dashboard" onclick="showPage('dashboard')"><span class="icon">📊</span>Dashboard</div>
+    <div class="nav-item" data-role="master operation td finance" data-page="orders" onclick="showPage('orders')"><span class="icon">📋</span>订单管理<span class="badge">3</span></div>
     <div class="nav-item" data-role="master operation td finance" data-page="insurance-global" onclick="showPage('insurance-global')"><span class="icon">🛡️</span>保险</div>
-    <div class="nav-item" data-role="master operation td finance gsh" data-page="pay-in" onclick="showPage('pay-in')"><span class="icon">💰</span>入账</div>
+    <div class="nav-item" data-role="master operation td finance" data-page="pay-in" onclick="showPage('pay-in')"><span class="icon">💰</span>入账</div>
     <div class="nav-item" data-role="master operation finance" data-page="pay-out" onclick="showPage('pay-out')"><span class="icon">💸</span>出账</div>
     <div class="nav-item" data-role="master operation td finance" data-page="notifications" onclick="showPage('notifications')"><span class="icon">🔔</span>通知<span class="badge" id="notif-badge">7</span></div>
     <div class="nav-item" data-role="master operation td finance" data-page="files-global" onclick="showPage('files-global')"><span class="icon">📁</span>文件与行程</div>
@@ -4082,7 +4080,7 @@ function renderPayIns(data) {
   const tbody = document.getElementById('payin-tbody');
   if (!data||!data.length) { tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:40px;color:#9CA3AF">暂无入账记录</td></tr>'; return; }
 
-  const canChangeGsh = ['master','operation','finance','gsh'].includes(currentUser.roleKey);
+  const canChangeGsh = ['master','operation','finance'].includes(currentUser.roleKey);
   const fmt = v=>(v||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
   let total=0; const thisMonth=new Date().toISOString().slice(0,7); let monthTotal=0;
   tbody.innerHTML = data.map(r => {
@@ -4163,8 +4161,8 @@ async function uploadGshInvoice(payinId, fileInput) {
 
 async function cycleGshStatus(payinId, newStatus) {
   // Only Finance/Master/Operation can change GSH status
-  if (!['master','operation','finance','gsh'].includes(currentUser.roleKey)) {
-    showToast('❌ 只有 Finance、GSH 或管理员可以修改核实状态');
+  if (!['master','operation','finance'].includes(currentUser.roleKey)) {
+    showToast('❌ 只有 Finance 或管理员可以修改核实状态');
     return;
   }
   const { error } = await sb.from('payins').update({ gsh_check: newStatus }).eq('id', payinId);
@@ -5115,8 +5113,8 @@ async function initCreateForm() {
     supSel.innerHTML = '<option value="">— 选择 Supplier —</option>' +
       _crSuppliers.map(s => `<option value="${s.id}" data-code="${s.supplier_code}" data-seq="${s.next_order_seq||1}">${s.supplier_code}</option>`).join('');
   }
-  // Load TDs → cr-td
-  const { data: tds } = await sb.from('users').select('id,name').eq('role','td').order('name');
+  // Load TDs → cr-td (role=td OR is_td=true)
+  const { data: tds } = await sb.from('users').select('id,name').or('role.eq.td,is_td.eq.true').eq('is_active',true).order('name');
   const tdSel = document.getElementById('cr-td');
   if (tdSel && tds) {
     tdSel.innerHTML = '<option value="">— 选择 TD —</option>' +
@@ -5938,14 +5936,14 @@ function doExport() {
 }
 
 /* ── USER MANAGEMENT ── */
-const _roleChip  = { master:'usr-role-master', operation:'usr-role-operation', td:'usr-role-td', finance:'usr-role-finance', gsh:'usr-role-gsh' };
-const _roleLabel = { master:'Master', operation:'Operation', td:'Travel Designer', finance:'Finance', gsh:'GSH' };
+const _roleChip  = { master:'usr-role-master', operation:'usr-role-operation', td:'usr-role-td', finance:'usr-role-finance' };
+const _roleLabel = { master:'Master', operation:'Operation', td:'Travel Designer', finance:'Finance' };
 
 async function loadUserMgmt() {
   const tbody = document.getElementById('user-mgmt-tbody');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#9CA3AF">⏳ 加载中...</td></tr>';
-  const { data, error } = await sb.from('users').select('id,name,email,role,is_active,created_at').order('created_at');
+  const { data, error } = await sb.from('users').select('id,name,email,role,is_active,is_td,created_at').order('created_at');
   if (error) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#DC2626">加载失败: ${error.message}</td></tr>`; return; }
   if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#9CA3AF">暂无用户</td></tr>'; return; }
   tbody.innerHTML = data.map(u => {
@@ -5964,7 +5962,7 @@ async function loadUserMgmt() {
       <td style="padding:10px 14px">${statusChip}</td>
       <td style="padding:10px 14px;color:#9CA3AF;font-size:12px">${(u.created_at||'').slice(0,10)}</td>
       <td style="padding:10px 14px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <button class="tb-btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="openEditUserModal('${u.id}','${u.name.replace(/'/g,"\\'")}','${u.email}','${u.role}')">✏️ 编辑</button>
+        <button class="tb-btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="openEditUserModal('${u.id}','${u.name.replace(/'/g,"\\'")}','${u.email}','${u.role}',${!!u.is_td})">✏️ 编辑</button>
         ${toggleBtn}
         ${!isMaster && u.id !== currentUser.id ? `<button class="tb-btn btn-ghost" style="font-size:11px;padding:4px 10px;color:#DC2626" onclick="deleteUser('${u.id}','${u.name.replace(/'/g,"\\'")}')">🗑️ 删除</button>` : ''}
       </div></td>
@@ -5973,19 +5971,22 @@ async function loadUserMgmt() {
 }
 
 let _editUserId = null;
-function openEditUserModal(id, name, email, role) {
+function openEditUserModal(id, name, email, role, isTd) {
   _editUserId = id;
   document.getElementById('eu-name').value  = name;
   document.getElementById('eu-email').value = email;
   document.getElementById('eu-role').value  = role;
+  const isTdEl = document.getElementById('eu-is-td');
+  if (isTdEl) isTdEl.checked = !!isTd;
   document.getElementById('modal-edit-user').classList.add('open');
 }
 async function submitEditUser() {
   const name  = document.getElementById('eu-name').value.trim();
   const email = document.getElementById('eu-email').value.trim();
   const role  = document.getElementById('eu-role').value;
+  const isTd  = document.getElementById('eu-is-td')?.checked || false;
   if (!name || !email) { showToast('⚠️ 请填写姓名和邮箱'); return; }
-  const { error } = await sb.from('users').update({ name, email, role }).eq('id', _editUserId);
+  const { error } = await sb.from('users').update({ name, email, role, is_td: isTd }).eq('id', _editUserId);
   if (error) { showToast('❌ 保存失败: ' + error.message); return; }
   closeModal('modal-edit-user');
   showToast('✅ 用户资料已更新');
@@ -6030,6 +6031,7 @@ async function saveNewUser() {
   const email = document.getElementById('cu-email').value.trim().toLowerCase();
   const role  = document.getElementById('cu-role').value;
   const pwd   = document.getElementById('cu-pwd').value;
+  const isTd  = document.getElementById('cu-is-td')?.checked || false;
   if (!name || !email) { showToast('⚠️ 请填写姓名和邮箱'); return; }
   if (!pwd || pwd.length < 6) { showToast('⚠️ 密码至少 6 位'); return; }
   // 1. Create Supabase Auth user
@@ -6038,7 +6040,7 @@ async function saveNewUser() {
   // 2. Insert into users table
   const nameParts = name.split(' ').filter(Boolean);
   const initials  = (nameParts.length >= 2 ? nameParts[0][0] + nameParts[nameParts.length-1][0] : name.slice(0,2)).toUpperCase();
-  const { error: dbErr } = await sb.from('users').insert({ name, email, role, is_active: true, avatar_initials: initials });
+  const { error: dbErr } = await sb.from('users').insert({ name, email, role, is_active: true, avatar_initials: initials, is_td: isTd });
   if (dbErr) { showToast('❌ 用户资料保存失败: ' + dbErr.message); return; }
   closeCreateUserModal();
   document.getElementById('cu-name').value = '';
@@ -6647,7 +6649,6 @@ async function submitEditPayOut() {
           <option value="operation">Operation</option>
           <option value="td">Travel Designer</option>
           <option value="finance">Finance</option>
-          <option value="gsh">GSH</option>
           <option value="master">Master</option>
         </select>
       </div>
@@ -6655,6 +6656,9 @@ async function submitEditPayOut() {
         <label>初始密码</label>
         <input id="cu-pwd" type="password" placeholder="设置初始密码">
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#374151;cursor:pointer">
+        <input type="checkbox" id="cu-is-td" style="width:auto;margin:0"/> 加入 Travel Designer 列表（创建订单时可选）
+      </label>
       <div style="font-size:11px;color:#9CA3AF">员工首次登录后可自行在个人设置中修改密码。</div>
     </div>
     <div class="modal-foot">
@@ -7710,10 +7714,12 @@ async function submitEditPayOut() {
           <option value="operation">Operation</option>
           <option value="td">Travel Designer</option>
           <option value="finance">Finance</option>
-          <option value="gsh">GSH</option>
           <option value="master">Master</option>
         </select>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#374151;cursor:pointer">
+        <input type="checkbox" id="eu-is-td" style="width:auto;margin:0"/> 加入 Travel Designer 列表（创建订单时可选）
+      </label>
     </div>
     <div class="modal-footer">
       <button class="tb-btn btn-ghost" onclick="closeModal('modal-edit-user')">取消</button>
