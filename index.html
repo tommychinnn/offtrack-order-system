@@ -484,11 +484,13 @@ body[data-active-role="master"] [data-role~="master"]{display:flex}
 body[data-active-role="operation"] [data-role~="operation"]{display:flex}
 body[data-active-role="td"] [data-role~="td"]{display:flex}
 body[data-active-role="finance"] [data-role~="finance"]{display:flex}
+body[data-active-role="gsh"] [data-role~="gsh"]{display:flex}
 .nav-item[data-role]{display:none}
 body[data-active-role="master"] .nav-item[data-role~="master"]{display:flex}
 body[data-active-role="operation"] .nav-item[data-role~="operation"]{display:flex}
 body[data-active-role="td"] .nav-item[data-role~="td"]{display:flex}
 body[data-active-role="finance"] .nav-item[data-role~="finance"]{display:flex}
+body[data-active-role="gsh"] .nav-item[data-role~="gsh"]{display:flex}
 
 /* ── ORDERS QUERY BAR (master/operation/finance only) ── */
 .ord-query-row{display:none;align-items:center;gap:8px;flex-wrap:wrap;width:100%;border-top:1px solid #F0F2F7;padding-top:10px;margin-top:4px}
@@ -708,10 +710,10 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section">主菜单</div>
-    <div class="nav-item" data-role="master operation td finance" data-page="dashboard" onclick="showPage('dashboard')"><span class="icon">📊</span>Dashboard</div>
-    <div class="nav-item" data-role="master operation td finance" data-page="orders" onclick="showPage('orders')"><span class="icon">📋</span>订单管理<span class="badge">3</span></div>
+    <div class="nav-item" data-role="master operation td finance gsh" data-page="dashboard" onclick="showPage('dashboard')"><span class="icon">📊</span>Dashboard</div>
+    <div class="nav-item" data-role="master operation td finance gsh" data-page="orders" onclick="showPage('orders')"><span class="icon">📋</span>订单管理<span class="badge">3</span></div>
     <div class="nav-item" data-role="master operation td finance" data-page="insurance-global" onclick="showPage('insurance-global')"><span class="icon">🛡️</span>保险</div>
-    <div class="nav-item" data-role="master operation td finance" data-page="pay-in" onclick="showPage('pay-in')"><span class="icon">💰</span>入账</div>
+    <div class="nav-item" data-role="master operation td finance gsh" data-page="pay-in" onclick="showPage('pay-in')"><span class="icon">💰</span>入账</div>
     <div class="nav-item" data-role="master operation finance" data-page="pay-out" onclick="showPage('pay-out')"><span class="icon">💸</span>出账</div>
     <div class="nav-item" data-role="master operation td finance" data-page="notifications" onclick="showPage('notifications')"><span class="icon">🔔</span>通知<span class="badge" id="notif-badge">7</span></div>
     <div class="nav-item" data-role="master operation td finance" data-page="files-global" onclick="showPage('files-global')"><span class="icon">📁</span>文件与行程</div>
@@ -719,6 +721,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
     <div class="nav-item" data-role="master" data-page="report" onclick="showPage('report')"><span class="icon">📈</span>报表</div>
     <div class="nav-section" data-role="master operation">设置</div>
     <div class="nav-item" data-role="master operation" data-page="supplier-settings" onclick="showPage('supplier-settings')"><span class="icon">🏢</span>Supplier 设置</div>
+    <div class="nav-item" data-role="master operation" data-page="bank-settings" onclick="showPage('bank-settings')"><span class="icon">🏦</span>收款银行</div>
     <div class="nav-item" data-role="master operation" data-page="regions" onclick="showPage('regions')"><span class="icon">🌏</span>地区与来源</div>
     <div class="nav-item" data-role="master operation" data-page="alert-rules" onclick="showPage('alert-rules')"><span class="icon">🔔</span>Alert 规则</div>
     <div class="nav-item" data-role="master" data-page="user-mgmt" onclick="showPage('user-mgmt')"><span class="icon">👥</span>用户管理</div>
@@ -1182,6 +1185,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             <div class="form-section-title">旅游地区</div>
             <div class="form-group">
               <label>主要地区 <span class="req">*</span></label>
+              <input type="text" id="cr-region-search" placeholder="🔍 搜索地区..." autocomplete="off" style="margin-bottom:4px" oninput="filterRegionSelect('cr-region-search','cr-region')"/>
               <select id="cr-region"><option value="">— 选择地区 —</option></select>
             </div>
           </div>
@@ -1655,6 +1659,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                 </select>
               </div>
               <div class="form-group"><label>旅游地区</label>
+                <input id="det-region-search" class="editable-field" type="text" placeholder="🔍 搜索地区..." readonly autocomplete="off" style="margin-bottom:4px;border:1.5px solid #F0F2F7;background:#FAFBFC;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:600;width:100%;box-sizing:border-box" oninput="filterRegionSelect('det-region-search','det-region-id')"/>
                 <select id="det-region-id" class="editable-field" disabled style="border:1.5px solid #F0F2F7;background:#FAFBFC;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:600;font-family:'Nunito',sans-serif;color:#374151;width:100%">
                   <option value="">—</option>
                 </select>
@@ -2400,6 +2405,27 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
 </div>
 
 <!-- ═══════════════════════════════════════════
+     PAGE: BANK SETTINGS
+═══════════════════════════════════════════ -->
+<div class="page" id="page-bank-settings">
+  <div class="topbar">
+    <div><div class="page-title">收款银行</div><div class="breadcrumb">Settings · 银行选项</div></div>
+    <button class="tb-btn btn-primary" onclick="openAddBankModal()">＋ 新增银行</button>
+  </div>
+  <div class="content-area" style="max-width:500px">
+    <div class="card">
+      <div style="font-size:12px;color:#6B7280;margin-bottom:12px">管理入账时可选的收款银行选项。</div>
+      <table class="tbl">
+        <thead><tr><th>银行名称</th><th style="text-align:right">操作</th></tr></thead>
+        <tbody id="bank-settings-tbody">
+          <tr><td colspan="2" style="text-align:center;padding:30px;color:#9CA3AF">⏳ 加载中...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
      PAGE: REGIONS & SOURCES
 ═══════════════════════════════════════════ -->
 <div class="page" id="page-regions">
@@ -2846,6 +2872,7 @@ function showPage(p) {
     notifications: 'page-notifications',
     'files-global': 'page-files-global',
     'supplier-settings': 'page-supplier-settings',
+    'bank-settings': 'page-bank-settings',
     regions: 'page-regions',
     anomaly: 'page-anomaly',
     report: 'page-report',
@@ -2871,6 +2898,7 @@ function showPage(p) {
   if (p === 'user-mgmt') { loadUserMgmt(); }
   if (p === 'finance-ledger') { loadFinanceLedger(); }
   if (p === 'supplier-settings') { loadSuppliers(); }
+  if (p === 'bank-settings') { loadBankSettings(); }
   if (p === 'regions') { loadRegions(); loadSources(); loadKols(); }
   if (p === 'detail') { setTimeout(() => { calcTotal(); syncTodoList(); syncSidebar(); }, 0); }
 
@@ -3474,6 +3502,7 @@ async function toggleEditMode() {
 
   // Load regions
   const { data: regions } = await sb.from('regions').select('id, city').order('city');
+  _regionsData = regions || [];
   const regSel = document.getElementById('det-region-id');
   const curRegId = _currentOrder.region_id || '';
   regSel.innerHTML = '<option value="">— 选择地区 —</option>' +
@@ -4016,7 +4045,7 @@ async function loadPayIns() {
   const tbody = document.getElementById('payin-tbody');
   const isTD = currentUser.roleKey === 'td';
   let query = sb.from('payins')
-    .select(`id,amount_rm,date,payment_type,bank,invoice_status,receipt_url,gsh_check,checked,orders${isTD?'!inner':''}(order_no,td_id,customers(name))`)
+    .select(`id,amount_rm,date,payment_type,bank,invoice_status,receipt_url,gsh_check,gsh_invoice_url,checked,orders${isTD?'!inner':''}(order_no,td_id,customers(name))`)
     .order('date', { ascending: false });
   if (isTD) query = query.eq('orders.td_id', currentUser.id);
   const { data, error } = await query;
@@ -4039,7 +4068,7 @@ function renderPayIns(data) {
   const tbody = document.getElementById('payin-tbody');
   if (!data||!data.length) { tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:40px;color:#9CA3AF">暂无入账记录</td></tr>'; return; }
 
-  const canChangeGsh = ['master','operation','finance'].includes(currentUser.roleKey);
+  const canChangeGsh = ['master','operation','finance','gsh'].includes(currentUser.roleKey);
   const fmt = v=>(v||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
   let total=0; const thisMonth=new Date().toISOString().slice(0,7); let monthTotal=0;
   tbody.innerHTML = data.map(r => {
@@ -4088,7 +4117,7 @@ function renderPayIns(data) {
       <td style="padding:10px 12px">${gshBtn}</td>
       <td style="padding:10px 12px">${invStatus}</td>
       <td class="check-col" style="padding:8px 12px">${checkBtn}</td>
-      <td style="padding:10px 12px;color:#9CA3AF;font-size:11px">—</td>
+      <td style="padding:8px 12px;white-space:nowrap">${r.gsh_invoice_url ? `<a href="${r.gsh_invoice_url}" target="_blank" title="查看GSH发票" style="font-size:18px;text-decoration:none">📄</a> ` : ''}${canChangeGsh ? `<label style="font-size:10px;padding:2px 7px;border-radius:4px;border:1.5px solid #9CA3AF;background:#F9FAFB;color:#6B7280;cursor:pointer" title="上传GSH发票"><input type="file" accept="image/*,.pdf" style="display:none" onchange="uploadGshInvoice('${r.id}',this)"/>📎 上传</label>` : '—'}</td>
       <td style="padding:8px 12px;white-space:nowrap"><button class="edit-payin-btn" style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #3B7A68;background:#EEF6F3;color:#3B7A68;cursor:pointer" onclick="openEditPayIn('${r.id}')">✏️ 编辑</button> <button style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #DC2626;background:#FEF2F2;color:#DC2626;cursor:pointer" onclick="deletePayIn('${r.id}')">🗑️ 删除</button></td>
     </tr>`;
   }).join('');
@@ -4102,10 +4131,26 @@ function renderPayIns(data) {
   filterPayIns();
 }
 
+async function uploadGshInvoice(payinId, fileInput) {
+  const file = fileInput.files[0];
+  if (!file) return;
+  showToast('⏳ 上传中...');
+  const ext = file.name.split('.').pop();
+  const path = `gsh-invoices/${payinId}-${Date.now()}.${ext}`;
+  const { error: upErr } = await sb.storage.from('payins').upload(path, file, { upsert: true });
+  if (upErr) { showToast('❌ 上传失败: ' + upErr.message); return; }
+  const { data: urlData } = sb.storage.from('payins').getPublicUrl(path);
+  const url = urlData?.publicUrl;
+  const { error } = await sb.from('payins').update({ gsh_invoice_url: url }).eq('id', payinId);
+  if (error) { showToast('❌ 保存失败: ' + error.message); return; }
+  showToast('✅ GSH 发票已上传');
+  await loadPayIns();
+}
+
 async function cycleGshStatus(payinId, newStatus) {
   // Only Finance/Master/Operation can change GSH status
-  if (!['master','operation','finance'].includes(currentUser.roleKey)) {
-    showToast('❌ 只有 Finance 或管理员可以修改核实状态');
+  if (!['master','operation','finance','gsh'].includes(currentUser.roleKey)) {
+    showToast('❌ 只有 Finance、GSH 或管理员可以修改核实状态');
     return;
   }
   const { error } = await sb.from('payins').update({ gsh_check: newStatus }).eq('id', payinId);
@@ -4189,6 +4234,63 @@ async function loadPayOuts() {
   document.getElementById('payout-tfoot-foreign').textContent = fmt(totalForeign);
   document.getElementById('payout-tfoot-rm').textContent = fmt(totalRM);
   document.getElementById('payout-tfoot-charges').textContent = fmt(totalCharges);
+}
+
+/* ── BANK SETTINGS ── */
+let _banksData = [];
+const DEFAULT_BANKS = ['TNG','HLB','PB','Maybank','CIMB','DuitNow','现金','其他'];
+
+async function loadBankSettings() {
+  const tbody = document.getElementById('bank-settings-tbody');
+  if (!tbody) return;
+  const { data, error } = await sb.from('banks').select('id,name').order('name');
+  if (error) {
+    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;padding:30px;color:#DC2626;font-size:12px">❌ 请先在 Supabase 创建 banks 表（id uuid, name text）</td></tr>';
+    return;
+  }
+  _banksData = data || [];
+  if (!_banksData.length) {
+    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;padding:30px;color:#9CA3AF;font-size:12px">暂无银行，点击「新增银行」添加</td></tr>';
+    return;
+  }
+  tbody.innerHTML = _banksData.map(b => `
+    <tr>
+      <td style="font-weight:700">${b.name}</td>
+      <td style="text-align:right"><button onclick="deleteBank('${b.id}','${b.name}')" style="font-size:10px;padding:3px 8px;border-radius:4px;border:1.5px solid #DC2626;background:#FEF2F2;color:#DC2626;cursor:pointer">删除</button></td>
+    </tr>`).join('');
+}
+
+function openAddBankModal() {
+  const name = prompt('银行名称：');
+  if (!name?.trim()) return;
+  addBank(name.trim());
+}
+
+async function addBank(name) {
+  const { error } = await sb.from('banks').insert({ name });
+  if (error) { showToast('❌ 添加失败: ' + error.message); return; }
+  showToast('✅ 已添加：' + name);
+  loadBankSettings();
+  refreshBankSelects();
+}
+
+async function deleteBank(id, name) {
+  if (!confirm(`确定删除「${name}」？`)) return;
+  const { error } = await sb.from('banks').delete().eq('id', id);
+  if (error) { showToast('❌ 删除失败: ' + error.message); return; }
+  showToast('✅ 已删除：' + name);
+  loadBankSettings();
+  refreshBankSelects();
+}
+
+async function refreshBankSelects() {
+  const { data } = await sb.from('banks').select('name').order('name');
+  const banks = data?.length ? data.map(b => b.name) : DEFAULT_BANKS;
+  const opts = '<option value="">选择</option>' + banks.map(b => `<option>${b}</option>`).join('');
+  ['pi-bank','epi-bank'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { const v = el.value; el.innerHTML = opts; el.value = v; }
+  });
 }
 
 async function loadSuppliers() {
@@ -4957,10 +5059,22 @@ function selectMode(el, group) {
 
 // ── CREATE FORM: INIT FROM DB ─────────────────────────────────────────────
 let _crSuppliers = [];
+let _regionsData = [];
+
+function filterRegionSelect(inputId, selectId) {
+  const q = (document.getElementById(inputId)?.value || '').toLowerCase();
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const filtered = q ? _regionsData.filter(r => r.city.toLowerCase().includes(q)) : _regionsData;
+  const curVal = sel.value;
+  sel.innerHTML = '<option value="">— 选择地区 —</option>' +
+    filtered.map(r => `<option value="${r.id}"${r.id === curVal ? ' selected' : ''}>${r.city}</option>`).join('');
+}
 
 async function initCreateForm() {
   // Load regions → cr-region
   const { data: regions } = await sb.from('regions').select('id,city').order('city');
+  _regionsData = regions || [];
   const regionSel = document.getElementById('cr-region');
   if (regionSel && regions) {
     regionSel.innerHTML = '<option value="">— 选择地区 —</option>' +
@@ -5730,6 +5844,7 @@ const PAGE_MAP = {
   notifications: 'page-notifications',
   'files-global': 'page-files-global',
   'supplier-settings': 'page-supplier-settings',
+  'bank-settings': 'page-bank-settings',
   regions: 'page-regions',
   anomaly: 'page-anomaly',
   'alert-rules': 'page-alert-rules',
@@ -5798,8 +5913,8 @@ function doExport() {
 }
 
 /* ── USER MANAGEMENT ── */
-const _roleChip  = { master:'usr-role-master', operation:'usr-role-operation', td:'usr-role-td', finance:'usr-role-finance' };
-const _roleLabel = { master:'Master', operation:'Operation', td:'Travel Designer', finance:'Finance' };
+const _roleChip  = { master:'usr-role-master', operation:'usr-role-operation', td:'usr-role-td', finance:'usr-role-finance', gsh:'usr-role-gsh' };
+const _roleLabel = { master:'Master', operation:'Operation', td:'Travel Designer', finance:'Finance', gsh:'GSH' };
 
 async function loadUserMgmt() {
   const tbody = document.getElementById('user-mgmt-tbody');
@@ -6132,7 +6247,7 @@ function toggleUserStatus(btn, statusId) {
 }
 
 /* ── Pay-In / Pay-Out Modals ── */
-function openPayInModal()  { document.getElementById('modal-pay-in').classList.add('open'); }
+function openPayInModal()  { document.getElementById('modal-pay-in').classList.add('open'); refreshBankSelects(); }
 async function openPayOutModal() {
   document.getElementById('modal-pay-out').classList.add('open');
   // Load suppliers into dropdown (reuse edit-form cache)
@@ -6342,6 +6457,7 @@ async function openEditPayIn(id) {
   document.getElementById('epi-order').value = r.orders?.order_no || '';
   document.getElementById('epi-type').value = r.payment_type || '';
   document.getElementById('epi-amount').value = r.amount_rm || '';
+  await refreshBankSelects();
   document.getElementById('epi-bank').value = r.bank || '';
   document.getElementById('epi-invoice-status').value = r.invoice_status || '';
   document.getElementById('epi-gsh').value = r.gsh_check || 'pending';
@@ -6506,6 +6622,7 @@ async function submitEditPayOut() {
           <option value="operation">Operation</option>
           <option value="td">Travel Designer</option>
           <option value="finance">Finance</option>
+          <option value="gsh">GSH</option>
           <option value="master">Master</option>
         </select>
       </div>
@@ -7568,6 +7685,7 @@ async function submitEditPayOut() {
           <option value="operation">Operation</option>
           <option value="td">Travel Designer</option>
           <option value="finance">Finance</option>
+          <option value="gsh">GSH</option>
           <option value="master">Master</option>
         </select>
       </div>
