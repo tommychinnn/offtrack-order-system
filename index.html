@@ -484,6 +484,11 @@ body[data-active-role="master"] [data-role~="master"]{display:flex}
 body[data-active-role="operation"] [data-role~="operation"]{display:flex}
 body[data-active-role="td"] [data-role~="td"]{display:flex}
 body[data-active-role="finance"] [data-role~="finance"]{display:flex}
+/* stats-row with data-role must use grid not flex */
+body[data-active-role="master"] .stats-row[data-role~="master"],
+body[data-active-role="operation"] .stats-row[data-role~="operation"],
+body[data-active-role="td"] .stats-row[data-role~="td"],
+body[data-active-role="finance"] .stats-row[data-role~="finance"]{display:grid}
 .nav-item[data-role]{display:none}
 body[data-active-role="master"] .nav-item[data-role~="master"]{display:flex}
 body[data-active-role="operation"] .nav-item[data-role~="operation"]{display:flex}
@@ -1500,9 +1505,9 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
           <div class="form-section">
             <div style="display:flex;gap:10px;align-items:center">
               <label style="font-size:13px;font-weight:700;color:#2D2926;min-width:100px">保险已买？</label>
-              <div class="radio-opt sel" id="ins-status-no-btn" onclick="setInsStatus('no')">不需要</div>
-              <div class="radio-opt" id="ins-status-partial-btn" onclick="setInsStatus('partial')">部分购买</div>
-              <div class="radio-opt" id="ins-status-yes-btn" onclick="setInsStatus('yes')">已全买</div>
+              <div class="radio-opt sel" id="ins-status-no-btn" onclick="setInsStatus('no')">未买</div>
+              <div class="radio-opt" id="ins-status-partial-btn" onclick="setInsStatus('partial')">部分买</div>
+              <div class="radio-opt" id="ins-status-yes-btn" onclick="setInsStatus('yes')">已买</div>
             </div>
           </div>
 
@@ -2182,12 +2187,19 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
     <div style="font-size:11px;color:#9CA3AF;font-weight:600">今天 · 2026-07-23 Wed</div>
   </div>
   <div class="content">
-    <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
+    <!-- Non-TD stats (master/operation/finance) -->
+    <div class="stats-row" data-role="master operation finance" style="grid-template-columns:repeat(5,1fr)">
       <div class="stat-card good"><div class="label">进行中订单</div><div class="val" id="dash-active">—</div><div class="sub" id="dash-active-sub">含出行中 — 单</div></div>
       <div class="stat-card"><div class="label">本月成交单</div><div class="val" id="dash-month">—</div><div class="sub">本月新单</div></div>
       <div class="stat-card warn"><div class="label">14天内出发</div><div class="val" id="dash-14d">—</div><div class="sub">需立即准备</div></div>
       <div class="stat-card danger"><div class="label">保险待处理</div><div class="val" id="dash-ins">—</div><div class="sub">无保险记录</div></div>
       <div class="stat-card danger"><div class="label">顾客尾款未付</div><div class="val" id="dash-balance">—</div><div class="sub" id="dash-balance-sub">总 RM —</div></div>
+    </div>
+    <!-- TD-only stats: current month orders, departure pax, total managed pax -->
+    <div class="stats-row" data-role="td" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card good"><div class="label">当月订单</div><div class="val" id="dash-td-month">—</div><div class="sub">本月出发单数</div></div>
+      <div class="stat-card"><div class="label">出发人数</div><div class="val" id="dash-td-pax">—</div><div class="sub">本月出发总人数</div></div>
+      <div class="stat-card warn"><div class="label">顾团人数</div><div class="val" id="dash-td-total-pax">—</div><div class="sub">所有进行中订单</div></div>
     </div>
 
     <div class="dash-grid">
@@ -3718,7 +3730,7 @@ async function loadDashboard() {
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0,10);
 
   let dashQuery = sb.from('orders')
-    .select('id,order_no,status,depart_date,end_date,date_tbd,selling_price,cost_rm,customers(name),regions(city),payins(amount_rm,gsh_check)')
+    .select('id,order_no,status,depart_date,end_date,date_tbd,selling_price,cost_rm,pax_total,customers(name),regions(city),payins(amount_rm,gsh_check)')
     .order('depart_date', { ascending: true });
   if (currentUser.roleKey === 'td' && currentUser.id) dashQuery = dashQuery.eq('td_id', currentUser.id);
   const { data: orders } = await dashQuery;
@@ -3756,6 +3768,18 @@ async function loadDashboard() {
     return s+(total-paid);
   },0);
   document.getElementById('dash-balance-sub').textContent = `总 RM ${fmt(totalBalance)}`;
+
+  // TD-specific stats
+  const monthEnd = new Date(today.getFullYear(), today.getMonth()+1, 0).toISOString().slice(0,10);
+  const thisMonthDepart = orders.filter(o => (o.depart_date||'') >= monthStart && (o.depart_date||'') <= monthEnd);
+  const tdMonthPax = thisMonthDepart.reduce((s,o)=>s+(parseInt(o.pax_total)||0),0);
+  const tdTotalPax = active.reduce((s,o)=>s+(parseInt(o.pax_total)||0),0);
+  const tdMonthEl = document.getElementById('dash-td-month');
+  const tdPaxEl = document.getElementById('dash-td-pax');
+  const tdTotalPaxEl = document.getElementById('dash-td-total-pax');
+  if (tdMonthEl) tdMonthEl.textContent = thisMonthDepart.length;
+  if (tdPaxEl) tdPaxEl.textContent = tdMonthPax || '—';
+  if (tdTotalPaxEl) tdTotalPaxEl.textContent = tdTotalPax || '—';
 
   // Upcoming table
   const upTbody = document.getElementById('dash-upcoming-tbody');
