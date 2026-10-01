@@ -775,10 +775,10 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
     <div class="orders-top-filterbar">
       <div class="compact-filter" style="margin-bottom:6px">
         <input id="ord-search" type="text" placeholder="搜索订单号、顾客名字…" style="min-width:180px" oninput="filterOrders()"/>
-        <select id="ord-filter-status" onchange="filterOrders()"><option value="">所有状态</option><option>已付定金</option><option>已付全款</option><option>行程结束</option><option>待结算</option></select>
-        <select id="ord-filter-region" onchange="filterOrders()"><option value="">所有地区</option><option>云南</option><option>四川</option><option>北京</option><option>哈尔滨</option><option>新疆</option></select>
-        <select id="ord-filter-td" onchange="filterOrders()"><option value="">所有对接</option><option>YXX - 媛媛</option><option>YXX - 焜焜</option><option>YXX - 葵葵</option></select>
-        <select id="ord-filter-month" onchange="filterOrders()"><option value="">所有月份</option><option>2025-11</option><option>2025-12</option><option>2026-01</option></select>
+        <select id="ord-filter-status" onchange="filterOrders()"><option value="">所有状态</option><option>已付定金</option><option>准备中</option><option>出发准备</option><option>旅途中</option><option>行程结束</option><option>退团</option></select>
+        <select id="ord-filter-region" onchange="filterOrders()"><option value="">所有地区</option></select>
+        <select id="ord-filter-td" onchange="filterOrders()"><option value="">所有对接</option></select>
+        <select id="ord-filter-month" onchange="filterOrders()"><option value="">所有月份</option></select>
         <div class="filter-chip" id="chip-balance" onclick="toggleOrderChip('balance',this)"><span class="dot"></span>尾款未付</div>
         <div class="filter-chip" id="chip-tbd" onclick="toggleOrderChip('tbd',this)"><span class="dot"></span>日期未定</div>
         <div class="filter-chip" id="chip-ins" onclick="toggleOrderChip('ins',this)"><span class="dot"></span>保险</div>
@@ -1186,6 +1186,21 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
           </div>
           <div class="form-section">
             <div class="form-section-title">旅游地区</div>
+            <div class="form-grid" style="margin-bottom:10px">
+              <div class="form-group">
+                <label>国家 <span class="req">*</span></label>
+                <select id="cr-country" onchange="document.getElementById('cr-region-display').value='';document.getElementById('cr-region').value='';regionDropdown('cr-region-display','cr-region','cr-region-dd')" style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;padding:7px 10px;border:1.5px solid #E2E6EA;border-radius:6px;width:100%;color:#374151;background:#fff">
+                  <option value="">— 全部 —</option>
+                  <option>中国</option>
+                  <option>日本</option>
+                  <option>韩国</option>
+                  <option>泰国</option>
+                  <option>印尼</option>
+                  <option>马来西亚</option>
+                  <option>欧洲</option>
+                </select>
+              </div>
+            </div>
             <div class="form-group">
               <label>主要地区 <span class="req">*</span></label>
               <div style="position:relative">
@@ -1241,7 +1256,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             <div class="form-section-title">第二联系方式（可选）</div>
             <div id="extra-contacts">
               <div class="form-grid" style="margin-bottom:8px">
-                <div class="form-group"><label>类型</label><select><option>Instagram</option><option>WeChat</option><option>WhatsApp</option><option>Email</option></select></div>
+                <div class="form-group"><label>类型</label><select><option>Instagram</option><option>WeChat</option><option>WhatsApp</option><option>Messenger</option><option>Email</option></select></div>
                 <div class="form-group"><label>用户名 / 号码</label><input type="text" placeholder="@username"/></div>
               </div>
             </div>
@@ -1295,14 +1310,12 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                 <label>主要客源 <span class="req">*</span></label>
                 <select id="cr-source">
                   <option value="">— 选择 —</option>
-                  <option>Offtrack Instagram</option>
+                  <option>博主介绍</option>
+                  <option>Offtrack IG</option>
                   <option>Offtrack 小红书</option>
-                  <option>老顾客</option>
+                  <option>Travel Fair</option>
+                  <option>GSH</option>
                   <option>老顾客介绍</option>
-                  <option>博主带来</option>
-                  <option>MITM Travel Fair</option>
-                  <option>Google</option>
-                  <option>Walk-in</option>
                   <option>Other</option>
                 </select>
               </div>
@@ -1311,9 +1324,12 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                 <select id="cr-kol">
                   <option value="">— 无 —</option>
                   <option>阿鱼</option>
-                  <option>小美旅行</option>
-                  <option>旅行达人Tony</option>
-                  <option value="Other">Other</option>
+                  <option>李大叔</option>
+                  <option>Ginger</option>
+                  <option>Belle Bong</option>
+                  <option>大牛</option>
+                  <option>HuanTing</option>
+                  <option value="Other">Others</option>
                 </select>
               </div>
             </div>
@@ -2752,6 +2768,17 @@ async function loadOrders() {
     tbody.innerHTML = '<tr><td colspan="25" style="text-align:center;padding:40px;color:#9CA3AF">暂无订单</td></tr>';
     return;
   }
+
+  // Populate top-bar filters from data
+  const allRegions = [...new Set(orders.map(o => o.regions?.city).filter(Boolean))].sort();
+  const regBarSel = document.getElementById('ord-filter-region');
+  if (regBarSel) regBarSel.innerHTML = '<option value="">所有地区</option>' + allRegions.map(r=>`<option>${r}</option>`).join('');
+  const allTDsBar = [...new Set(orders.map(o => o.users?.name).filter(Boolean))].sort();
+  const tdBarSel = document.getElementById('ord-filter-td');
+  if (tdBarSel) tdBarSel.innerHTML = '<option value="">所有对接</option>' + allTDsBar.map(t=>`<option>${t}</option>`).join('');
+  const allMonthsBar = [...new Set(orders.map(o => (o.created_at||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  const monBarSel = document.getElementById('ord-filter-month');
+  if (monBarSel) monBarSel.innerHTML = '<option value="">所有月份</option>' + allMonthsBar.map(m=>`<option>${m}</option>`).join('');
 
   // Populate TD filter dynamically
   const tdNames = [...new Set(orders.map(o => o.users?.name).filter(Boolean))].sort();
@@ -4424,7 +4451,7 @@ async function loadSources() {
     ).join('');
   }
   const crSrc = document.getElementById('cr-source');
-  if (crSrc) crSrc.innerHTML = rows.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  if (crSrc) crSrc.innerHTML = '<option value="">— 选择 —</option>' + rows.map(s=>`<option value="${s.name}">${s.name}</option>`).join('') + '<option value="Other">Other</option>';
 }
 
 // Region CRUD
@@ -5099,9 +5126,11 @@ let _regionsData = [];
 
 function regionDropdown(displayId, valueId, ddId) {
   const q = (document.getElementById(displayId)?.value || '').toLowerCase();
+  const country = displayId === 'cr-region-display' ? (document.getElementById('cr-country')?.value || '') : '';
   const dd = document.getElementById(ddId);
   if (!dd) return;
-  const filtered = q ? _regionsData.filter(r => r.city.toLowerCase().includes(q)) : _regionsData;
+  let filtered = q ? _regionsData.filter(r => r.city.toLowerCase().includes(q)) : _regionsData;
+  if (country) filtered = filtered.filter(r => (r.country||'') === country);
   if (!filtered.length) { dd.style.display = 'none'; return; }
   dd.innerHTML = filtered.map(r =>
     `<div onmousedown="selectRegion('${r.id}','${r.city}','${displayId}','${valueId}','${ddId}')"
@@ -5122,8 +5151,8 @@ function selectRegion(id, city, displayId, valueId, ddId) {
 
 async function initCreateForm() {
   // Load regions → cr-region
-  const { data: regions } = await sb.from('regions').select('id,city').order('city');
-  _regionsData = regions || [];
+  const { data: regions } = await sb.from('regions').select('id,city,country').order('city');
+  _regionsData = (regions || []).map(r => ({ id: r.id, city: r.city, country: r.country || '' }));
   // Clear create-form combobox
   const crDisp = document.getElementById('cr-region-display'); if (crDisp) crDisp.value = '';
   const crVal  = document.getElementById('cr-region');         if (crVal)  crVal.value  = '';
@@ -5146,6 +5175,8 @@ async function initCreateForm() {
   }
   // Sync KOL list → cr-kol
   await loadKols();
+  // Sync source list → cr-source
+  await loadSources();
   filterSales();
 }
 
