@@ -518,6 +518,8 @@ body[data-active-role="finance"] .ord-stats-admin{display:grid}
 body[data-active-role="td"] .ord-stats-td{display:grid}
 /* Hide top filter bar for TD (they use column filters instead) */
 body[data-active-role="td"] .orders-top-filterbar{display:none}
+body[data-active-role="td"] #btn-show-archived{display:none!important}
+body[data-active-role="finance"] #btn-show-archived{display:none!important}
 /* Cost & profit columns — hidden from TD */
 .col-cost{display:none}
 body[data-active-role="master"] .col-cost,
@@ -773,6 +775,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
     </div>
     <button class="tb-btn btn-primary" onclick="showPage('create')">＋ 新增订单</button>
     <div class="spacer"></div>
+    <button id="btn-show-archived" class="tb-btn btn-ghost" style="font-size:11px" data-role="master operation" onclick="toggleShowArchived()">📦 显示已归档</button>
     <button class="tb-btn btn-ghost" onclick="openExportModal()">📥 导出</button>
   </div>
   <div class="content">
@@ -799,21 +802,29 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
         <select id="ord-filter-region" onchange="filterOrders()"><option value="">所有地区</option></select>
         <select id="ord-filter-td" onchange="filterOrders()"><option value="">所有对接</option></select>
         <select id="ord-filter-month" onchange="filterOrders()"><option value="">所有月份</option></select>
+        <input id="ord-filter-kol" type="text" placeholder="博主名字…" style="min-width:110px;max-width:140px" oninput="filterOrders()"/>
         <div class="filter-chip" id="chip-balance" onclick="toggleOrderChip('balance',this)"><span class="dot"></span>尾款未付</div>
         <div class="filter-chip" id="chip-tbd" onclick="toggleOrderChip('tbd',this)"><span class="dot"></span>日期未定</div>
         <div class="filter-chip" id="chip-ins" onclick="toggleOrderChip('ins',this)"><span class="dot"></span>保险</div>
         <button class="tb-btn btn-ghost" style="font-size:11px;padding:4px 10px;margin-left:auto" onclick="clearOrderFilters()">✕ 清除</button>
       </div>
       <!-- Date range (compact) -->
-      <div class="compact-filter ord-query-row" style="margin-bottom:8px">
+      <div class="compact-filter ord-query-row" style="margin-bottom:8px;flex-wrap:wrap;gap:6px">
         <span style="font-size:11px;font-weight:700;color:#6B7280;white-space:nowrap">出发日期</span>
         <input type="date" id="ord-date-from" style="min-width:120px;cursor:pointer" oninput="filterOrders()">
         <span style="font-size:11px;color:#9CA3AF">至</span>
         <input type="date" id="ord-date-to" style="min-width:120px;cursor:pointer" oninput="filterOrders()">
-        <button class="filter-chip" style="border:1.5px solid #E2E6EA;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;background:#fff" onclick="setDateRange('this-month')">本月</button>
-        <button class="filter-chip" style="border:1.5px solid #E2E6EA;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;background:#fff" onclick="setDateRange('next-month')">下月</button>
-        <button class="filter-chip" style="border:1.5px solid #E2E6EA;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;background:#fff" onclick="setDateRange('this-quarter')">本季度</button>
-        <button class="filter-chip" style="border:1.5px solid #E2E6EA;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;background:#fff" onclick="setDateRange('this-year')">今年</button>
+        <button class="filter-chip" style="border:1.5px solid #E2E6EA;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;background:#fff" onclick="setDateRange('depart','this-month')">本月</button>
+        <button class="filter-chip" style="border:1.5px solid #E2E6EA;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;background:#fff" onclick="setDateRange('depart','next-month')">下月</button>
+        <button class="filter-chip" style="border:1.5px solid #E2E6EA;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;background:#fff" onclick="setDateRange('depart','this-quarter')">本季度</button>
+        <button class="filter-chip" style="border:1.5px solid #E2E6EA;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;background:#fff" onclick="setDateRange('depart','this-year')">今年</button>
+        <span style="font-size:11px;font-weight:700;color:#6B7280;white-space:nowrap;margin-left:8px">注册日期</span>
+        <input type="date" id="ord-created-from" style="min-width:120px;cursor:pointer" oninput="filterOrders()">
+        <span style="font-size:11px;color:#9CA3AF">至</span>
+        <input type="date" id="ord-created-to" style="min-width:120px;cursor:pointer" oninput="filterOrders()">
+        <button class="filter-chip" style="border:1.5px solid #E2E6EA;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;background:#fff" onclick="setDateRange('created','this-month')">本月</button>
+        <button class="filter-chip" style="border:1.5px solid #E2E6EA;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;background:#fff" onclick="setDateRange('created','this-quarter')">本季度</button>
+        <button class="filter-chip" style="border:1.5px solid #E2E6EA;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;background:#fff" onclick="setDateRange('created','this-year')">今年</button>
       </div>
     </div>
     <!-- Query Summary Bar (master/op/finance only) -->
@@ -1114,7 +1125,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
               <td id="tfoot-count" style="color:#6B7280;font-size:11px">—</td>
               <td></td><td></td><td></td><td></td>
               <td style="text-align:center" id="tfoot-pax">—</td>
-              <td></td><td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
               <td style="text-align:right" id="tfoot-total">—</td>
               <td class="col-cost" style="text-align:right;color:#7C3AED" id="tfoot-cost">—</td>
               <td class="col-cost" style="text-align:right;color:#7C3AED" id="tfoot-cost-total">—</td>
@@ -1123,7 +1134,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
               <td class="col-cost" style="text-align:right;color:#059669;font-weight:900" id="tfoot-actual-profit">—</td>
               <td style="text-align:right;color:#065F46" id="tfoot-paid">—</td>
               <td style="text-align:right;color:#DC2626" id="tfoot-balance">—</td>
-              <td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td>
             </tr>
           </tfoot>
         </table>
@@ -1210,14 +1221,14 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
               <div class="form-group">
                 <label>国家 <span class="req">*</span></label>
                 <select id="cr-country" onchange="document.getElementById('cr-region-display').value='';document.getElementById('cr-region').value='';regionDropdown('cr-region-display','cr-region','cr-region-dd')" style="font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;padding:7px 10px;border:1.5px solid #E2E6EA;border-radius:6px;width:100%;color:#374151;background:#fff">
-                  <option value="">— 全部 —</option>
-                  <option>中国</option>
-                  <option>日本</option>
-                  <option>韩国</option>
-                  <option>泰国</option>
-                  <option>印尼</option>
-                  <option>马来西亚</option>
-                  <option>欧洲</option>
+                  <option value="">— All —</option>
+                  <option>China</option>
+                  <option>Japan</option>
+                  <option>South Korea</option>
+                  <option>Thailand</option>
+                  <option>Indonesia</option>
+                  <option>Malaysia</option>
+                  <option>Europe</option>
                 </select>
               </div>
             </div>
@@ -1310,8 +1321,8 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
               </div>
               <div class="form-group">
                 <label>Supplier 订单编号</label>
-                <input type="text" value="EC090" readonly style="background:#F7F8FA;color:#6B7280"/>
-                <span style="font-size:10px;color:#9CA3AF;margin-top:3px">系统自动生成，保存后锁定</span>
+                <input type="text" id="cr-order-no-preview" placeholder="选择 Supplier 后自动填入" style="text-transform:uppercase;font-family:monospace;font-weight:700" oninput="this.value=this.value.toUpperCase()"/>
+                <span style="font-size:10px;color:#9CA3AF;margin-top:3px">系统自动生成，可手动修改</span>
               </div>
             </div>
             <div class="form-grid" style="margin-top:10px">
@@ -1560,31 +1571,9 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
         <!-- STEP 5: 确认状态 -->
         <div class="step-body" id="create-step-5" style="display:none">
           <div class="form-section">
-            <div style="display:flex;gap:10px;align-items:center">
-              <label style="font-size:13px;font-weight:700;color:#2D2926;min-width:100px">合同已签？</label>
-              <div class="radio-opt" id="contract-yes-btn" onclick="setContract(true)">是</div>
-              <div class="radio-opt sel" id="contract-no-btn" onclick="setContract(false)">否</div>
-            </div>
+            <div style="font-size:11px;font-weight:700;color:#9CA3AF;margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px">待办清单 — 可提前勾选已完成项目</div>
+            <div id="create-checklist"></div>
           </div>
-
-          <div class="form-section">
-            <div style="display:flex;gap:10px;align-items:center">
-              <label style="font-size:13px;font-weight:700;color:#2D2926;min-width:100px">护照已交？</label>
-              <div class="radio-opt" id="pass-yes-btn" onclick="setPassport('yes')">已全交</div>
-              <div class="radio-opt" id="pass-partial-btn" onclick="setPassport('partial')">部分</div>
-              <div class="radio-opt sel" id="pass-no-btn" onclick="setPassport('no')">未交</div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <div style="display:flex;gap:10px;align-items:center">
-              <label style="font-size:13px;font-weight:700;color:#2D2926;min-width:100px">保险已买？</label>
-              <div class="radio-opt sel" id="ins-status-no-btn" onclick="setCrInsStatus('no')">未买</div>
-              <div class="radio-opt" id="ins-status-partial-btn" onclick="setCrInsStatus('partial')">部分买</div>
-              <div class="radio-opt" id="ins-status-yes-btn" onclick="setCrInsStatus('yes')">已买</div>
-            </div>
-          </div>
-
           <div class="alert-box" style="background:#EEF6F3;border:1px solid #A7F3D0;margin-top:4px">
             <div class="alert-icon">✅</div>
             <div class="alert-body">
@@ -1736,6 +1725,10 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
         <div class="ov-section" style="margin-bottom:12px">
           <div class="ov-section-title">① 基本资料</div>
           <div style="padding:14px 14px 10px">
+            <div class="form-group" id="det-order-no-row" style="margin-bottom:8px;display:none">
+              <label>订单号码 <span style="font-size:10px;font-weight:600;color:#EF4444">（谨慎修改）</span></label>
+              <input type="text" id="det-order-no" class="editable-field" placeholder="例：EC107" style="border:1.5px solid #3B7A68;background:#fff;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:700;width:100%;box-sizing:border-box;font-family:monospace;color:#374151;outline:none;text-transform:uppercase"/>
+            </div>
             <div class="form-grid">
               <div class="form-group"><label>Travel Designer</label>
                 <select id="det-td-id" class="editable-field" disabled style="border:1.5px solid #F0F2F7;background:#FAFBFC;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:600;font-family:'Nunito',sans-serif;color:#374151;width:100%">
@@ -1993,17 +1986,10 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
         <!-- ══ TAB 2: 资料状态 & 入账 ══ -->
         <div id="tab-payin" class="tab-content">
 
-        <!-- ③ 资料状态 -->
+        <!-- ③ 待办清单 -->
         <div class="ov-section" style="margin-bottom:12px">
-          <div class="ov-section-title">③ 资料状态</div>
-          <div style="padding:14px;display:flex;flex-wrap:wrap;gap:10px">
-            <button class="status-toggle st-confirmed" onclick="toggleStatus(this)"><span class="st-icon">✓</span> 合约</button>
-            <button class="status-toggle st-pending" onclick="toggleStatus(this)"><span class="st-icon">✗</span> 护照</button>
-            <button class="status-toggle st-pending" onclick="toggleStatus(this)"><span class="st-icon">✗</span> 保险</button>
-            <button class="status-toggle st-confirmed" onclick="toggleStatus(this)"><span class="st-icon">✓</span> 第一笔定金</button>
-            <button class="status-toggle st-pending" onclick="toggleStatus(this)"><span class="st-icon">✗</span> 第二笔定金</button>
-            <button class="status-toggle st-pending" onclick="toggleStatus(this)"><span class="st-icon">✗</span> 尾款</button>
-          </div>
+          <div class="ov-section-title">③ 待办清单</div>
+          <div id="detail-checklist-body" style="padding:4px 0"></div>
         </div>
 
         <!-- ④ 入账记录 -->
@@ -2184,24 +2170,6 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             <div class="sc-row"><span class="sc-key">订单状态</span><span class="sc-val"><span class="chip chip-preparing">Preparing</span></span></div>
           </div>
         </div>
-        <div class="sidebar-card" style="margin-top:12px">
-          <div class="sc-header" style="display:flex;align-items:center;justify-content:space-between">
-            <span>待办清单</span>
-            <span style="font-size:9px;color:#9CA3AF;font-weight:600">状态在 Tab ② 更改</span>
-          </div>
-          <div class="todo-group-label">资料状态</div>
-          <div class="todo-row" id="td-合约"><div class="td-icon">✗</div><span>合约</span></div>
-          <div class="todo-row" id="td-护照"><div class="td-icon">✗</div><span>护照</span></div>
-          <div class="todo-row" id="td-保险"><div class="td-icon">✗</div><span>保险</span></div>
-          <div class="todo-row" id="td-定金1"><div class="td-icon">✗</div><span>第一笔定金</span></div>
-          <div class="todo-row" id="td-定金2"><div class="td-icon">✗</div><span>第二笔定金</span></div>
-          <div class="todo-row" id="td-尾款"><div class="td-icon">✗</div><span>尾款已付</span></div>
-          <div class="todo-group-label" style="margin-top:4px">自动检测</div>
-          <div class="todo-row" id="td-balance"><div class="td-icon" style="font-size:9px">?</div><span id="td-balance-label">尾款金额待核对</span></div>
-          <div class="todo-group-label" style="margin-top:4px">其他</div>
-          <div class="todo-row todo-clickable" id="td-群发" onclick="tickTodo(this)"><div class="td-icon">☐</div><span>开群发攻略</span></div>
-          <div class="todo-row todo-clickable" id="td-免责" onclick="tickTodo(this)"><div class="td-icon">☐</div><span>免责协议</span></div>
-        </div>
       </div>
     </div>
   </div>
@@ -2313,7 +2281,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
       <div class="stat-card"><div class="label">本月成交单</div><div class="val" id="dash-month">—</div><div class="sub">本月新单</div></div>
       <div class="stat-card warn"><div class="label">14天内出发</div><div class="val" id="dash-14d">—</div><div class="sub">需立即准备</div></div>
       <div class="stat-card danger"><div class="label">保险待处理</div><div class="val" id="dash-ins">—</div><div class="sub">无保险记录</div></div>
-      <div class="stat-card danger"><div class="label">顾客尾款未付</div><div class="val" id="dash-balance">—</div><div class="sub" id="dash-balance-sub">总 RM —</div></div>
+      <div class="stat-card danger"><div class="label">顾客尾款未付</div><div class="val" id="dash-balance">—</div><div class="sub" id="dash-balance-sub">35天内 + 行程结束</div></div>
     </div>
     <!-- TD-only stats: current month orders, departure pax, total managed pax -->
     <div class="stats-row" data-role="td" style="grid-template-columns:repeat(3,1fr)">
@@ -2354,6 +2322,14 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             <tr><td colspan="3" style="text-align:center;padding:20px;color:#9CA3AF;font-size:11px">暂无未付尾款</td></tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- 4. Recent notifications -->
+      <div class="dash-panel" style="cursor:default">
+        <div class="dash-panel-title" style="display:flex;align-items:center;justify-content:space-between">🔔 最新通知 <span style="font-size:10px;font-weight:600;color:#3B7A68;cursor:pointer;text-transform:none;letter-spacing:0" onclick="showPage('notifications')">查看全部 →</span></div>
+        <div id="dash-notif-list">
+          <div style="text-align:center;padding:20px;color:#9CA3AF;font-size:11px">暂无通知</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2614,7 +2590,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <input type="hidden" id="region-edit-id"/>
       <div class="form-group"><label>城市 / 地区名称 <span class="req">*</span></label><input type="text" id="region-city" placeholder="例：九寨沟"/></div>
-      <div class="form-group"><label>国家</label><input type="text" id="region-country" placeholder="例：中国（可留空）"/></div>
+      <div class="form-group"><label>国家</label><input type="text" id="region-country" placeholder="e.g. China (optional)"/></div>
     </div>
     <div class="modal-footer">
       <button class="tb-btn btn-ghost" onclick="closeRegionModal()">取消</button>
@@ -2852,7 +2828,7 @@ async function loadOrders() {
     .from('orders')
     .select(`
       id, order_no, status, source, kol_name, special_notes, date_tbd,
-      depart_date, end_date, created_at, td_id, has_contract,
+      depart_date, end_date, created_at, td_id, has_contract, is_archived,
       pax_total, price_total, insurance_total, discount, discount_type, selling_price,
       cost_currency, cost_foreign, cost_rm,
       customers ( name, salutation, notes, phone ),
@@ -2865,9 +2841,9 @@ async function loadOrders() {
     `)
     .order('created_at', { ascending: false });
   // TD role: only show their own orders
-  if (currentUser.roleKey === 'td' && currentUser.id) {
-    query = query.eq('td_id', currentUser.id);
-  }
+  if (currentUser.roleKey === 'td' && currentUser.id) query = query.eq('td_id', currentUser.id);
+  // Default: hide archived unless toggle is on
+  if (!_showArchived) query = query.eq('is_archived', false);
   const { data: orders, error } = await query;
 
   if (error) {
@@ -2971,10 +2947,11 @@ function buildOrderRow(o) {
 
   // Payment chip
   let payChip = '';
-  if (total === 0)      payChip = '<span class="chip chip-pending">—</span>';
-  else if (balance <= 0) payChip = '<span class="chip chip-confirmed">已付全款</span>';
-  else if (paid > 0)    payChip = '<span class="chip chip-deposit">已付定金</span>';
-  else                  payChip = '<span class="chip chip-cancelled">未付</span>';
+  if (total === 0)       payChip = '<span class="chip chip-pending">—</span>';
+  else if (balance < 0)  payChip = '<span class="chip" style="background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D">多付</span>';
+  else if (balance === 0) payChip = '<span class="chip chip-confirmed">已付全款</span>';
+  else if (paid > 0)     payChip = '<span class="chip chip-deposit">已付定金</span>';
+  else                   payChip = '<span class="chip chip-cancelled">未付</span>';
 
   const balColor = balance > 0 ? '#DC2626' : '#059669';
 
@@ -2991,7 +2968,10 @@ function buildOrderRow(o) {
     data-balance="${balance.toFixed(2)}"
     data-cost="${cost}"
     data-profit="${profit.toFixed(2)}"
-    data-actual-profit="${actualProfit.toFixed(2)}">
+    data-actual-profit="${actualProfit.toFixed(2)}"
+    data-supplier-owed="${remainRM > 0 ? remainRM.toFixed(2) : '0'}"
+    data-kol="${(o.kol_name||'').toLowerCase()}"
+    data-created="${(o.created_at||'').slice(0,10)}">
     <td class="sh-sticky sh-sep" style="left:0"><span class="mono">${o.order_no}</span></td>
     <td class="muted" style="font-size:11px">${fmtDate((o.created_at||'').slice(0,10))}</td>
     <td><strong>${custName}</strong>${o.pax_total > 1 ? ' <span class="muted">+' + (o.pax_total - 1) + '</span>' : ''}${o.customers?.phone ? '<br><span style="font-size:10px;font-weight:500;color:#9CA3AF">' + o.customers.phone + '</span>' : ''}</td>
@@ -3017,7 +2997,12 @@ function buildOrderRow(o) {
     <td>${o.has_contract ? '<span class="chip chip-confirmed" style="font-size:9px">Yes</span>' : '<span class="chip chip-draft" style="font-size:9px">No</span>'}</td>
     <td class="muted" style="font-size:11px">${o.kol_name || '—'}</td>
     <td style="font-size:11px;color:#6B7280;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${(o.customers?.notes||'').replace(/"/g,'&quot;')}">${o.customers?.notes || '—'}</td>
-    <td><div style="position:relative"><button class="action-dots" onclick="toggleDotMenu(this,event)">⋯</button><div class="dot-menu"><div class="dot-menu-item" onclick="openOrder('${o.id}')">🔍 查看订单</div><div class="dot-menu-item" onclick="openOrder('${o.id}')">✏️ 编辑</div><div class="dot-sep"></div><div class="dot-menu-item archive" onclick="archiveOrder(this)">📦 归档</div></div></div></td>
+    <td><div style="position:relative"><button class="action-dots" onclick="toggleDotMenu(this,event)">⋯</button><div class="dot-menu">
+      ${o.is_archived
+        ? `<div class="dot-menu-item" style="color:#059669" onclick="unarchiveOrder('${o.id}',this)">♻️ 复原订单</div>`
+        : `<div class="dot-menu-item" onclick="openOrder('${o.id}')">🔍 查看订单</div><div class="dot-menu-item" onclick="openOrder('${o.id}')">✏️ 编辑</div><div class="dot-sep"></div><div class="dot-menu-item archive" onclick="archiveOrder('${o.id}',this)">📦 归档</div>`
+      }
+    </div></div></td>
   </tr>`;
 }
 
@@ -3055,6 +3040,7 @@ function showPage(p) {
   if (p === 'pay-out') { loadPayOuts(); }
   if (p === 'report') { loadReport(); }
   if (p === 'files-global') { loadGlobalFiles(); }
+  if (p === 'notifications') { loadNotifications(); }
   if (p === 'user-mgmt') { loadUserMgmt(); }
   if (p === 'finance-ledger') { loadFinanceLedger(); }
   if (p === 'supplier-settings') { loadSuppliers(); }
@@ -3068,6 +3054,7 @@ function showPage(p) {
       if (s) s.style.display = i === 1 ? 'block' : 'none';
     }
     currentCreateStep = 1;
+    _createChecklist = {};
     updateStepUI();
     initCreateForm();
   }
@@ -3084,7 +3071,7 @@ async function openOrder(uuid) {
 
   const { data: o, error } = await sb.from('orders').select(`
     id, order_no, status, source, kol_name, special_notes, date_tbd,
-    depart_date, end_date, created_at, has_contract,
+    depart_date, end_date, created_at, has_contract, checklist,
     td_id, region_id, supplier_id, supplier_salesperson_id, customer_id,
     pax_total, price_total, selling_price, insurance_total, discount, discount_type,
     cost_currency, cost_foreign, cost_rm, pricing_mode,
@@ -3185,6 +3172,8 @@ async function openOrder(uuid) {
   // Order special notes (editable in basic tab)
   const notes = o.special_notes || '';
   document.getElementById('det-notes').value = notes;
+  const orderNoInput = document.getElementById('det-order-no');
+  if (orderNoInput) orderNoInput.value = o.order_no || '';
 
   // Sidebar
   document.getElementById('sc-order-no').textContent  = o.order_no;
@@ -3423,7 +3412,7 @@ async function loadDetailInsurance() {
 }
 
 // ── COLUMN FILTER STATE ──
-const _colFilters = { id:'', cust:'', month:'', region:[], td:'', status:'' };
+const _colFilters = { id:'', cust:'', month:'', region:[], td:'', status:'', kol:'' };
 
 function openColFilter(e, panelId) {
   e.stopPropagation();
@@ -3470,7 +3459,7 @@ function clearColFilter(key, panelId) {
 }
 
 function _syncColFilterActive() {
-  const map = { id:'cf-id', cust:'cf-cust', month:'cf-month', region:'cf-region', td:'cf-td', status:'cf-status' };
+  const map = { id:'cf-id', cust:'cf-cust', month:'cf-month', region:'cf-region', td:'cf-td', status:'cf-status', kol:'cf-kol' };
   for (const [key, panelId] of Object.entries(map)) {
     const val = _colFilters[key];
     const hasFilter = Array.isArray(val) ? val.length > 0 : val !== '';
@@ -3490,15 +3479,18 @@ function filterOrders() {
   const fRegion = document.getElementById('ord-filter-region')?.value || '';
   const fTd     = document.getElementById('ord-filter-td')?.value     || '';
   const fMonth  = document.getElementById('ord-filter-month')?.value  || '';
-  const dateFrom = document.getElementById('ord-date-from')?.value || '';
-  const dateTo   = document.getElementById('ord-date-to')?.value   || '';
+  const fKol    = (document.getElementById('ord-filter-kol')?.value || '').toLowerCase().trim();
+  const dateFrom    = document.getElementById('ord-date-from')?.value    || '';
+  const dateTo      = document.getElementById('ord-date-to')?.value      || '';
+  const createdFrom = document.getElementById('ord-created-from')?.value || '';
+  const createdTo   = document.getElementById('ord-created-to')?.value   || '';
   const chipBalance = _ordChips['balance'];
   const chipTbd     = _ordChips['tbd'];
   const activeRole  = document.body.dataset.activeRole || '';
 
 
   const rows = document.querySelectorAll('#orders-tbody tr');
-  let n = 0, sumPax = 0, sumTotal = 0, sumPaid = 0, sumBal = 0, sumCost = 0, sumProfit = 0, sumActualProfit = 0;
+  let n = 0, sumPax = 0, sumTotal = 0, sumPaid = 0, sumBal = 0, sumCost = 0, sumProfit = 0, sumActualProfit = 0, sumSupplierOwed = 0;
 
   rows.forEach(tr => {
     const cells = tr.querySelectorAll('td');
@@ -3511,7 +3503,8 @@ function filterOrders() {
     const status  = tr.dataset.status || '';
     const month   = tr.dataset.month  || '';
     const td      = tr.dataset.td     || '';
-    const depart  = tr.dataset.depart || '';
+    const depart  = tr.dataset.depart  || '';
+    const created = tr.dataset.created || '';
     const balance = parseFloat(tr.dataset.balance) || 0;
 
     // Top-bar search (master/op/finance)
@@ -3523,6 +3516,7 @@ function filterOrders() {
     if (_colFilters.td     && td     !== _colFilters.td)                               { tr.style.display='none'; return; }
     if (_colFilters.status && status !== _colFilters.status)                           { tr.style.display='none'; return; }
     if (_colFilters.region.length && !_colFilters.region.includes(region))             { tr.style.display='none'; return; }
+    if (fKol && !(tr.dataset.kol||'').includes(fKol))                                  { tr.style.display='none'; return; }
     // Top-bar selects
     if (fStatus && status !== fStatus) { tr.style.display='none'; return; }
     if (fRegion && region !== fRegion) { tr.style.display='none'; return; }
@@ -3532,10 +3526,15 @@ function filterOrders() {
     if (chipBalance && balance <= 0) { tr.style.display='none'; return; }
     // Chip: 日期未定
     if (chipTbd && depart !== '') { tr.style.display='none'; return; }
-    // Date range
-    if ((dateFrom || dateTo) && depart) {
+    // Departure date range
+    if (dateFrom || dateTo) {
       if (dateFrom && depart < dateFrom) { tr.style.display='none'; return; }
       if (dateTo   && depart > dateTo)   { tr.style.display='none'; return; }
+    }
+    // Registration date range
+    if (createdFrom || createdTo) {
+      if (createdFrom && created < createdFrom) { tr.style.display='none'; return; }
+      if (createdTo   && created > createdTo)   { tr.style.display='none'; return; }
     }
 
     tr.style.display = '';
@@ -3544,9 +3543,10 @@ function filterOrders() {
     sumTotal  += parseFloat(tr.dataset.total)  || 0;
     sumPaid   += parseFloat(tr.dataset.paid)   || 0;
     sumBal    += parseFloat(tr.dataset.balance) || 0;
-    sumCost         += parseFloat(tr.dataset.cost)         || 0;
-    sumProfit       += parseFloat(tr.dataset.profit)       || 0;
-    sumActualProfit += parseFloat(tr.dataset.actualProfit) || 0;
+    sumCost         += parseFloat(tr.dataset.cost)          || 0;
+    sumProfit       += parseFloat(tr.dataset.profit)        || 0;
+    sumActualProfit += parseFloat(tr.dataset.actualProfit)  || 0;
+    sumSupplierOwed += parseFloat(tr.dataset.supplierOwed)  || 0;
   });
 
   const fmt = v => v.toLocaleString('en-MY');
@@ -3572,6 +3572,8 @@ function filterOrders() {
   document.getElementById('tfoot-total').textContent      = fmt(sumTotal);
   document.getElementById('tfoot-cost').textContent       = '—';
   document.getElementById('tfoot-cost-total').textContent = fmt(sumCost);
+  const tfSupplier = document.getElementById('tfoot-supplier-owed');
+  if (tfSupplier) { tfSupplier.textContent = sumSupplierOwed > 0 ? fmt(Math.round(sumSupplierOwed)) : '—'; tfSupplier.style.textAlign = 'right'; tfSupplier.style.color = '#D97706'; tfSupplier.style.fontWeight = '900'; }
   document.getElementById('tfoot-profit').textContent     = fmt(sumProfit);
   document.getElementById('tfoot-actual-profit').textContent = fmt(sumActualProfit);
   document.getElementById('tfoot-paid').textContent       = fmt(sumPaid);
@@ -3634,8 +3636,11 @@ function clearOrderFilters() {
   document.getElementById('ord-filter-region').value = '';
   document.getElementById('ord-filter-td').value     = '';
   document.getElementById('ord-filter-month').value  = '';
+  const kolF = document.getElementById('ord-filter-kol'); if (kolF) kolF.value = '';
   document.getElementById('ord-date-from').value     = '';
   document.getElementById('ord-date-to').value       = '';
+  document.getElementById('ord-created-from').value  = '';
+  document.getElementById('ord-created-to').value    = '';
   ['balance','tbd','ins'].forEach(k => {
     _ordChips[k] = false;
     const c = document.getElementById('chip-' + k);
@@ -3644,7 +3649,7 @@ function clearOrderFilters() {
   filterOrders();
 }
 
-function setDateRange(preset) {
+function setDateRange(type, preset) {
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth();
   let from, to;
@@ -3659,8 +3664,10 @@ function setDateRange(preset) {
     from = new Date(y, 0, 1); to = new Date(y, 11, 31);
   }
   const iso = d => d.toISOString().slice(0, 10);
-  document.getElementById('ord-date-from').value = iso(from);
-  document.getElementById('ord-date-to').value   = iso(to);
+  const fromId = type === 'created' ? 'ord-created-from' : 'ord-date-from';
+  const toId   = type === 'created' ? 'ord-created-to'   : 'ord-date-to';
+  document.getElementById(fromId).value = iso(from);
+  document.getElementById(toId).value   = iso(to);
   filterOrders();
 }
 
@@ -3717,6 +3724,10 @@ async function toggleEditMode() {
     document.getElementById('det-end').setAttribute('readonly', '');
     document.getElementById('det-end').style.opacity = '0.4';
   }
+
+  // Show order_no field for master/operation only
+  const orderNoRow = document.getElementById('det-order-no-row');
+  if (orderNoRow && ['master','operation'].includes(currentUser?.roleKey)) orderNoRow.style.display = '';
 
   document.getElementById('detail-edit-btn').style.display = 'none';
   document.getElementById('detail-depart-btn').style.display = 'none';
@@ -3791,7 +3802,14 @@ async function saveEditMode() {
   const costRate    = g('cost-rate') || null;
   const costRM      = (costForeign && costRate) ? Math.round(costForeign * costRate * 100) / 100 : null;
 
+  const newOrderNo = (document.getElementById('det-order-no')?.value || '').trim().toUpperCase();
+  if (newOrderNo && newOrderNo !== _currentOrder.order_no) {
+    const { data: existing } = await sb.from('orders').select('id').eq('order_no', newOrderNo).maybeSingle();
+    if (existing) { showToast('❌ 订单号 ' + newOrderNo + ' 已存在'); btn.disabled = false; btn.textContent = '💾 保存更改'; return; }
+  }
+  const orderUpdate = { order_no: newOrderNo || _currentOrder.order_no };
   const { error } = await sb.from('orders').update({
+    ...orderUpdate,
     td_id: tdId, region_id: regionId,
     supplier_id: supId, supplier_salesperson_id: spId,
     source, kol_name: kolName, status,
@@ -3829,6 +3847,8 @@ function cancelEditMode() {
   });
   const tbdBtn = document.getElementById('det-tbd-btn');
   if (tbdBtn) { tbdBtn.style.pointerEvents = 'none'; tbdBtn.style.opacity = '0.5'; }
+  const orderNoRowC = document.getElementById('det-order-no-row');
+  if (orderNoRowC) orderNoRowC.style.display = 'none';
   document.getElementById('detail-edit-btn').style.display = '';
   document.getElementById('detail-depart-btn').style.display = '';
   document.getElementById('detail-save-btn').style.display = 'none';
@@ -3844,31 +3864,7 @@ function toggleStatus(el) {
   syncTodoList();
 }
 function syncTodoList() {
-  const statusMap = {'合约':'td-合约','护照':'td-护照','保险':'td-保险','第一笔定金':'td-定金1','第二笔定金':'td-定金2','尾款':'td-尾款'};
-  document.querySelectorAll('.status-toggle').forEach(btn => {
-    const text = btn.textContent.replace(/[✓✗]/g,'').trim();
-    const rowId = statusMap[text]; if (!rowId) return;
-    const row = document.getElementById(rowId); if (!row) return;
-    const done = btn.classList.contains('st-confirmed');
-    row.querySelector('.td-icon').textContent = done ? '✓' : '✗';
-    row.classList.toggle('todo-done', done);
-    row.classList.remove('todo-warn');
-  });
-  // Balance check: compare total paid (④) vs 总售价
-  const totEl = document.getElementById('total-display');
-  const paidEl = document.querySelector('#tab-payin .pay-summary-row td:nth-child(3)');
-  const balRow = document.getElementById('td-balance');
-  const balLabel = document.getElementById('td-balance-label');
-  if (totEl && paidEl && balRow) {
-    const total = parseFloat(totEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0;
-    const paid = parseFloat(paidEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0;
-    const ok = total > 0 && Math.abs(paid - total) < 1;
-    const icon = balRow.querySelector('.td-icon');
-    icon.textContent = ok ? '✓' : (total > 0 ? '!' : '?');
-    balRow.classList.toggle('todo-done', ok);
-    balRow.classList.toggle('todo-warn', !ok && total > 0);
-    if (balLabel) balLabel.textContent = ok ? '尾款金额正确' : total > 0 ? 'RM ' + Math.abs(paid-total).toLocaleString('en-MY') + ' 差额' : '尾款金额待核对';
-  }
+  renderChecklist('detail-checklist-body', _currentOrder?.checklist, true);
 }
 let _insOn = true;
 function toggleInsuranceMode() {
@@ -3881,6 +3877,47 @@ function toggleInsuranceMode() {
   if (lbl) lbl.textContent = '保险 ' + (_insOn ? 'ON' : 'OFF');
   document.querySelectorAll('.ins-col').forEach(el => el.style.display = _insOn ? '' : 'none');
 }
+const CHECKLIST_ITEMS = [
+  { key: 'contract',        label: '合同' },
+  { key: 'passport',        label: '收护照' },
+  { key: 'itinerary_sent',  label: '发顾客初步行程确认单' },
+  { key: 'supplier_group',  label: '和 Supplier 开群通知成交' },
+  { key: 'gift',            label: '寄礼物' },
+  { key: 'payment1',        label: '第一笔款项' },
+  { key: 'receipt1',        label: '发收据（第一笔）' },
+  { key: 'payment2',        label: '第二笔款项' },
+  { key: 'receipt2',        label: '发收据（第二笔）' },
+  { key: 'balance',         label: '尾款' },
+  { key: 'receipt_balance', label: '发收据（尾款）' },
+  { key: 'service_group',   label: '行程前开服务群' },
+];
+function renderChecklist(containerId, checklist, clickable) {
+  const el = document.getElementById(containerId); if (!el) return;
+  const c = checklist || {};
+  const done = CHECKLIST_ITEMS.filter(i => c[i.key]).length;
+  el.innerHTML = `<div style="font-size:10px;color:#9CA3AF;padding:4px 14px 6px;font-weight:600">${done} / ${CHECKLIST_ITEMS.length} 已完成</div>`
+    + CHECKLIST_ITEMS.map(item => {
+      const isDone = !!c[item.key];
+      const onclick = clickable ? `onclick="${containerId==='detail-checklist-body'?'toggleChecklist':'toggleCreateChecklist'}('${item.key}')"` : '';
+      return `<div class="todo-row ${isDone?'todo-done':''} ${clickable?'todo-clickable':''}" ${onclick}>
+        <div class="td-icon">${isDone?'✓':'☐'}</div><span>${item.label}</span>
+      </div>`;
+    }).join('');
+}
+let _createChecklist = {};
+function toggleCreateChecklist(key) {
+  _createChecklist[key] = !_createChecklist[key];
+  renderChecklist('create-checklist', _createChecklist, true);
+}
+async function toggleChecklist(key) {
+  if (!_currentOrder?.id) return;
+  const c = Object.assign({}, _currentOrder.checklist || {});
+  c[key] = !c[key];
+  const { error } = await sb.from('orders').update({ checklist: c }).eq('id', _currentOrder.id);
+  if (error) { showToast('❌ 更新失败: ' + error.message); return; }
+  _currentOrder.checklist = c;
+  renderChecklist('detail-checklist-body', c, true);
+}
 function tickTodo(el) {
   const done = el.classList.toggle('todo-done');
   el.querySelector('.td-icon').textContent = done ? '✓' : '☐';
@@ -3891,6 +3928,7 @@ async function loadDashboard() {
   const fmt = v => (v||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
   const today = new Date(); today.setHours(0,0,0,0);
   const in14 = new Date(today); in14.setDate(today.getDate()+14);
+  const in35 = new Date(today); in35.setDate(today.getDate()+35);
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0,10);
 
   let dashQuery = sb.from('orders')
@@ -3902,7 +3940,14 @@ async function loadDashboard() {
 
   const activeStatuses = ['confirmed','preparing','ready_to_depart','travelling'];
   const active = orders.filter(o => activeStatuses.includes(o.status));
-  const travelling = orders.filter(o => o.status === 'travelling');
+  const travelling = orders.filter(o => {
+    if (o.status === 'travelling') return true;
+    if (!o.depart_date || o.date_tbd || !activeStatuses.includes(o.status)) return false;
+    const dep = new Date(o.depart_date + 'T00:00:00');
+    if (dep > today) return false;
+    if (o.end_date) { const end = new Date(o.end_date + 'T00:00:00'); if (end < today) return false; }
+    return true;
+  });
   const upcoming = orders.filter(o => {
     if (!o.depart_date || o.date_tbd || !activeStatuses.includes(o.status)) return false;
     const d = new Date(o.depart_date+'T00:00:00');
@@ -3923,7 +3968,14 @@ async function loadDashboard() {
   const withBalance = orders.filter(o => {
     const total = parseFloat(o.selling_price)||0;
     const paid = (o.payins||[]).filter(p=>p.gsh_check==='verified').reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
-    return total > 0 && paid < total;
+    if (!(total > 0 && paid < total)) return false;
+    // 行程结束但未付清
+    if (o.status === 'completed') return true;
+    if (o.end_date && new Date(o.end_date+'T00:00:00') < today) return true;
+    // 35天内出发未付清
+    if (!o.depart_date || o.date_tbd) return false;
+    const dep = new Date(o.depart_date+'T00:00:00');
+    return dep >= today && dep <= in35;
   });
   document.getElementById('dash-balance').textContent = withBalance.length;
   const totalBalance = withBalance.reduce((s,o)=>{
@@ -3983,8 +4035,12 @@ async function loadDashboard() {
     balTbody.innerHTML = top5.map(o => {
       const total=parseFloat(o.selling_price)||0;
       const paid=(o.payins||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
+      const isEnded = o.status==='completed' || (o.end_date && new Date(o.end_date+'T00:00:00') < today);
+      const tag = isEnded
+        ? `<span style="font-size:9px;font-weight:700;background:#FEE2E2;color:#DC2626;border-radius:3px;padding:1px 5px;margin-left:4px">行程结束</span>`
+        : `<span style="font-size:9px;font-weight:700;background:#FEF3C7;color:#D97706;border-radius:3px;padding:1px 5px;margin-left:4px">35天内</span>`;
       return `<tr class="clickable-row" onclick="showPage('detail')">
-        <td><span style="font-weight:800;font-family:monospace">${o.order_no}</span></td>
+        <td><span style="font-weight:800;font-family:monospace">${o.order_no}</span>${tag}</td>
         <td>${o.customers?.name||'—'}</td>
         <td style="text-align:right;color:#DC2626;font-weight:700">RM ${fmt(total-paid)}</td>
       </tr>`;
@@ -3992,6 +4048,8 @@ async function loadDashboard() {
   } else {
     balTbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:#9CA3AF;font-size:11px">暂无未付尾款</td></tr>';
   }
+
+  loadNotifications();
 }
 
 async function loadFinanceLedger() {
@@ -4569,7 +4627,7 @@ async function loadRegions() {
   }
   list.innerHTML = data.map(r =>
     `<div class="region-row" style="display:flex;align-items:center;justify-content:space-between">
-      <span>${r.city}${r.country&&r.country!=='中国'?' · '+r.country:''}</span>
+      <span>${r.city}${r.country&&r.country!=='China'?' · '+r.country:''}</span>
       <span style="display:flex;gap:4px">
         <button class="file-btn" style="font-size:10px;padding:2px 7px" onclick="showRegionModal('${r.id}','${r.city.replace(/'/g,"\\'")}','${(r.country||'').replace(/'/g,"\\'")}')">编辑</button>
         <button class="file-btn" style="font-size:10px;padding:2px 7px;color:#DC2626;border-color:#DC2626" onclick="deleteRegion('${r.id}','${r.city.replace(/'/g,"\\'")}')">删除</button>
@@ -4619,7 +4677,7 @@ function closeRegionModal() { document.getElementById('region-modal').classList.
 async function saveRegion() {
   const id = document.getElementById('region-edit-id').value;
   const city = document.getElementById('region-city').value.trim();
-  const country = document.getElementById('region-country').value.trim() || '中国';
+  const country = document.getElementById('region-country').value.trim() || 'China';
   if (!city) { alert('请填写城市名称'); return; }
   if (id) {
     const { error } = await sb.from('regions').update({ city, country }).eq('id', id);
@@ -4898,16 +4956,38 @@ function toggleDotMenu(btn, event) {
   }
 }
 function closeDotMenus() { document.querySelectorAll('.dot-menu').forEach(m => m.classList.remove('open')); }
-function archiveOrder(el, event) {
-  if (event) event.stopPropagation();
-  const row = el.closest('tr');
+let _showArchived = false;
+
+async function archiveOrder(orderId, el) {
   closeDotMenus();
-  if (confirm('确定要归档此订单吗？归档后不会删除资料，可在归档记录中恢复。')) {
-    row.style.opacity = '0.4';
-    row.style.transition = 'opacity .4s';
-    setTimeout(() => row.remove(), 400);
+  appConfirm('确定要归档此订单吗？归档后可以在「显示已归档」中复原。', async () => {
+    const { error } = await sb.from('orders').update({ is_archived: true }).eq('id', orderId);
+    if (error) { showToast('❌ 归档失败: ' + error.message); return; }
+    const row = el.closest('tr');
+    if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
     showToast('📦 订单已归档');
+  });
+}
+
+async function unarchiveOrder(orderId, el) {
+  closeDotMenus();
+  const { error } = await sb.from('orders').update({ is_archived: false }).eq('id', orderId);
+  if (error) { showToast('❌ 复原失败: ' + error.message); return; }
+  const row = el.closest('tr');
+  if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
+  showToast('✅ 订单已复原');
+}
+
+function toggleShowArchived() {
+  _showArchived = !_showArchived;
+  const btn = document.getElementById('btn-show-archived');
+  if (btn) {
+    btn.textContent = _showArchived ? '📦 隐藏已归档' : '📦 显示已归档';
+    btn.style.background = _showArchived ? '#FEF3C7' : '';
+    btn.style.borderColor = _showArchived ? '#F59E0B' : '';
+    btn.style.color = _showArchived ? '#92400E' : '';
   }
+  loadOrders();
 }
 
 // ── NOTES ──
@@ -5255,6 +5335,7 @@ function createStep(dir) {
   currentCreateStep = next;
   document.getElementById('create-step-' + currentCreateStep).style.display = 'block';
   updateStepUI();
+  if (currentCreateStep === 5) renderChecklist('create-checklist', _createChecklist, true);
 }
 
 function updateStepUI() {
@@ -5381,9 +5462,12 @@ function filterSales() {
     : '<option value="">— 请先选择 Supplier —</option>';
   // Update order no preview
   const opt = supSel?.options[supSel.selectedIndex];
-  if (opt?.value) {
+  const previewEl = document.getElementById('cr-order-no-preview');
+  if (opt?.value && previewEl) {
     const no = (opt.dataset.code||'') + String(parseInt(opt.dataset.seq)||1).padStart(3,'0');
-    document.querySelectorAll('#create-step-3 input[readonly]').forEach(inp => inp.value = no);
+    previewEl.value = no;
+  } else if (previewEl && !opt?.value) {
+    previewEl.value = '';
   }
 }
 
@@ -5431,11 +5515,29 @@ async function submitOrder() {
   const costRate     = parseFloat(document.getElementById('cr-cost-rate')?.value) || null;
   const costRM       = (costForeign && costRate) ? Math.round(costForeign * costRate * 100) / 100 : null;
 
-  // Order number from supplier
+  // Order number — use user's manual entry if provided, else auto-generate
   const opt     = supSel.options[supSel.selectedIndex];
   const supCode = opt?.dataset.code || '';
-  const nextSeq = parseInt(opt?.dataset.seq) || 1;
-  const orderNo = supCode + String(nextSeq).padStart(3, '0');
+  const manualOrderNo = (document.getElementById('cr-order-no-preview')?.value || '').trim().toUpperCase();
+  let nextSeq = parseInt(opt?.dataset.seq) || 1;
+  let orderNo;
+  if (manualOrderNo) {
+    // Check if manually entered number is already taken
+    const { data: taken } = await sb.from('orders').select('id').eq('order_no', manualOrderNo).maybeSingle();
+    if (taken) { alert('❌ 订单号 ' + manualOrderNo + ' 已存在，请修改后重试'); return; }
+    orderNo = manualOrderNo;
+    // Adjust nextSeq if the manual number is for this supplier
+    const manualSeq = parseInt(manualOrderNo.replace(supCode, ''));
+    if (!isNaN(manualSeq) && manualSeq >= nextSeq) nextSeq = manualSeq;
+  } else {
+    orderNo = supCode + String(nextSeq).padStart(3, '0');
+    while (true) {
+      const { data: taken } = await sb.from('orders').select('id').eq('order_no', orderNo).maybeSingle();
+      if (!taken) break;
+      nextSeq++;
+      orderNo = supCode + String(nextSeq).padStart(3, '0');
+    }
+  }
 
   // Find or create customer
   let customerId = null;
@@ -5473,7 +5575,8 @@ async function submitOrder() {
     selling_price: sellingPrice || null,
     cost_currency: costCurrency,
     cost_foreign: costForeign,
-    cost_rm: costRM
+    cost_rm: costRM,
+    checklist: _createChecklist
   }).select('id').single();
   if (ordErr) { alert('创建订单失败: ' + ordErr.message); return; }
 
@@ -5487,8 +5590,14 @@ async function submitOrder() {
   }
   Object.keys(_crFiles).forEach(k => delete _crFiles[k]);
 
-  // Increment supplier next_order_seq
+  // Increment supplier next_order_seq (use the actual seq that was used, in case we skipped)
   await sb.from('suppliers').update({ next_order_seq: nextSeq + 1 }).eq('id', supId);
+
+  // Trigger 1: notify TD to send contract, collect deposit & passport
+  const _tdIdForNotif = document.getElementById('cr-td')?.value || (currentUser.roleKey === 'td' ? currentUser.id : null);
+  if (_tdIdForNotif) {
+    await sendNotif('order_task', `订单 ${orderNo} 已创建 — 请发合同、收定金、收护照`, orderNo, orderId, null, _tdIdForNotif);
+  }
 
   alert('✅ 订单 ' + orderNo + ' 已创建成功！');
   await loadOrders();
@@ -5502,7 +5611,7 @@ function setPriceMode(mode) {
   document.getElementById('price-mode-total').style.display = mode === 'total' ? '' : 'none';
   document.getElementById('mode-pax-btn').classList.toggle('sel', mode === 'pax');
   document.getElementById('mode-total-btn').classList.toggle('sel', mode === 'total');
-  calcFinalPrice();
+  if (mode === 'pax') calcPaxTotal(); else calcTotalMode();
 }
 
 let _paxSell = 0, _paxCost = 0;
@@ -5543,8 +5652,8 @@ function calcInsBreakdown() {
   if (insEl) insEl.value = total || '';
   const insTotEl = document.getElementById('cr-tot-insurance');
   if (insTotEl) insTotEl.value = total || '';
-  calcPaxTotal();
-  calcTotalMode();
+  const _insIsPax = document.getElementById('price-mode-pax')?.style.display !== 'none';
+  if (_insIsPax) calcPaxTotal(); else calcTotalMode();
 }
 function calcPaxTotal() {
   const g = id => parseFloat(document.getElementById(id)?.value) || 0;
@@ -5605,11 +5714,7 @@ function crCalcCostRM() {
   crCalcProfit();
 }
 function crCalcProfit() {
-  const isPax = document.getElementById('price-mode-pax')?.style.display !== 'none';
-  const ins = isPax
-    ? (parseFloat(document.getElementById('cr-insurance')?.value) || 0)
-    : (parseFloat(document.getElementById('cr-tot-insurance')?.value) || 0);
-  const profit = _paxSell - _paxCost - ins;
+  const profit = _paxSell - _paxCost;
   const fe = document.getElementById('final-sell-price');
   const pe = document.getElementById('est-profit');
   const fmt = n => 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
@@ -5644,10 +5749,9 @@ function setInsurance(on) {
     const insTotEl = document.getElementById('cr-tot-insurance');
     if (insEl) insEl.value = '';
     if (insTotEl) insTotEl.value = '';
-    calcPaxTotal();
-    calcTotalMode();
   }
-  calcFinalPrice();
+  const _setInsIsPax = document.getElementById('price-mode-pax')?.style.display !== 'none';
+  if (_setInsIsPax) calcPaxTotal(); else calcTotalMode();
 }
 
 function setCrInsStatus(v) {
@@ -6101,6 +6205,9 @@ async function _fetchProfileAndEnter(email) {
   document.getElementById('app-main').style.display     = 'flex';
   await loadOrders();
   showPage('orders');
+  loadNotifications();
+  if (_notifPollTimer) clearInterval(_notifPollTimer);
+  _notifPollTimer = setInterval(loadNotifications, 60000);
   return 'ok';
 }
 
@@ -6138,6 +6245,8 @@ async function doLogin() {
 
 async function doLogout() {
   await sb.auth.signOut();
+  if (_notifPollTimer) { clearInterval(_notifPollTimer); _notifPollTimer = null; }
+  _notifData = []; _notifReadIds = new Set();
   currentUser = { id: null, name: '', roleKey: 'operation' };
   document.getElementById('login-screen').style.display  = 'flex';
   document.getElementById('app-sidebar').style.display   = 'none';
@@ -6186,15 +6295,143 @@ function toggleAlertSwitch(track) {
 function saveAlertRules() { showToast('✅ Alert 规则已保存'); }
 
 // ── NOTIFICATIONS ──
-function markAllRead() {
+let _notifPollTimer = null;
+let _notifData = [];
+let _notifReadIds = new Set();
+
+async function sendNotif(type, message, orderNo, orderId, targetRole, targetUserId) {
+  try {
+    await sb.from('notifications').insert({
+      type, message,
+      order_no: orderNo || null,
+      order_id: orderId || null,
+      target_role: targetRole || null,
+      target_user_id: targetUserId || null
+    });
+  } catch(e) {}
+}
+
+async function loadNotifications() {
+  if (!currentUser.id) return;
+  const { data: notifs } = await sb.from('notifications')
+    .select('*')
+    .or(`target_user_id.eq.${currentUser.id},target_role.eq.${currentUser.roleKey}`)
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (!notifs) return;
+  _notifData = notifs;
+
+  _notifReadIds = new Set();
+  if (notifs.length) {
+    const { data: reads } = await sb.from('notification_reads')
+      .select('notification_id')
+      .eq('user_id', currentUser.id)
+      .in('notification_id', notifs.map(n => n.id));
+    if (reads) reads.forEach(r => _notifReadIds.add(r.notification_id));
+  }
+
+  const unread = notifs.filter(n => !_notifReadIds.has(n.id)).length;
+  const badge = document.getElementById('notif-badge');
+  if (badge) { badge.textContent = unread > 0 ? String(unread) : ''; badge.style.display = unread > 0 ? '' : 'none'; }
+
+  const allTab = document.querySelector('#page-notifications .file-type-tab');
+  if (allTab) allTab.innerHTML = `全部 <span style="color:#E8906B;font-weight:800">${notifs.length}</span>`;
+
+  _renderNotifList('all');
+  _renderDashNotifs();
+}
+
+function _notifCatClass(type) {
+  if (['pay_in','pay_out','finance_action'].includes(type)) return 'ni-finance';
+  if (['insurance_buy','insurance_done'].includes(type)) return 'ni-insurance';
+  return 'ni-system';
+}
+function _notifEmoji(type) {
+  return { pay_in:'💰', pay_out:'💸', finance_action:'💰', insurance_buy:'🛡️', insurance_done:'🛡️', order_task:'📋' }[type] || '🔔';
+}
+function _timeAgo(ts) {
+  const s = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s/60) + ' 分钟前';
+  if (s < 86400) return Math.floor(s/3600) + ' 小时前';
+  return Math.floor(s/86400) + ' 天前';
+}
+
+function _renderNotifList(filter) {
+  const list = document.getElementById('notif-list');
+  if (!list) return;
+  let items = _notifData;
+  if (filter === 'unread') items = items.filter(n => !_notifReadIds.has(n.id));
+  else if (filter === 'finance') items = items.filter(n => ['pay_in','pay_out','finance_action'].includes(n.type));
+  else if (filter === 'insurance') items = items.filter(n => ['insurance_buy','insurance_done'].includes(n.type));
+  else if (filter === 'system') items = items.filter(n => n.type === 'order_task');
+  if (!items.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#9CA3AF;font-size:12px;font-weight:600">暂无通知</div>';
+    return;
+  }
+  list.innerHTML = items.map(n => {
+    const u = !_notifReadIds.has(n.id);
+    return `<div class="notif-item${u?' unread':''}" data-id="${n.id}" onclick="markOneRead(this,'${n.id}')">
+      <div class="notif-icon ${_notifCatClass(n.type)}">${_notifEmoji(n.type)}</div>
+      <div class="notif-body">
+        <div class="notif-title">${n.message}</div>
+        ${n.order_no ? `<div class="notif-desc">订单: ${n.order_no}</div>` : ''}
+        <div class="notif-time">${_timeAgo(n.created_at)}</div>
+      </div>
+      ${u ? '<div class="unread-dot"></div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function _renderDashNotifs() {
+  const panel = document.getElementById('dash-notif-list');
+  if (!panel) return;
+  const recent = _notifData.slice(0, 6);
+  if (!recent.length) {
+    panel.innerHTML = '<div style="text-align:center;padding:20px;color:#9CA3AF;font-size:11px">暂无通知</div>';
+    return;
+  }
+  panel.innerHTML = recent.map(n => {
+    const u = !_notifReadIds.has(n.id);
+    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid #F7F8FA;cursor:pointer" onclick="showPage('notifications')">
+      <span style="font-size:13px;flex-shrink:0">${_notifEmoji(n.type)}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:${u?'800':'600'};color:#2D2926;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.message}</div>
+        <div style="font-size:10px;color:#9CA3AF;margin-top:1px">${_timeAgo(n.created_at)}${n.order_no?' · '+n.order_no:''}</div>
+      </div>
+      ${u ? '<div style="width:6px;height:6px;border-radius:50%;background:#E8906B;flex-shrink:0;margin-top:4px"></div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+async function markOneRead(el, id) {
+  if (_notifReadIds.has(id)) return;
+  _notifReadIds.add(id);
+  el.classList.remove('unread');
+  el.querySelector('.unread-dot')?.remove();
+  const unread = _notifData.filter(n => !_notifReadIds.has(n.id)).length;
+  const badge = document.getElementById('notif-badge');
+  if (badge) { badge.textContent = unread > 0 ? String(unread) : ''; badge.style.display = unread > 0 ? '' : 'none'; }
+  try { await sb.from('notification_reads').insert({ notification_id: id, user_id: currentUser.id }); } catch(e) {}
+}
+
+async function markAllRead() {
+  const unread = _notifData.filter(n => !_notifReadIds.has(n.id));
+  if (!unread.length) { showToast('无未读通知'); return; }
+  try { await sb.from('notification_reads').insert(unread.map(n => ({ notification_id: n.id, user_id: currentUser.id }))); } catch(e) {}
+  unread.forEach(n => _notifReadIds.add(n.id));
   document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
   document.querySelectorAll('.unread-dot').forEach(el => el.remove());
-  document.getElementById('notif-badge').textContent = '0';
+  const badge = document.getElementById('notif-badge');
+  if (badge) { badge.textContent = ''; badge.style.display = 'none'; }
+  _renderDashNotifs();
   showToast('✅ 全部通知已标为已读');
 }
+
 function filterNotif(btn, type) {
-  document.querySelectorAll('.notif-list .file-type-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#page-notifications .file-type-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  _renderNotifList(type);
 }
 function filterInsGlobal(btn, type) {
   document.querySelectorAll('#page-insurance-global .file-type-tab').forEach(b => b.classList.remove('active'));
@@ -6467,6 +6704,11 @@ async function submitInsCreate() {
     end_date: end,
   });
   if (error) { showToast('❌ 提交失败: ' + error.message); return; }
+  // Trigger 4a: notify Finance to buy insurance
+  try {
+    const { data: _ordForIns } = await sb.from('orders').select('order_no').eq('id', orderId).maybeSingle();
+    if (_ordForIns) await sendNotif('insurance_buy', `保险申请（${_ordForIns.order_no}）— 请联系保险公司购买`, _ordForIns.order_no, orderId, 'finance', null);
+  } catch(e) {}
   closeModal('modal-ins-create');
   showToast('✅ 保单申请已提交，等待 Finance 处理');
   if (document.getElementById('page-insurance-global')?.classList.contains('active')) loadInsuranceGlobal();
@@ -6499,8 +6741,16 @@ async function submitInsFinish() {
   if (!policyLink) { showToast('⚠️ 请填写保单链接'); return; }
   if (!_insFinishId) { showToast('❌ 找不到保单记录'); return; }
 
-  const { error } = await sb.from('insurance').update({ premium_rm: fee, pdf_url: policyLink }).eq('id', _insFinishId);
+  const _insFinishIdCopy = _insFinishId;
+  const { error } = await sb.from('insurance').update({ premium_rm: fee, pdf_url: policyLink }).eq('id', _insFinishIdCopy);
   if (error) { showToast('❌ 更新失败: ' + error.message); return; }
+  // Trigger 4b: notify TD that insurance is bought — send policy to customer
+  try {
+    const { data: _insData } = await sb.from('insurance').select('order_id, orders!inner(order_no, td_id)').eq('id', _insFinishIdCopy).maybeSingle();
+    if (_insData?.orders?.order_no) {
+      await sendNotif('insurance_done', `保险已完成（${_insData.orders.order_no}）— 请发保单给顾客`, _insData.orders.order_no, _insData.order_id, null, _insData.orders.td_id);
+    }
+  } catch(e) {}
   closeModal('modal-ins-finish');
   showToast('✅ 保单已标记完成');
   _insFinishId = null;
@@ -6731,6 +6981,8 @@ async function submitPayIn() {
   if (receiptUrl) row.receipt_url = receiptUrl;
   const { error } = await sb.from('payins').insert(row);
   if (error) { showToast('❌ 提交失败: ' + error.message); return; }
+  // Trigger 2: notify Finance to check and issue invoice
+  await sendNotif('pay_in', `收到入账 ${orderNo}（RM ${amt.toFixed(2)}）— 请 check 并开 Invoice`, orderNo, orderId, 'finance', null);
   closeModal('modal-pay-in');
   showToast('✅ 入账记录已提交');
   if (document.getElementById('page-payin')?.classList.contains('active')) await loadPayIns();
@@ -6788,6 +7040,8 @@ async function submitPayOut() {
     transfer_proof_url: transferUrl
   });
   if (error) { showToast('❌ 提交失败: ' + error.message); return; }
+  // Trigger 5: notify Finance of the payout
+  await sendNotif('pay_out', `出账已录入（${orderNo}）— Finance 请知悉`, orderNo, orderId, 'finance', null);
   closeModal('modal-pay-out');
   showToast('✅ 出账记录已提交');
   if (_currentOrder) loadDetailPayouts();
@@ -6874,6 +7128,9 @@ async function submitEditPayIn() {
   const gshCheck = document.getElementById('epi-gsh').value || 'pending';
   const notes   = document.getElementById('epi-notes').value.trim() || null;
   if (!date || !amt || !bank) { showToast('⚠️ 请填写日期、金额、Bank'); return; }
+  const newOrderNo = document.getElementById('epi-order').value.trim().toUpperCase();
+  const newOrderEntry = newOrderNo ? _ordersCache.find(o => o.id === newOrderNo) : null;
+  if (newOrderNo && !newOrderEntry) { showToast('⚠️ 找不到订单号 ' + newOrderNo); return; }
   const receiptFile = document.getElementById('epi-receipt-file')?.files[0];
   let receiptUrl = null;
   if (receiptFile) {
@@ -6882,9 +7139,17 @@ async function submitEditPayIn() {
     if (!receiptUrl) return;
   }
   const upd = { date, payment_type: type, amount_rm: amt, bank, invoice_status: invStat, gsh_check: gshCheck, finance_note: notes };
+  if (newOrderEntry) upd.order_id = newOrderEntry.uuid;
   if (receiptUrl) upd.receipt_url = receiptUrl;
   const { error } = await sb.from('payins').update(upd).eq('id', _editPayInId);
   if (error) { showToast('❌ 更新失败: ' + error.message); return; }
+  // Trigger 3: notify TD that Finance took action on pay-in
+  try {
+    const { data: _piData } = await sb.from('payins').select('order_id, orders!inner(order_no, td_id)').eq('id', _editPayInId).maybeSingle();
+    if (_piData?.orders?.order_no) {
+      await sendNotif('finance_action', `入账已处理（${_piData.orders.order_no}）— Finance 已上传 Invoice / check 款项`, _piData.orders.order_no, _piData.order_id, null, _piData.orders.td_id);
+    }
+  } catch(e) {}
   closeModal('modal-edit-payin');
   showToast('✅ 入账记录已更新');
   loadPayIns();
