@@ -635,9 +635,13 @@ body[data-active-role="operation"] .edit-payout-btn,
 body[data-active-role="finance"] .edit-payout-btn{display:inline-flex!important;align-items:center}
 /* 检查 column (visible to master/operation/finance, hidden from td) */
 .check-col{display:none!important}
-body[data-active-role="master"] .check-col,
-body[data-active-role="operation"] .check-col,
-body[data-active-role="finance"] .check-col{display:table-cell!important}
+/* Finance-only badge — shown to roles that cannot edit Finance fields */
+.fo-badge{display:inline;font-size:9px;font-weight:700;color:#D97706;background:#FEF3C7;border:1px solid #FDE68A;border-radius:3px;padding:1px 5px;margin-left:5px;vertical-align:middle;white-space:nowrap}
+body[data-active-role="master"] .fo-badge,body[data-active-role="operation"] .fo-badge,body[data-active-role="finance"] .fo-badge{display:none}
+/* Role-specific profit labels: TD sees 预估加成, others see 实际加成 */
+.label-td{display:none}
+body[data-active-role="td"] .label-non-td{display:none}
+body[data-active-role="td"] .label-td{display:inline}
 /* Order search dropdown */
 .order-search-box{position:relative}
 .order-drop{display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;background:#fff;border:1.5px solid #3B7A68;border-radius:6px;z-index:1000;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.12)}
@@ -677,8 +681,22 @@ body[data-active-role="finance"] .ins-create-btn{display:inline-flex!important}
 .ins-finish-btn{display:none!important}
 body[data-active-role="master"] .ins-finish-btn,
 body[data-active-role="operation"] .ins-finish-btn,
-body[data-active-role="finance"] .ins-finish-btn,
-body[data-active-role="td"] .ins-finish-btn{display:inline-block!important}
+body[data-active-role="finance"] .ins-finish-btn{display:inline-block!important}
+/* TD-only check button */
+.ins-check-btn{display:none!important}
+body[data-active-role="td"] .ins-check-btn{display:inline-block!important}
+/* Insurance form link button — Finance doesn't need it */
+.ins-copy-link-btn{display:none!important}
+body[data-active-role="td"] .ins-copy-link-btn,
+body[data-active-role="master"] .ins-copy-link-btn,
+body[data-active-role="operation"] .ins-copy-link-btn{display:inline-flex!important}
+/* Insurance stats visibility */
+.ins-stat-td-block{display:none}
+.ins-stat-finance-block{display:none}
+body[data-active-role="td"] .ins-stat-td-block{display:block}
+body[data-active-role="master"] .ins-stat-td-block,body[data-active-role="master"] .ins-stat-finance-block,
+body[data-active-role="operation"] .ins-stat-td-block,body[data-active-role="operation"] .ins-stat-finance-block,
+body[data-active-role="finance"] .ins-stat-td-block,body[data-active-role="finance"] .ins-stat-finance-block{display:block}
 /* Finance-only elements */
 .role-finance-only{display:none!important}
 body[data-active-role="finance"] .role-finance-only,
@@ -1379,8 +1397,8 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                   </tr>
                   <tr style="border-top:1px dashed #E5E8EE">
                     <td style="color:#6B7280;font-size:11px">+ 保险总价</td>
-                    <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right">附加</td>
-                    <td style="text-align:right"><input type="number" id="cr-insurance" class="inline-num" placeholder="0" style="width:90px;text-align:right" oninput="calcPaxTotal()"/></td>
+                    <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right">见下方保险栏</td>
+                    <td style="text-align:right"><input type="number" id="cr-insurance" class="inline-num" placeholder="0" style="width:90px;text-align:right;background:#FAFBFC;color:#D97706" readonly/></td>
                   </tr>
                   <tr>
                     <td style="color:#6B7280;font-size:11px">− 折扣</td>
@@ -1407,8 +1425,8 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                 <tbody>
                   <tr style="border-top:1px dashed #E5E8EE">
                     <td style="color:#6B7280;font-size:11px">+ 保险总价</td>
-                    <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right">附加</td>
-                    <td style="text-align:right"><input type="number" id="cr-tot-insurance" class="inline-num" placeholder="0" style="width:90px;text-align:right" oninput="calcTotalMode()"/></td>
+                    <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right">见下方保险栏</td>
+                    <td style="text-align:right"><input type="number" id="cr-tot-insurance" class="inline-num" placeholder="0" style="width:90px;text-align:right;background:#FAFBFC;color:#D97706" readonly/></td>
                   </tr>
                   <tr>
                     <td style="color:#6B7280;font-size:11px">− 折扣</td>
@@ -1451,14 +1469,46 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
               <label style="font-size:12px;font-weight:600;color:#4B5563;min-width:80px">需要保险？</label>
               <div class="radio-opt sel" id="ins-yes-btn" onclick="setInsurance(true)">是</div>
-              <div class="radio-opt" id="ins-no-btn" onclick="setInsurance(false)">否</div>
+              <div class="radio-opt" id="ins-no-btn" onclick="setInsurance(false)">无需保险</div>
             </div>
             <div id="ins-detail">
-              <div class="form-grid">
-                <div class="form-group"><label>需要保险人数</label><input type="number" placeholder="2" id="ins-pax"/></div>
-                <div class="form-group"><label>保险公司</label><input type="text" placeholder="Chubb Insurance" id="ins-company" value="Chubb Insurance"/></div>
-              </div>
-              <div style="font-size:11px;color:#9CA3AF;margin-top:4px">保险总保费请在上方价格表填写</div>
+              <table class="pay-table" style="margin-bottom:10px">
+                <thead>
+                  <tr>
+                    <th>年龄</th>
+                    <th style="text-align:center">人数</th>
+                    <th style="text-align:right">保费/人 (RM)</th>
+                    <th style="text-align:right">小计 (RM)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-size:12px;color:#4B5563">0–64 岁</td>
+                    <td style="text-align:center"><input type="number" value="0" min="0" class="inline-num" id="ins-qty-young" style="width:55px;text-align:center" oninput="calcInsBreakdown()"/></td>
+                    <td style="text-align:right"><input type="number" value="88" min="0" class="inline-num" id="ins-rate-young" style="width:70px;text-align:right" oninput="calcInsBreakdown()"/></td>
+                    <td id="ins-sub-young" style="text-align:right;font-weight:700;color:#9CA3AF">—</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:12px;color:#4B5563">≥65 岁</td>
+                    <td style="text-align:center"><input type="number" value="0" min="0" class="inline-num" id="ins-qty-elder" style="width:55px;text-align:center" oninput="calcInsBreakdown()"/></td>
+                    <td style="text-align:right"><input type="number" value="233" min="0" class="inline-num" id="ins-rate-elder" style="width:70px;text-align:right" oninput="calcInsBreakdown()"/></td>
+                    <td id="ins-sub-elder" style="text-align:right;font-weight:700;color:#9CA3AF">—</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:12px;color:#4B5563">特殊</td>
+                    <td style="text-align:center"><input type="number" min="0" class="inline-num" id="ins-qty-special" placeholder="—" style="width:55px;text-align:center" oninput="calcInsBreakdown()"/></td>
+                    <td style="text-align:right"><input type="number" min="0" class="inline-num" id="ins-rate-special" placeholder="—" style="width:70px;text-align:right" oninput="calcInsBreakdown()"/></td>
+                    <td id="ins-sub-special" style="text-align:right;font-weight:700;color:#9CA3AF">—</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" style="text-align:right;font-weight:700;font-size:11px;color:#6B7280">保险总保费</td>
+                    <td id="ins-total-cell" style="text-align:right;font-weight:900;color:#D97706">RM 0</td>
+                  </tr>
+                </tfoot>
+              </table>
+              <div class="form-group" style="max-width:220px"><label>保险公司</label><input type="text" placeholder="Chubb Insurance" id="ins-company" value="Chubb Insurance"/></div>
             </div>
           </div>
 
@@ -1466,14 +1516,14 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
           <div class="form-section">
             <div style="background:#EEF6F3;border:1px solid #A7F3D0;border-radius:10px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center">
               <div>
-                <div style="font-size:11px;color:#6B7280;margin-bottom:4px">最终总售价</div>
-                <div style="font-size:22px;font-weight:900;color:#065F46" id="final-sell-price">RM —</div>
-                <div style="font-size:10px;color:#9CA3AF;margin-top:2px">售价 + 保险 − 折扣</div>
+                <div style="font-size:11px;color:#6B7280;margin-bottom:4px">预估加成</div>
+                <div style="font-size:22px;font-weight:900;color:#065F46" id="est-profit">RM —</div>
+                <div style="font-size:10px;color:#9CA3AF;margin-top:2px">总售价 − 底价RM</div>
               </div>
               <div style="text-align:right" class="cr-profit-block">
-                <div style="font-size:11px;color:#6B7280;margin-bottom:4px">预计利润</div>
-                <div style="font-size:18px;font-weight:800;color:#3B7A68" id="est-profit">RM —</div>
-                <div style="font-size:10px;color:#9CA3AF;margin-top:2px">总售价 − 底价RM</div>
+                <div style="font-size:11px;color:#6B7280;margin-bottom:4px">最终总售价</div>
+                <div style="font-size:18px;font-weight:800;color:#3B7A68" id="final-sell-price">RM —</div>
+                <div style="font-size:10px;color:#9CA3AF;margin-top:2px">售价 + 保险 − 折扣</div>
               </div>
             </div>
             <div class="form-group" style="margin-top:10px"><label>价格备注</label><textarea id="cr-notes" rows="2" placeholder="如：老人价格以定制方案为准..."></textarea></div>
@@ -1481,19 +1531,25 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
 
           <!-- 报价单上传 -->
           <div class="form-section">
-            <div class="form-section-title">报价单上传</div>
+            <div class="form-section-title">报价单上传 <span style="font-size:10px;font-weight:400;color:#9CA3AF">（可选，提交后上传也可以）</span></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
               <div>
                 <div style="font-size:11px;font-weight:700;color:#6B7280;margin-bottom:6px">Supplier 报价单</div>
-                <div class="file-upload-zone" style="margin-top:0">
-                  <div class="fuz-icon">📄</div><div class="fuz-text">上传 Supplier 报价</div><div class="fuz-sub">PDF · JPG · PNG</div>
-                </div>
+                <label class="file-upload-zone" style="margin-top:0;cursor:pointer;display:block">
+                  <input type="file" id="cr-supplier-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="crFileSelected('supplier_quote',this)"/>
+                  <div class="fuz-icon">📄</div>
+                  <div class="fuz-text" id="cr-supplier-file-name">点击上传 Supplier 报价</div>
+                  <div class="fuz-sub">PDF · JPG · PNG</div>
+                </label>
               </div>
               <div>
                 <div style="font-size:11px;font-weight:700;color:#6B7280;margin-bottom:6px">Offtrack 报价单</div>
-                <div class="file-upload-zone" style="margin-top:0">
-                  <div class="fuz-icon">📋</div><div class="fuz-text">上传 Offtrack 报价</div><div class="fuz-sub">PDF · JPG · PNG</div>
-                </div>
+                <label class="file-upload-zone" style="margin-top:0;cursor:pointer;display:block">
+                  <input type="file" id="cr-offtrack-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="crFileSelected('offtrack_quote',this)"/>
+                  <div class="fuz-icon">📋</div>
+                  <div class="fuz-text" id="cr-offtrack-file-name">点击上传 Offtrack 报价</div>
+                  <div class="fuz-sub">PDF · JPG · PNG</div>
+                </label>
               </div>
             </div>
           </div>
@@ -1521,9 +1577,9 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
           <div class="form-section">
             <div style="display:flex;gap:10px;align-items:center">
               <label style="font-size:13px;font-weight:700;color:#2D2926;min-width:100px">保险已买？</label>
-              <div class="radio-opt sel" id="ins-status-no-btn" onclick="setInsStatus('no')">未买</div>
-              <div class="radio-opt" id="ins-status-partial-btn" onclick="setInsStatus('partial')">部分买</div>
-              <div class="radio-opt" id="ins-status-yes-btn" onclick="setInsStatus('yes')">已买</div>
+              <div class="radio-opt sel" id="ins-status-no-btn" onclick="setCrInsStatus('no')">未买</div>
+              <div class="radio-opt" id="ins-status-partial-btn" onclick="setCrInsStatus('partial')">部分买</div>
+              <div class="radio-opt" id="ins-status-yes-btn" onclick="setCrInsStatus('yes')">已买</div>
             </div>
           </div>
 
@@ -1603,6 +1659,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
         <div>
           <div class="oh-id" id="detail-oh-id"><span>EC</span>089</div>
           <div class="oh-customer" id="detail-oh-customer">MS TAN MEI LING</div>
+          <div id="detail-oh-phone" style="font-size:12px;font-weight:600;color:#6B7280;margin-top:2px;display:none"></div>
           <div class="oh-meta" id="detail-oh-meta">建立于 2026-05-10 · Tommy Chin · Offtrack Travel</div>
           <div class="oh-chips" id="detail-oh-chips">
             <span class="chip chip-preparing">Preparing</span>
@@ -1749,6 +1806,10 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
               <textarea id="det-notes" class="editable-field" readonly style="width:100%;min-height:56px;box-sizing:border-box;resize:vertical;font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;padding:7px 10px;border-radius:6px;border:1.5px solid #F0F2F7;background:#FAFBFC;color:#374151;outline:none"></textarea>
             </div>
             <div class="form-group" style="margin-top:8px">
+              <label>顾客电话 <span style="font-size:10px;font-weight:600;color:#9CA3AF">（保存后同步到顾客资料及总表）</span></label>
+              <input type="text" id="det-cust-phone" class="editable-field" readonly placeholder="+601X-XXX XXXX" style="width:100%;box-sizing:border-box;font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;padding:7px 10px;border-radius:6px;border:1.5px solid #F0F2F7;background:#FAFBFC;color:#374151;outline:none"/>
+            </div>
+            <div class="form-group" style="margin-top:8px">
               <label>顾客备注 <span style="font-size:10px;font-weight:600;color:#9CA3AF">（保存后同步到顾客资料及总表）</span></label>
               <textarea id="det-cust-notes" class="editable-field" readonly style="width:100%;min-height:56px;box-sizing:border-box;resize:vertical;font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;padding:7px 10px;border-radius:6px;border:1.5px solid #F0F2F7;background:#FAFBFC;color:#374151;outline:none"></textarea>
             </div>
@@ -1776,7 +1837,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                   <tr style="border-top:1px dashed #E5E8EE">
                     <td style="color:#6B7280;font-size:11px">+ 保险总价</td>
                     <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right">附加</td>
-                    <td style="text-align:right"><input class="editable-field" id="det-tot-insurance" type="number" min="0" value="440" readonly style="width:85px;text-align:right;padding:4px 6px" oninput="detCalcTotal()"/></td>
+                    <td style="text-align:right"><input id="det-tot-insurance" type="number" min="0" value="0" readonly style="width:85px;text-align:right;padding:4px 6px;background:#FAFBFC;border:1.5px solid #F0F2F7;border-radius:6px;color:#D97706;font-weight:700;font-size:12px"/></td>
                   </tr>
                   <tr>
                     <td style="color:#6B7280;font-size:11px">− 折扣</td>
@@ -1801,26 +1862,26 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
               <tbody>
                 <tr>
                   <td>成人 (A)</td>
-                  <td style="text-align:center"><input class="editable-field" id="qty-A" type="number" min="0" value="5" readonly style="width:55px;text-align:center;padding:4px 6px" oninput="calcTotal()"/></td>
+                  <td style="text-align:center"><input class="editable-field" id="qty-A" type="number" min="0" value="5" readonly style="width:55px;text-align:center;padding:4px 6px" oninput="calcTotal();detAutoCalcIns()"/></td>
                   <td style="text-align:right"><input class="editable-field" id="price-A" type="number" min="0" value="3498" readonly style="width:85px;text-align:right;padding:4px 6px" oninput="calcTotal()"/></td>
                   <td id="subtotal-A" style="text-align:right;font-weight:700">17,490</td>
                 </tr>
                 <tr>
                   <td>儿童 (C)</td>
-                  <td style="text-align:center"><input class="editable-field" id="qty-C" type="number" min="0" value="" readonly style="width:55px;text-align:center;padding:4px 6px" placeholder="—" oninput="calcTotal()"/></td>
+                  <td style="text-align:center"><input class="editable-field" id="qty-C" type="number" min="0" value="" readonly style="width:55px;text-align:center;padding:4px 6px" placeholder="—" oninput="calcTotal();detAutoCalcIns()"/></td>
                   <td style="text-align:right"><input class="editable-field" id="price-C" type="number" min="0" value="" readonly style="width:85px;text-align:right;padding:4px 6px" placeholder="—" oninput="calcTotal()"/></td>
                   <td id="subtotal-C" style="text-align:right;color:#9CA3AF">—</td>
                 </tr>
                 <tr>
                   <td>老人 (E)</td>
-                  <td style="text-align:center"><input class="editable-field" id="qty-E" type="number" min="0" value="" readonly style="width:55px;text-align:center;padding:4px 6px" placeholder="—" oninput="calcTotal()"/></td>
+                  <td style="text-align:center"><input class="editable-field" id="qty-E" type="number" min="0" value="" readonly style="width:55px;text-align:center;padding:4px 6px" placeholder="—" oninput="calcTotal();detAutoCalcIns()"/></td>
                   <td style="text-align:right"><input class="editable-field" id="price-E" type="number" min="0" value="" readonly style="width:85px;text-align:right;padding:4px 6px" placeholder="—" oninput="calcTotal()"/></td>
                   <td id="subtotal-E" style="text-align:right;color:#9CA3AF">—</td>
                 </tr>
                 <tr style="border-top:1px dashed #E5E8EE">
                   <td style="color:#6B7280;font-size:11px">+ 保险总价</td>
-                  <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right">附加</td>
-                  <td style="text-align:right"><input class="editable-field" id="price-insurance" type="number" min="0" value="440" readonly style="width:85px;text-align:right;padding:4px 6px" oninput="calcTotal()"/></td>
+                  <td colspan="2" style="color:#9CA3AF;font-size:11px;text-align:right">见下方明细</td>
+                  <td style="text-align:right"><input id="price-insurance" type="number" min="0" value="0" readonly style="width:85px;text-align:right;padding:4px 6px;background:#FAFBFC;border:1.5px solid #F0F2F7;border-radius:6px;color:#D97706;font-weight:700;font-size:12px"/></td>
                 </tr>
                 <tr>
                   <td style="color:#6B7280;font-size:11px">− 折扣</td>
@@ -1837,13 +1898,54 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             </table>
             </div><!-- /det-price-pax -->
 
+            <!-- 保险费用明细 -->
+            <div style="margin-bottom:12px">
+              <div style="font-size:10px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🛡️ 保险费用明细</div>
+              <table class="pay-table" style="margin-bottom:0">
+                <thead>
+                  <tr>
+                    <th>年龄</th>
+                    <th style="text-align:center">人数</th>
+                    <th style="text-align:right">保费/人 (RM)</th>
+                    <th style="text-align:right">小计 (RM)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-size:12px;color:#4B5563">0–64 岁</td>
+                    <td style="text-align:center"><input class="editable-field" type="number" min="0" id="det-ins-qty-young" value="0" readonly style="width:55px;text-align:center;padding:4px 6px" oninput="detCalcInsBreakdown()"/></td>
+                    <td style="text-align:right"><input class="editable-field" type="number" min="0" id="det-ins-rate-young" value="88" readonly style="width:70px;text-align:right;padding:4px 6px" oninput="detCalcInsBreakdown()"/></td>
+                    <td id="det-ins-sub-young" style="text-align:right;font-weight:700;color:#9CA3AF">—</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:12px;color:#4B5563">≥65 岁</td>
+                    <td style="text-align:center"><input class="editable-field" type="number" min="0" id="det-ins-qty-elder" value="0" readonly style="width:55px;text-align:center;padding:4px 6px" oninput="detCalcInsBreakdown()"/></td>
+                    <td style="text-align:right"><input class="editable-field" type="number" min="0" id="det-ins-rate-elder" value="233" readonly style="width:70px;text-align:right;padding:4px 6px" oninput="detCalcInsBreakdown()"/></td>
+                    <td id="det-ins-sub-elder" style="text-align:right;font-weight:700;color:#9CA3AF">—</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:12px;color:#4B5563">特殊</td>
+                    <td style="text-align:center"><input class="editable-field" type="number" min="0" id="det-ins-qty-special" readonly style="width:55px;text-align:center;padding:4px 6px" placeholder="—" oninput="detCalcInsBreakdown()"/></td>
+                    <td style="text-align:right"><input class="editable-field" type="number" min="0" id="det-ins-rate-special" readonly style="width:70px;text-align:right;padding:4px 6px" placeholder="—" oninput="detCalcInsBreakdown()"/></td>
+                    <td id="det-ins-sub-special" style="text-align:right;font-weight:700;color:#9CA3AF">—</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" style="text-align:right;font-weight:700;font-size:11px;color:#6B7280">保险总保费</td>
+                    <td id="det-ins-total-cell" style="text-align:right;font-weight:900;color:#D97706">RM 0</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
             <!-- 保险状态 -->
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#F7F8FA;border-radius:8px;padding:10px 14px;margin-bottom:12px">
               <span style="font-size:11px;font-weight:700;color:#6B7280;white-space:nowrap">🛡️ 保险状态：</span>
               <div class="ins-status-toggle" id="ins-status-toggle">
-                <button class="ist-btn sel-full" onclick="setInsStatus('full')">✅ 全部需要</button>
-                <button class="ist-btn" onclick="setInsStatus('partial')">⚡ 部分需要</button>
-                <button class="ist-btn" onclick="setInsStatus('none')">— 不需要</button>
+                <button class="ist-btn sel-none" onclick="setInsStatus('none')">— 未买</button>
+                <button class="ist-btn" onclick="setInsStatus('partial')">⚡ 部分买</button>
+                <button class="ist-btn" onclick="setInsStatus('done')">✅ 已买</button>
               </div>
               <a href="#" onclick="showPage('insurance-global');return false" style="font-size:11px;color:#3B7A68;font-weight:700;margin-left:4px;white-space:nowrap">→ 查看 / 管理保单申请</a>
             </div>
@@ -1878,7 +1980,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
               <div id="profit-display" style="font-size:20px;font-weight:900;color:#059669">RM 1,786</div>
             </div>
             <div style="text-align:right">
-              <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">实际利润 <span style="font-weight:400;color:#9CA3AF;font-size:9px">（入账 − 出账）</span></div>
+              <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px"><span class="label-non-td">实际加成</span><span class="label-td">预估加成</span> <span style="font-weight:400;color:#9CA3AF;font-size:9px"><span class="label-non-td">（入账 − 出账）</span><span class="label-td">（售价含保险 − 底价）</span></span></div>
               <div id="actual-profit-display" style="font-size:20px;font-weight:900;color:#059669">RM —</div>
             </div>
           </div>
@@ -2261,14 +2363,20 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
 <div class="page" id="page-insurance-global">
   <div class="topbar">
     <div><div class="page-title">保险</div><div class="breadcrumb">Insurance Applications</div></div>
+    <div class="spacer"></div>
+    <button class="tb-btn btn-ghost ins-copy-link-btn" style="font-size:12px" onclick="copyInsFormLink()">📋 Copy 表单链接</button>
   </div>
   <div class="content-area">
 
     <!-- Stats -->
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
-      <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:12px 20px;min-width:120px">
-        <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">未购买</div>
+      <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:12px 20px;min-width:120px" class="ins-stat-td-block">
+        <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">待核对</div>
         <div style="font-size:20px;font-weight:900;color:#D97706" id="ins-stat-pending">—</div>
+      </div>
+      <div style="background:#EEF2FF;border:1px solid #C7D2FE;border-radius:10px;padding:12px 20px;min-width:120px" class="ins-stat-finance-block">
+        <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">待购买</div>
+        <div style="font-size:20px;font-weight:900;color:#4F46E5" id="ins-stat-verified">—</div>
       </div>
       <div style="background:#EEF6F3;border:1px solid #BBF7D0;border-radius:10px;padding:12px 20px;min-width:120px">
         <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">已购买</div>
@@ -2296,9 +2404,10 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
       <table style="width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap">
         <thead>
           <tr style="background:#F7F8FA;border-bottom:2px solid #E5E7EB">
-            <th style="padding:10px 12px;text-align:left;font-weight:800">状态</th>
+            <th style="padding:10px 12px;text-align:left;font-weight:800">购买状态</th>
             <th style="padding:10px 12px;text-align:left;font-weight:800">订单号</th>
             <th style="padding:10px 12px;text-align:left;font-weight:800">申请人</th>
+            <th style="padding:10px 12px;text-align:left;font-weight:800">核对</th>
             <th style="padding:10px 12px;text-align:left;font-weight:800">出发</th>
             <th style="padding:10px 12px;text-align:left;font-weight:800">回程</th>
             <th style="padding:10px 12px;text-align:left;font-weight:800">目的地</th>
@@ -2730,6 +2839,7 @@ const SUPA_URL = 'https://yfmmmlcqzgqfxkovhabd.supabase.co';
 // anon key: Supabase → Settings → API Keys → Legacy → anon public
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmbW1tbGNxemdxZnhrb3ZoYWJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyNDk0ODEsImV4cCI6MjEwMTgyNTQ4MX0.4NquQJT3LowGU5kfVcNApaove8o9N6NlvT8wTnLrk9A';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+const INSURANCE_FORM_URL = 'https://staff.offtracktravel.com.my/insurance';
 
 // ── LOAD ORDERS FROM SUPABASE ─────────────────────────────────────────────
 async function loadOrders() {
@@ -2743,7 +2853,7 @@ async function loadOrders() {
       depart_date, end_date, created_at, td_id, has_contract,
       pax_total, price_total, insurance_total, discount, discount_type, selling_price,
       cost_currency, cost_foreign, cost_rm,
-      customers ( name, salutation, notes ),
+      customers ( name, salutation, notes, phone ),
       supplier_salespersons ( name ),
       regions ( city ),
       users ( name ),
@@ -2882,7 +2992,7 @@ function buildOrderRow(o) {
     data-actual-profit="${actualProfit.toFixed(2)}">
     <td class="sh-sticky sh-sep" style="left:0"><span class="mono">${o.order_no}</span></td>
     <td class="muted" style="font-size:11px">${fmtDate((o.created_at||'').slice(0,10))}</td>
-    <td><strong>${custName}</strong>${o.pax_total > 1 ? ' <span class="muted">+' + (o.pax_total - 1) + '</span>' : ''}</td>
+    <td><strong>${custName}</strong>${o.pax_total > 1 ? ' <span class="muted">+' + (o.pax_total - 1) + '</span>' : ''}${o.customers?.phone ? '<br><span style="font-size:10px;font-weight:500;color:#9CA3AF">' + o.customers.phone + '</span>' : ''}</td>
     <td>${region}</td>
     <td>${fmtDate(depart)}</td>
     <td>${fmtDate(end)}</td>
@@ -2976,7 +3086,7 @@ async function openOrder(uuid) {
     td_id, region_id, supplier_id, supplier_salesperson_id, customer_id,
     pax_total, price_total, selling_price, insurance_total, discount, discount_type,
     cost_currency, cost_foreign, cost_rm, pricing_mode,
-    customers ( name, salutation, notes ),
+    customers ( name, salutation, notes, phone ),
     supplier_salespersons ( name ),
     suppliers ( id, supplier_code ),
     regions ( city ),
@@ -3014,6 +3124,8 @@ async function openOrder(uuid) {
   const orderNum    = o.order_no?.replace(/^\D+/, '') || '';
   document.getElementById('detail-oh-id').innerHTML = '<span>' + orderPrefix + '</span>' + orderNum;
   document.getElementById('detail-oh-customer').textContent = custName;
+  const phoneEl = document.getElementById('detail-oh-phone');
+  if (phoneEl) { const ph = o.customers?.phone; phoneEl.textContent = ph || ''; phoneEl.style.display = ph ? '' : 'none'; }
   const createdDate = (o.created_at || '').substring(0, 10);
   document.getElementById('detail-oh-meta').textContent = '建立于 ' + createdDate + ' · ' + tdName + ' · Offtrack Travel';
 
@@ -3132,13 +3244,13 @@ async function openOrder(uuid) {
   if (priceMode === 'total') {
     if (o.pax_total != null) document.getElementById('det-total-pax').value = o.pax_total;
     if (o.price_total != null) document.getElementById('det-total-price').value = o.price_total;
-    if (o.insurance_total != null) document.getElementById('det-tot-insurance').value = o.insurance_total;
     if (o.discount != null) document.getElementById('det-tot-discount').value = o.discount;
     if (o.discount_type) { const el = document.getElementById('det-tot-discount-type'); if (el) el.value = o.discount_type; }
     detCalcTotal();
   } else {
     const pax = parseInt(o.pax_total) || 0;
-    const basePrice = parseFloat(o.price_total) || 0;
+    const basePrice = parseFloat(o.price_total) ||
+      (o.selling_price ? Math.max(0, (parseFloat(o.selling_price) || 0) - (parseFloat(o.insurance_total) || 0) + (parseFloat(o.discount) || 0)) : 0);
     const pricePerPax = pax > 0 ? Math.round(basePrice / pax) : 0;
     document.getElementById('qty-A').value = pax || '';
     document.getElementById('price-A').value = pricePerPax || '';
@@ -3146,14 +3258,37 @@ async function openOrder(uuid) {
     document.getElementById('price-C').value = '';
     document.getElementById('qty-E').value = '';
     document.getElementById('price-E').value = '';
-    if (o.insurance_total != null) document.getElementById('price-insurance').value = o.insurance_total;
     if (o.discount != null) document.getElementById('price-discount').value = o.discount;
     if (o.discount_type) { const el = document.getElementById('price-discount-type'); if (el) el.value = o.discount_type; }
     calcTotal();
   }
+  // Pre-fill insurance breakdown from existing data
+  const insTotal = parseFloat(o.insurance_total) || 0;
+  const paxCount = parseInt(o.pax_total) || 0;
+  const detQtyYoungEl = document.getElementById('det-ins-qty-young');
+  const detQtyElderEl = document.getElementById('det-ins-qty-elder');
+  const detQtySpecialEl = document.getElementById('det-ins-qty-special');
+  const detRateYoungEl = document.getElementById('det-ins-rate-young');
+  const detRateElderEl = document.getElementById('det-ins-rate-elder');
+  const detRateSpecialEl = document.getElementById('det-ins-rate-special');
+  // Reset all breakdown fields first
+  if (detQtyYoungEl) detQtyYoungEl.value = 0;
+  if (detQtyElderEl) detQtyElderEl.value = 0;
+  if (detQtySpecialEl) detQtySpecialEl.value = '';
+  if (detRateYoungEl) detRateYoungEl.value = 88;
+  if (detRateElderEl) detRateElderEl.value = 233;
+  if (detRateSpecialEl) detRateSpecialEl.value = '';
+  // Only populate if there is actual insurance
+  if (insTotal > 0 && paxCount > 0) {
+    if (detQtyYoungEl) detQtyYoungEl.value = paxCount;
+    if (detRateYoungEl) detRateYoungEl.value = Math.round(insTotal / paxCount);
+  }
+  detCalcInsBreakdown();
   // Customer notes — read-only display
   const custNotesEl = document.getElementById('det-cust-notes');
   if (custNotesEl) custNotesEl.value = o.customers?.notes || '';
+  const custPhoneEl = document.getElementById('det-cust-phone');
+  if (custPhoneEl) custPhoneEl.value = o.customers?.phone || '';
   // Cost inputs
   if (o.cost_foreign != null) document.getElementById('cost-foreign').value = o.cost_foreign;
   if (o.cost_foreign && o.cost_rm) {
@@ -3191,9 +3326,9 @@ async function loadDetailPayins() {
   const verifiedTotal = data.filter(r=>r.gsh_check==='verified').reduce((s,r) => s + (parseFloat(r.amount_rm)||0), 0);
   const pendingTotal = data.filter(r=>r.gsh_check!=='verified').reduce((s,r) => s + (parseFloat(r.amount_rm)||0), 0);
   const gshStyles = {
-    pending:  { bg: '#FEF3C7', color: '#D97706', label: '⏳' },
-    verified: { bg: '#D1FAE5', color: '#059669', label: '✅' },
-    issue:    { bg: '#FEE2E2', color: '#DC2626', label: '❌' }
+    pending:  { bg: '#FEF3C7', color: '#D97706', label: '🟡 Pending' },
+    verified: { bg: '#D1FAE5', color: '#059669', label: '🟢 Verified' },
+    issue:    { bg: '#FEE2E2', color: '#DC2626', label: '🔴 Issue Found' }
   };
   tbody.innerHTML = data.map((r, i) => {
     const gs = gshStyles[r.gsh_check] || gshStyles.pending;
@@ -3671,10 +3806,11 @@ async function saveEditMode() {
   btn.disabled = false; btn.textContent = '💾 保存更改';
   if (error) { showToast('❌ 保存失败: ' + error.message); return; }
 
-  // Save customer notes if changed
+  // Save customer phone + notes if changed
   const custNotes = document.getElementById('det-cust-notes')?.value ?? null;
-  if (_currentOrder.customer_id && custNotes !== null) {
-    await sb.from('customers').update({ notes: custNotes }).eq('id', _currentOrder.customer_id);
+  const custPhone = document.getElementById('det-cust-phone')?.value?.trim() ?? null;
+  if (_currentOrder.customer_id) {
+    await sb.from('customers').update({ notes: custNotes, phone: custPhone || null }).eq('id', _currentOrder.customer_id);
   }
 
   showToast('✅ 资料已保存');
@@ -3942,37 +4078,58 @@ async function loadInsuranceGlobal() {
   if (error || !data) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:#DC2626">加载失败: '+(error?.message||'')+'</td></tr>'; return; }
   if (!data.length) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:#9CA3AF">暂无保险记录</td></tr>'; return; }
 
-  let pending=0,done=0,premium=0;
+  let cntPending=0,cntVerified=0,cntDone=0,premium=0;
   tbody.innerHTML = data.map(r => {
-    const isDone = r.status === 'purchased' || (!!r.premium_rm && r.status !== 'pending');
-    if (isDone) done++; else pending++;
+    const isPurchased = r.status === 'purchased' || (!!r.premium_rm && r.status !== 'pending' && r.status !== 'td_verified');
+    const isVerified  = r.status === 'td_verified';
+    const isPending   = !isPurchased && !isVerified;
+    if (isPurchased) cntDone++; else if (isVerified) cntVerified++; else cntPending++;
     premium += parseFloat(r.premium_rm)||0;
-    const dot = isDone ? '#059669' : '#EAB308';
+    const dot = isPurchased ? '#059669' : isVerified ? '#4F46E5' : '#EAB308';
+    const rowBg = isPurchased ? '' : isVerified ? ';background:#EEF2FF' : ';background:#FEFCE8';
     const insId = r.id;
     const orderNo = (r.orders?.order_no||'').replace(/'/g,"\\'");
     const insName = (r.insured_name||'').replace(/'/g,"\\'");
-    const pdfBtn = r.pdf_url ? `<a href="${r.pdf_url}" target="_blank" title="查看保单" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:5px;background:#EEF6F3;color:#059669;font-size:14px;text-decoration:none;border:1px solid #BBF7D0">📄</a>` : '';
-    const actionBtns = isDone
-      ? `<span class="ins-action-btn done" style="font-size:10px">已购买</span>`
-      : `<button class="ins-action-btn ins-finish-btn" onclick="openInsFinishModal('${insId}','${orderNo}','${insName}')">标记完成</button>`;
-    return `<tr style="border-bottom:1px solid #F0F2F7${!isDone?';background:#FEFCE8':''}">
-      <td style="padding:10px 12px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${dot}"></span></td>
+    const checkCol = isPurchased || isVerified
+      ? `<span style="font-size:11px;font-weight:700;color:#059669">✓ 已核对</span>`
+      : `<span style="font-size:11px;font-weight:700;color:#D97706">— 未核对</span>`;
+    const pdfUrl = r.pdf_url ? r.pdf_url.replace(/'/g,"\\'") : '';
+    const pdfCell = r.pdf_url
+      ? `<div style="display:flex;gap:4px;align-items:center">
+           <a href="${r.pdf_url}" target="_blank" title="查看保单" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:5px;background:#EEF6F3;color:#059669;font-size:14px;text-decoration:none;border:1px solid #BBF7D0">📄</a>
+           <button class="ins-action-btn" style="font-size:10px;padding:2px 7px" onclick="copyText('${pdfUrl}','保单链接')">📋</button>
+         </div>`
+      : '—';
+    const purchaseStatusChip = isPurchased
+      ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#059669;margin-right:4px"></span><span style="font-size:11px;font-weight:700;color:#059669">已购买</span>`
+      : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9CA3AF;margin-right:4px"></span><span style="font-size:11px;font-weight:600;color:#9CA3AF">未购买</span>`;
+    const actionBtns = isPurchased
+      ? ``
+      : isVerified
+        ? `<button class="ins-action-btn ins-finish-btn" onclick="openInsFinishModal('${insId}','${orderNo}','${insName}')">标记完成</button>`
+        : `<button class="ins-action-btn ins-check-btn" onclick="quickCheckIns('${insId}')">✅ 核对</button>
+           <button class="ins-action-btn ins-finish-btn" onclick="openInsFinishModal('${insId}','${orderNo}','${insName}')">标记完成</button>`;
+    return `<tr style="border-bottom:1px solid #F0F2F7${rowBg}">
+      <td style="padding:10px 12px">${purchaseStatusChip}</td>
       <td style="padding:10px 12px"><span style="color:#3B7A68;font-weight:700">${r.orders?.order_no||'—'}</span></td>
       <td style="padding:10px 12px;font-weight:600">${r.insured_name||'—'}</td>
+      <td style="padding:10px 12px">${checkCol}</td>
       <td style="padding:10px 12px;color:#6B7280">${r.start_date||'—'}</td>
       <td style="padding:10px 12px;color:#6B7280">${r.end_date||'—'}</td>
       <td style="padding:10px 12px;color:#6B7280">${r.orders?.regions?.city||'—'}</td>
       <td style="padding:10px 12px;text-align:right;font-weight:700">${r.premium_rm ? parseFloat(r.premium_rm).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0}) : '—'}</td>
-      <td style="padding:10px 12px">${pdfBtn}</td>
+      <td style="padding:10px 12px">${pdfCell}</td>
       <td style="padding:10px 12px;white-space:nowrap;display:flex;gap:5px;align-items:center">
         ${actionBtns}
-        <button class="ins-action-btn" style="font-size:10px;background:#EEF2FF;color:#4F46E5;border-color:#C7D2FE" onclick="openInsEditModal('${insId}')">✏️ 编辑</button>
+        <button class="ins-action-btn" style="font-size:10px;background:#EEF2FF;color:#4F46E5;border-color:#C7D2FE" onclick="openInsEditModal('${insId}')">✏️</button>
         <button class="ins-action-btn" style="font-size:10px;background:#FEF2F2;color:#DC2626;border-color:#FECACA" onclick="deleteInsRecord('${insId}','${insName}')">🗑️</button>
       </td>
     </tr>`;
   }).join('');
-  document.getElementById('ins-stat-pending').textContent = pending+' 份';
-  document.getElementById('ins-stat-done').textContent = done+' 份';
+  document.getElementById('ins-stat-pending').textContent = cntPending+' 份';
+  const verifiedEl = document.getElementById('ins-stat-verified');
+  if (verifiedEl) verifiedEl.textContent = cntVerified+' 份';
+  document.getElementById('ins-stat-done').textContent = cntDone+' 份';
   document.getElementById('ins-stat-premium').textContent = 'RM '+premium.toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
 }
 
@@ -4145,18 +4302,17 @@ function renderPayIns(data) {
     // GSH check status: 'pending' (yellow), 'verified' (green), 'issue' (red)
     const gshStat = r.gsh_check || 'pending';
     const gshStyles = {
-      pending:  { bg: '#FEF3C7', color: '#D97706', border: '#FDE68A', label: '⏳ Pending', dot: '#D97706' },
-      verified: { bg: '#D1FAE5', color: '#059669', border: '#A7F3D0', label: '✅ Verified', dot: '#059669' },
-      issue:    { bg: '#FEE2E2', color: '#DC2626', border: '#FECACA', label: '❌ Issue', dot: '#DC2626' }
+      pending:  { bg: '#FEF3C7', color: '#D97706', border: '#FDE68A', label: '🟡 Pending', dot: '#D97706' },
+      verified: { bg: '#D1FAE5', color: '#059669', border: '#A7F3D0', label: '🟢 Verified', dot: '#059669' },
+      issue:    { bg: '#FEE2E2', color: '#DC2626', border: '#FECACA', label: '🔴 Issue Found', dot: '#DC2626' }
     };
     const gs = gshStyles[gshStat] || gshStyles.pending;
-    const gshDisplay = `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:${gs.bg};color:${gs.color}">${gs.label}</span>`;
-    
+
     // GSH toggle button - only for Finance/Master/Operation roles
     const nextGshStatus = gshStat === 'pending' ? 'verified' : gshStat === 'verified' ? 'issue' : 'pending';
-    const gshBtn = canChangeGsh 
-      ? `<button onclick="cycleGshStatus('${r.id}','${nextGshStatus}')" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid ${gs.border};background:${gs.bg};color:${gs.color};cursor:pointer;white-space:nowrap">${gshStat === 'pending' ? '核实' : gshStat === 'verified' ? '标记问题' : '重置'}</button>`
-      : `<span style="font-size:10px;color:#9CA3AF">—</span>`;
+    const gshBtn = canChangeGsh
+      ? `<button onclick="cycleGshStatus('${r.id}','${nextGshStatus}')" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid ${gs.border};background:${gs.bg};color:${gs.color};cursor:pointer;white-space:nowrap">${gs.label}</button>`
+      : `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:${gs.bg};color:${gs.color}">${gs.label}</span>`;
     
     // Finance check status (separate from GSH bank check)
     const checkStat = r.checked || 'unchecked';
@@ -4595,6 +4751,38 @@ function calcCostRM() {
   if (el) el.textContent = '≈ RM ' + rm.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
   calcProfit();
 }
+function detAutoCalcIns() {
+  // Only auto-sync pax → insurance qty when in edit mode
+  if (!editMode) return;
+  const qA = parseFloat(document.getElementById('qty-A')?.value) || 0;
+  const qC = parseFloat(document.getElementById('qty-C')?.value) || 0;
+  const qE = parseFloat(document.getElementById('qty-E')?.value) || 0;
+  const qYEl = document.getElementById('det-ins-qty-young');
+  const qEEl = document.getElementById('det-ins-qty-elder');
+  if (qYEl) qYEl.value = qA + qC;
+  if (qEEl) qEEl.value = qE;
+  detCalcInsBreakdown();
+}
+function detCalcInsBreakdown() {
+  const qY = parseFloat(document.getElementById('det-ins-qty-young')?.value) || 0;
+  const rY = parseFloat(document.getElementById('det-ins-rate-young')?.value) || 0;
+  const qE = parseFloat(document.getElementById('det-ins-qty-elder')?.value) || 0;
+  const rE = parseFloat(document.getElementById('det-ins-rate-elder')?.value) || 0;
+  const qS = parseFloat(document.getElementById('det-ins-qty-special')?.value) || 0;
+  const rS = parseFloat(document.getElementById('det-ins-rate-special')?.value) || 0;
+  const sub1 = qY * rY, sub2 = qE * rE, sub3 = qS * rS, total = sub1 + sub2 + sub3;
+  const fmt = n => n > 0 ? n.toLocaleString('en-MY') : '—';
+  const setCell = (id, n) => { const el = document.getElementById(id); if (!el) return; el.textContent = fmt(n); el.style.color = n > 0 ? '#D97706' : '#9CA3AF'; };
+  setCell('det-ins-sub-young', sub1); setCell('det-ins-sub-elder', sub2); setCell('det-ins-sub-special', sub3);
+  const totalCell = document.getElementById('det-ins-total-cell');
+  if (totalCell) totalCell.textContent = 'RM ' + (total > 0 ? total.toLocaleString('en-MY') : '0');
+  const insEl = document.getElementById('price-insurance');
+  if (insEl) insEl.value = total || '';
+  const insTotEl = document.getElementById('det-tot-insurance');
+  if (insTotEl) insTotEl.value = total || '';
+  const isPaxMode = document.getElementById('det-price-pax')?.style.display !== 'none';
+  if (isPaxMode) { calcTotal(); } else { detCalcTotal(); }
+}
 function calcTotal() {
   const g = id => parseFloat(document.getElementById(id)?.value) || 0;
   const stA = g('qty-A') * g('price-A');
@@ -4674,17 +4862,22 @@ function calcProfit() {
   const profit = sell - costRM;
   el.textContent = 'RM ' + profit.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
   el.style.color = profit >= 0 ? '#059669' : '#DC2626';
-  // Also compute 实际利润 = 总入账 - 总出账
+  // actual-profit-display: TDs see estimated profit (sell - cost); Finance/Master/Operation see 入账 - 出账
   const actualEl = document.getElementById('actual-profit-display');
   if (actualEl) {
-    const paidEl = document.querySelector('#tab-payin .pay-summary-row td:nth-child(3)');
-    const paidOut = document.querySelector('#tab-payout .pay-summary-row td:nth-child(3)');
-    const totalIn = paidEl ? parseFloat(paidEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
-    const totalOut = paidOut ? parseFloat(paidOut.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
-    const actual = totalIn - totalOut;
     const fmt = n => 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
-    actualEl.textContent = (totalIn > 0 || totalOut > 0) ? fmt(actual) : 'RM —';
-    actualEl.style.color = actual >= 0 ? '#059669' : '#DC2626';
+    if (currentUser?.roleKey === 'td') {
+      actualEl.textContent = sell > 0 ? fmt(profit) : 'RM —';
+      actualEl.style.color = profit >= 0 ? '#059669' : '#DC2626';
+    } else {
+      const paidEl = document.querySelector('#tab-payin .pay-summary-row td:nth-child(3)');
+      const paidOut = document.querySelector('#tab-payout .pay-summary-row td:nth-child(3)');
+      const totalIn = paidEl ? parseFloat(paidEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
+      const totalOut = paidOut ? parseFloat(paidOut.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
+      const actual = totalIn - totalOut;
+      actualEl.textContent = (totalIn > 0 || totalOut > 0) ? fmt(actual) : 'RM —';
+      actualEl.style.color = actual >= 0 ? '#059669' : '#DC2626';
+    }
   }
 }
 
@@ -5264,7 +5457,7 @@ async function submitOrder() {
 
   // Insert order
   const brand = document.getElementById('cr-brand')?.value || 'Offtrack Travel';
-  const { error: ordErr } = await sb.from('orders').insert({
+  const { data: ordData, error: ordErr } = await sb.from('orders').insert({
     order_no: orderNo, status: 'confirmed', brand: brand,
     customer_id: customerId,
     region_id: regionId,
@@ -5285,8 +5478,18 @@ async function submitOrder() {
     cost_currency: costCurrency,
     cost_foreign: costForeign,
     cost_rm: costRM
-  });
+  }).select('id').single();
   if (ordErr) { alert('创建订单失败: ' + ordErr.message); return; }
+
+  // Upload any queued quote files
+  const orderId = ordData.id;
+  for (const [type, file] of Object.entries(_crFiles)) {
+    const url = await uploadToStorage(file, 'order-files');
+    if (url) {
+      await sb.from('order_files').insert({ order_id: orderId, file_name: file.name, file_url: url, file_type: type });
+    }
+  }
+  Object.keys(_crFiles).forEach(k => delete _crFiles[k]);
 
   // Increment supplier next_order_seq
   await sb.from('suppliers').update({ next_order_seq: nextSeq + 1 }).eq('id', supId);
@@ -5307,15 +5510,45 @@ function setPriceMode(mode) {
 }
 
 let _paxSell = 0, _paxCost = 0;
+const _crFiles = {};
+function crFileSelected(type, input) {
+  const file = input.files[0];
+  if (!file) return;
+  _crFiles[type] = file;
+  const nameId = type === 'supplier_quote' ? 'cr-supplier-file-name' : 'cr-offtrack-file-name';
+  const el = document.getElementById(nameId);
+  if (el) { el.textContent = '✅ ' + file.name; el.style.color = '#16a34a'; }
+}
 // ── CREATE ORDER JS ──
 function autoCalcIns() {
   const qA = parseFloat(document.getElementById('cr-qty-A')?.value) || 0;
+  const qC = parseFloat(document.getElementById('cr-qty-C')?.value) || 0;
   const qE = parseFloat(document.getElementById('cr-qty-E')?.value) || 0;
-  const ins = qA * 88 + qE * 233;
+  const qYEl = document.getElementById('ins-qty-young');
+  const qEEl = document.getElementById('ins-qty-elder');
+  if (qYEl) qYEl.value = qA + qC;
+  if (qEEl) qEEl.value = qE;
+  calcInsBreakdown();
+}
+function calcInsBreakdown() {
+  const qY = parseFloat(document.getElementById('ins-qty-young')?.value) || 0;
+  const rY = parseFloat(document.getElementById('ins-rate-young')?.value) || 0;
+  const qE = parseFloat(document.getElementById('ins-qty-elder')?.value) || 0;
+  const rE = parseFloat(document.getElementById('ins-rate-elder')?.value) || 0;
+  const qS = parseFloat(document.getElementById('ins-qty-special')?.value) || 0;
+  const rS = parseFloat(document.getElementById('ins-rate-special')?.value) || 0;
+  const sub1 = qY * rY, sub2 = qE * rE, sub3 = qS * rS, total = sub1 + sub2 + sub3;
+  const fmt = n => n > 0 ? n.toLocaleString('en-MY') : '—';
+  const setCell = (id, n) => { const el = document.getElementById(id); if (!el) return; el.textContent = fmt(n); el.style.color = n > 0 ? '#D97706' : '#9CA3AF'; };
+  setCell('ins-sub-young', sub1); setCell('ins-sub-elder', sub2); setCell('ins-sub-special', sub3);
+  const totalCell = document.getElementById('ins-total-cell');
+  if (totalCell) totalCell.textContent = 'RM ' + (total > 0 ? total.toLocaleString('en-MY') : '0');
   const insEl = document.getElementById('cr-insurance');
-  if (insEl) insEl.value = ins > 0 ? ins : '';
-  const paxEl = document.getElementById('ins-pax');
-  if (paxEl) paxEl.value = (qA + qE) > 0 ? (qA + qE) : '';
+  if (insEl) insEl.value = total || '';
+  const insTotEl = document.getElementById('cr-tot-insurance');
+  if (insTotEl) insTotEl.value = total || '';
+  calcPaxTotal();
+  calcTotalMode();
 }
 function calcPaxTotal() {
   const g = id => parseFloat(document.getElementById(id)?.value) || 0;
@@ -5403,17 +5636,25 @@ function calcFinalPrice() {
   const fe = document.getElementById('final-sell-price');
   const pe = document.getElementById('est-profit');
   if (fe) fe.textContent = _paxSell > 0 ? fmt(final) : 'RM —';
-  if (pe) pe.textContent = _paxSell > 0 ? fmt(profit) : 'RM —';
+  if (pe) { pe.textContent = _paxSell > 0 ? fmt(profit) : 'RM —'; if (_paxSell > 0) pe.style.color = profit >= 0 ? '#065F46' : '#DC2626'; }
 }
 
 function setInsurance(on) {
   document.getElementById('ins-detail').style.display = on ? '' : 'none';
   document.getElementById('ins-yes-btn').classList.toggle('sel', on);
   document.getElementById('ins-no-btn').classList.toggle('sel', !on);
+  if (!on) {
+    const insEl = document.getElementById('cr-insurance');
+    const insTotEl = document.getElementById('cr-tot-insurance');
+    if (insEl) insEl.value = '';
+    if (insTotEl) insTotEl.value = '';
+    calcPaxTotal();
+    calcTotalMode();
+  }
   calcFinalPrice();
 }
 
-function setInsStatus(v) {
+function setCrInsStatus(v) {
   ['no','partial','yes'].forEach(k => {
     const el = document.getElementById('ins-status-' + k + '-btn');
     if (el) el.classList.toggle('sel', k === v);
@@ -5731,7 +5972,9 @@ async function submitGlobalUpload() {
   if (!orderNo || !file) { showToast('⚠️ 请选择订单和文件'); return; }
   let orderId = _ordersCache.find(o => o.id === orderNo)?.uuid || null;
   if (!orderId) {
-    const { data: ord } = await sb.from('orders').select('id').eq('order_no', orderNo).maybeSingle();
+    let ordQ = sb.from('orders').select('id').eq('order_no', orderNo);
+    if (currentUser.roleKey === 'td' && currentUser.id) ordQ = ordQ.eq('td_id', currentUser.id);
+    const { data: ord } = await ordQ.maybeSingle();
     if (!ord) { showToast('❌ 找不到订单 ' + orderNo); return; }
     orderId = ord.id;
   }
@@ -6234,6 +6477,25 @@ async function submitInsCreate() {
   if (_currentOrder) loadDetailInsurance();
 }
 
+function copyInsFormLink() {
+  copyText(INSURANCE_FORM_URL, '表单链接');
+}
+function copyText(text, label) {
+  navigator.clipboard.writeText(text).then(() => showToast('📋 ' + (label||'') + ' 已复制')).catch(() => {
+    const t = document.createElement('textarea');
+    t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
+    showToast('📋 ' + (label||'') + ' 已复制');
+  });
+}
+
+async function quickCheckIns(insId) {
+  const { error } = await sb.from('insurance').update({ status: 'td_verified' }).eq('id', insId);
+  if (error) { showToast('❌ 更新失败: ' + error.message); return; }
+  showToast('✅ 已核对，Finance 可以处理了');
+  if (document.getElementById('page-insurance-global')?.classList.contains('active')) loadInsuranceGlobal();
+  if (_currentOrder) loadDetailInsurance();
+}
+
 async function submitInsFinish() {
   const fee        = parseFloat(document.getElementById('if-fee').value) || null;
   const policyLink = document.getElementById('if-policy-link')?.value.trim() || null;
@@ -6251,15 +6513,27 @@ async function submitInsFinish() {
   if (document.getElementById('page-insurance-global')?.classList.contains('active')) loadInsuranceGlobal();
   if (_currentOrder) loadDetailInsurance();
 }
+function parseSal(fullName) {
+  const sals = ['Mr', 'Ms', 'Mrs', 'Dr'];
+  const parts = (fullName || '').trim().split(' ');
+  if (parts.length > 1 && sals.includes(parts[0])) {
+    return { sal: parts[0], name: parts.slice(1).join(' ') };
+  }
+  return { sal: 'Mr', name: fullName || '' };
+}
 let _insEditId = null;
 async function openInsEditModal(insId) {
   _insEditId = insId;
   const { data: r, error } = await sb.from('insurance').select('*').eq('id', insId).maybeSingle();
   if (error || !r) { showToast('❌ 无法加载记录'); return; }
-  document.getElementById('ie-insured-name').value  = r.insured_name || '';
+  const insParsed = parseSal(r.insured_name);
+  document.getElementById('ie-insured-sal').value   = insParsed.sal;
+  document.getElementById('ie-insured-name').value  = insParsed.name;
   document.getElementById('ie-insured-ic').value    = r.insured_ic || '';
   document.getElementById('ie-insured-phone').value = r.insured_phone || '';
-  document.getElementById('ie-bene-name').value     = r.bene_name || '';
+  const beneParsed = parseSal(r.bene_name);
+  document.getElementById('ie-bene-sal').value      = beneParsed.sal;
+  document.getElementById('ie-bene-name').value     = beneParsed.name;
   document.getElementById('ie-bene-ic').value       = r.bene_ic || '';
   document.getElementById('ie-bene-phone').value    = r.bene_phone || '';
   document.getElementById('ie-bene-dob').value      = r.bene_dob || '';
@@ -6274,13 +6548,16 @@ async function openInsEditModal(insId) {
 }
 async function submitInsEdit() {
   if (!_insEditId) return;
+  const insSal  = document.getElementById('ie-insured-sal').value;
   const insName = document.getElementById('ie-insured-name').value.trim();
   if (!insName) { showToast('⚠️ 申请人不能为空'); return; }
+  const beneSal  = document.getElementById('ie-bene-sal').value;
+  const beneName = document.getElementById('ie-bene-name').value.trim();
   const { error } = await sb.from('insurance').update({
-    insured_name:  insName,
+    insured_name:  insSal + ' ' + insName,
     insured_ic:    document.getElementById('ie-insured-ic').value.trim() || null,
     insured_phone: document.getElementById('ie-insured-phone').value.trim() || null,
-    bene_name:     document.getElementById('ie-bene-name').value.trim() || null,
+    bene_name:     beneSal && beneName ? beneSal + ' ' + beneName : beneName || null,
     bene_ic:       document.getElementById('ie-bene-ic').value.trim() || null,
     bene_phone:    document.getElementById('ie-bene-phone').value.trim() || null,
     bene_dob:      document.getElementById('ie-bene-dob').value || null,
@@ -6311,9 +6588,9 @@ async function deleteInsRecord(insId, name) {
 function setInsStatus(mode) {
   const btns = document.querySelectorAll('#ins-status-toggle .ist-btn');
   btns.forEach(b => b.className = 'ist-btn');
-  if (mode === 'full')    btns[0].classList.add('sel-full');
+  if (mode === 'none')    btns[0].classList.add('sel-none');
   if (mode === 'partial') btns[1].classList.add('sel-partial');
-  if (mode === 'none')    btns[2].classList.add('sel-none');
+  if (mode === 'done')    btns[2].classList.add('sel-full');
 }
 
 function toggleUserStatus(btn, statusId) {
@@ -6329,7 +6606,15 @@ function toggleUserStatus(btn, statusId) {
 }
 
 /* ── Pay-In / Pay-Out Modals ── */
-function openPayInModal()  { document.getElementById('modal-pay-in').classList.add('open'); refreshBankSelects(); }
+function openPayInModal() {
+  document.getElementById('modal-pay-in').classList.add('open');
+  refreshBankSelects();
+  const canFinance = ['master','operation','finance'].includes(currentUser?.roleKey);
+  ['pi-gsh','pi-invoice-status'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !canFinance;
+  });
+}
 async function openPayOutModal() {
   document.getElementById('modal-pay-out').classList.add('open');
   // Load suppliers into dropdown (reuse edit-form cache)
@@ -6548,6 +6833,11 @@ async function openEditPayIn(id) {
   if (info) info.innerHTML = r.receipt_url ? `<a href="${r.receipt_url}" target="_blank" style="font-size:11px;color:#3B7A68;font-weight:700">📎 查看当前收据</a>` : '<span style="font-size:11px;color:#9CA3AF">暂无收据</span>';
   const fileInput = document.getElementById('epi-receipt-file');
   if (fileInput) fileInput.value = '';
+  const canFinance = ['master','operation','finance'].includes(currentUser?.roleKey);
+  ['epi-gsh','epi-invoice-status'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !canFinance;
+  });
   document.getElementById('modal-edit-payin').classList.add('open');
 }
 async function submitEditPayIn() {
@@ -7012,7 +7302,7 @@ async function submitEditPayOut() {
           <tr style="background:#F7F8FA;border-bottom:2px solid #E5E7EB">
             <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">状态</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">日期</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">订单号</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">类型</th><th style="padding:10px 12px;text-align:right;font-weight:800;white-space:nowrap">金额 (RM)</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">Bank</th>
             <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">收据</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">GSH 核对银行</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">Invoice Status</th><th class="check-col" style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">检查</th>
-            <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">Finance 备注</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">操作</th>
+            <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">备注</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">操作</th>
           </tr>
         </thead>
         <tbody id="payin-tbody">
@@ -7073,7 +7363,7 @@ async function submitEditPayOut() {
             <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">状态</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">日期</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">订单号</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">Supplier</th><th style="padding:10px 12px;text-align:right;font-weight:800;white-space:nowrap">货币</th><th style="padding:10px 12px;text-align:right;font-weight:800;white-space:nowrap">金额（外币）</th><th style="padding:10px 12px;text-align:right;font-weight:800;white-space:nowrap">金额（RM）</th><th style="padding:10px 12px;text-align:right;font-weight:800;white-space:nowrap">Bank Charges</th>
             <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">收据</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">Supplier Invoice</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">转账凭证</th>
             <th class="check-col" style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">检查</th>
-            <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">Finance 备注</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">操作</th>
+            <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">备注</th><th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">操作</th>
           </tr>
         </thead>
         <tbody id="payout-tbody">
@@ -7160,15 +7450,15 @@ async function submitEditPayOut() {
       </div>
       <div class="mf-row col2">
         <div class="mf-group">
-          <label>GSH 核对银行</label>
+          <label>GSH 核对银行<span class="fo-badge">🔒 Finance only</span></label>
           <select id="pi-gsh">
-            <option value="pending">⏳ Pending</option>
-            <option value="verified">✅ Verified</option>
-            <option value="issue">❌ Issue</option>
+            <option value="pending">🟡 Pending</option>
+            <option value="verified">🟢 Verified</option>
+            <option value="issue">🔴 Issue Found</option>
           </select>
         </div>
         <div class="mf-group">
-          <label>Invoice Status</label>
+          <label>Invoice Status<span class="fo-badge">🔒 Finance only</span></label>
           <select id="pi-invoice-status">
             <option value="">— 未处理</option>
             <option value="done">✅ Done</option>
@@ -7475,7 +7765,15 @@ async function submitEditPayOut() {
       <div class="mf-row col2">
         <div class="mf-group">
           <label>Insured Name 旅客名字 *</label>
-          <input type="text" id="ie-insured-name" placeholder="全名"/>
+          <div style="display:grid;grid-template-columns:90px 1fr;gap:6px">
+            <select id="ie-insured-sal">
+              <option value="Mr">Mr</option>
+              <option value="Ms">Ms</option>
+              <option value="Mrs">Mrs</option>
+              <option value="Dr">Dr</option>
+            </select>
+            <input type="text" id="ie-insured-name" placeholder="Full Name 全名"/>
+          </div>
         </div>
         <div class="mf-group">
           <label>Insured IC 旅客身份证</label>
@@ -7493,7 +7791,15 @@ async function submitEditPayOut() {
       <div class="mf-row col2">
         <div class="mf-group">
           <label>Beneficiary Name 受益人名字</label>
-          <input type="text" id="ie-bene-name" placeholder="全名"/>
+          <div style="display:grid;grid-template-columns:90px 1fr;gap:6px">
+            <select id="ie-bene-sal">
+              <option value="Mr">Mr</option>
+              <option value="Ms">Ms</option>
+              <option value="Mrs">Mrs</option>
+              <option value="Dr">Dr</option>
+            </select>
+            <input type="text" id="ie-bene-name" placeholder="Full Name 全名"/>
+          </div>
         </div>
         <div class="mf-group">
           <label>Beneficiary IC 受益人身份证</label>
@@ -7627,15 +7933,15 @@ async function submitEditPayOut() {
       </div>
       <div class="mf-row col2">
         <div class="mf-group">
-          <label>GSH 核对银行</label>
+          <label>GSH 核对银行<span class="fo-badge">🔒 Finance only</span></label>
           <select id="epi-gsh">
-            <option value="pending">⏳ Pending</option>
-            <option value="verified">✅ Verified</option>
-            <option value="issue">❌ Issue</option>
+            <option value="pending">🟡 Pending</option>
+            <option value="verified">🟢 Verified</option>
+            <option value="issue">🔴 Issue Found</option>
           </select>
         </div>
         <div class="mf-group">
-          <label>Invoice Status</label>
+          <label>Invoice Status<span class="fo-badge">🔒 Finance only</span></label>
           <select id="epi-invoice-status">
             <option value="">— 未处理</option>
             <option value="done">✅ Done</option>
