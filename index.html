@@ -4105,10 +4105,7 @@ async function loadInsuranceGlobal() {
       : `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9CA3AF;margin-right:4px"></span><span style="font-size:11px;font-weight:600;color:#9CA3AF">未购买</span>`;
     const actionBtns = isPurchased
       ? ``
-      : isVerified
-        ? `<button class="ins-action-btn ins-finish-btn" onclick="openInsFinishModal('${insId}','${orderNo}','${insName}')">标记完成</button>`
-        : `<button class="ins-action-btn ins-check-btn" onclick="quickCheckIns('${insId}')">✅ 核对</button>
-           <button class="ins-action-btn ins-finish-btn" onclick="openInsFinishModal('${insId}','${orderNo}','${insName}')">标记完成</button>`;
+      : `<button class="ins-action-btn ins-finish-btn" onclick="openInsFinishModal('${insId}','${orderNo}','${insName}')">标记完成</button>`;
     return `<tr style="border-bottom:1px solid #F0F2F7${rowBg}">
       <td style="padding:10px 12px">${purchaseStatusChip}</td>
       <td style="padding:10px 12px"><span style="color:#3B7A68;font-weight:700">${r.orders?.order_no||'—'}</span></td>
@@ -6513,6 +6510,35 @@ async function submitInsFinish() {
   if (document.getElementById('page-insurance-global')?.classList.contains('active')) loadInsuranceGlobal();
   if (_currentOrder) loadDetailInsurance();
 }
+function updateCheckToggleBtn() {
+  const section = document.getElementById('ie-check-section');
+  const statusText = document.getElementById('ie-check-status-text');
+  const btn = document.getElementById('ie-check-toggle-btn');
+  if (!section || !btn) return;
+  if (_insEditStatus === 'pending') {
+    section.style.background = '#FEFCE8'; section.style.borderColor = '#FDE68A';
+    statusText.textContent = '— 未核对'; statusText.style.color = '#D97706';
+    btn.textContent = '✅ 核对确认'; btn.style.background = '#059669'; btn.style.color = '#fff';
+  } else if (_insEditStatus === 'td_verified') {
+    section.style.background = '#F0FDF4'; section.style.borderColor = '#BBF7D0';
+    statusText.textContent = '✓ 已核对'; statusText.style.color = '#059669';
+    btn.textContent = '↩️ 取消核对'; btn.style.background = '#FEF3C7'; btn.style.color = '#92400E';
+  } else {
+    section.style.display = 'none';
+  }
+}
+async function toggleInsCheckInModal() {
+  if (!_insEditId) return;
+  const newStatus = _insEditStatus === 'pending' ? 'td_verified' : 'pending';
+  const { error } = await sb.from('insurance').update({ status: newStatus }).eq('id', _insEditId);
+  if (error) { showToast('❌ 更新失败: ' + error.message); return; }
+  _insEditStatus = newStatus;
+  document.getElementById('ie-status').value = newStatus;
+  updateCheckToggleBtn();
+  showToast(newStatus === 'td_verified' ? '✅ 已核对，Finance 可以处理了' : '↩️ 已取消核对');
+  if (document.getElementById('page-insurance-global')?.classList.contains('active')) loadInsuranceGlobal();
+  if (_currentOrder) loadDetailInsurance();
+}
 function parseSal(fullName) {
   const sals = ['Mr', 'Ms', 'Mrs', 'Dr'];
   const parts = (fullName || '').trim().split(' ');
@@ -6544,6 +6570,10 @@ async function openInsEditModal(insId) {
   document.getElementById('ie-pdf-url').value       = r.pdf_url || '';
   document.getElementById('ie-status').value        = r.status || 'pending';
   document.getElementById('ie-notes').value         = r.notes || '';
+  _insEditStatus = r.status || 'pending';
+  const checkSection = document.getElementById('ie-check-section');
+  if (checkSection) checkSection.style.display = 'flex';
+  updateCheckToggleBtn();
   document.getElementById('modal-ins-edit').classList.add('open');
 }
 async function submitInsEdit() {
@@ -7761,6 +7791,10 @@ async function submitEditPayOut() {
       <span class="modal-close" onclick="closeModal('modal-ins-edit')">✕</span>
     </div>
     <div class="modal-body">
+      <div id="ie-check-section" class="ins-check-btn" style="margin-bottom:16px;padding:10px 14px;border-radius:8px;border:1px solid #E5E7EB;display:flex;align-items:center;gap:12px">
+        <span id="ie-check-status-text" style="flex:1;font-size:13px;font-weight:700"></span>
+        <button id="ie-check-toggle-btn" onclick="toggleInsCheckInModal()" style="font-size:12px;font-weight:700;padding:5px 14px;border:none;border-radius:6px;cursor:pointer"></button>
+      </div>
       <div style="font-size:11px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">受保人信息</div>
       <div class="mf-row col2">
         <div class="mf-group">
