@@ -685,6 +685,8 @@ body[data-active-role="finance"] .ins-finish-btn{display:inline-block!important}
 /* TD-only check button */
 .ins-check-btn{display:none!important}
 body[data-active-role="td"] .ins-check-btn{display:inline-block!important}
+.ins-check-td-only{display:none}
+body[data-active-role="td"] .ins-check-td-only{display:flex}
 /* Insurance form link button — Finance doesn't need it */
 .ins-copy-link-btn{display:none!important}
 body[data-active-role="td"] .ins-copy-link-btn,
@@ -4080,8 +4082,8 @@ async function loadInsuranceGlobal() {
 
   let cntPending=0,cntVerified=0,cntDone=0,premium=0;
   tbody.innerHTML = data.map(r => {
-    const isPurchased = r.status === 'purchased' || (!!r.premium_rm && r.status !== 'pending' && r.status !== 'td_verified');
-    const isVerified  = r.status === 'td_verified';
+    const isPurchased = !!r.pdf_url;
+    const isVerified  = !isPurchased && r.status === 'td_verified';
     const isPending   = !isPurchased && !isVerified;
     if (isPurchased) cntDone++; else if (isVerified) cntVerified++; else cntPending++;
     premium += parseFloat(r.premium_rm)||0;
@@ -6497,12 +6499,10 @@ async function submitInsFinish() {
   const fee        = parseFloat(document.getElementById('if-fee').value) || null;
   const policyLink = document.getElementById('if-policy-link')?.value.trim() || null;
   if (!fee) { showToast('⚠️ 请填写实际保费'); return; }
+  if (!policyLink) { showToast('⚠️ 请填写保单链接'); return; }
   if (!_insFinishId) { showToast('❌ 找不到保单记录'); return; }
 
-  const updateData = { premium_rm: fee, status: 'purchased' };
-  if (policyLink) updateData.pdf_url = policyLink;
-
-  const { error } = await sb.from('insurance').update(updateData).eq('id', _insFinishId);
+  const { error } = await sb.from('insurance').update({ premium_rm: fee, pdf_url: policyLink }).eq('id', _insFinishId);
   if (error) { showToast('❌ 更新失败: ' + error.message); return; }
   closeModal('modal-ins-finish');
   showToast('✅ 保单已标记完成');
@@ -6524,7 +6524,7 @@ function updateCheckToggleBtn() {
     statusText.textContent = '✓ 已核对'; statusText.style.color = '#059669';
     btn.textContent = '↩️ 取消核对'; btn.style.background = '#FEF3C7'; btn.style.color = '#92400E';
   } else {
-    section.style.display = 'none';
+    section.style.display = 'none'; // purchased: hide even for TD
   }
 }
 async function toggleInsCheckInModal() {
@@ -6571,8 +6571,6 @@ async function openInsEditModal(insId) {
   document.getElementById('ie-status').value        = r.status || 'pending';
   document.getElementById('ie-notes').value         = r.notes || '';
   _insEditStatus = r.status || 'pending';
-  const checkSection = document.getElementById('ie-check-section');
-  if (checkSection) checkSection.style.display = 'flex';
   updateCheckToggleBtn();
   document.getElementById('modal-ins-edit').classList.add('open');
 }
@@ -7768,7 +7766,7 @@ async function submitEditPayOut() {
       </div>
       <div class="mf-group">
         <label>保单链接 (Google Drive / PDF URL)</label>
-        <input type="url" id="if-policy-link" placeholder="https://drive.google.com/..." style="font-size:12px"/>
+        <input type="url" id="if-policy-link" placeholder="https://drive.google.com/..." style="font-size:12px" required/>
       </div>
       <div class="mf-group">
         <label>备注</label>
@@ -7791,7 +7789,7 @@ async function submitEditPayOut() {
       <span class="modal-close" onclick="closeModal('modal-ins-edit')">✕</span>
     </div>
     <div class="modal-body">
-      <div id="ie-check-section" class="ins-check-btn" style="margin-bottom:16px;padding:10px 14px;border-radius:8px;border:1px solid #E5E7EB;display:flex;align-items:center;gap:12px">
+      <div id="ie-check-section" class="ins-check-td-only" style="margin-bottom:16px;padding:10px 14px;border-radius:8px;border:1px solid #E5E7EB;align-items:center;gap:12px">
         <span id="ie-check-status-text" style="flex:1;font-size:13px;font-weight:700"></span>
         <button id="ie-check-toggle-btn" onclick="toggleInsCheckInModal()" style="font-size:12px;font-weight:700;padding:5px 14px;border:none;border-radius:6px;cursor:pointer"></button>
       </div>
