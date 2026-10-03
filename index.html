@@ -2854,7 +2854,7 @@ async function loadOrders() {
       customers ( name, salutation, notes, phone ),
       supplier_salespersons ( name ),
       regions ( city ),
-      users ( name ),
+      users!td_id ( name ),
       ce:users!ce_id ( name ),
       payins ( amount_rm, gsh_check ),
       payouts ( amount_rm, amount_foreign, currency ),
