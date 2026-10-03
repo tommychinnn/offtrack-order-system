@@ -1224,6 +1224,10 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                 <label>Travel Designer <span class="req">*</span></label>
                 <select id="cr-td"><option value="">— 选择 TD —</option></select>
               </div>
+              <div class="form-group">
+                <label>Customer Experience</label>
+                <select id="cr-ce"><option value="">— 选择 CE —</option></select>
+              </div>
             </div>
           </div>
           <div class="form-section">
@@ -1743,6 +1747,11 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             <div class="form-grid">
               <div class="form-group"><label>Travel Designer</label>
                 <select id="det-td-id" class="editable-field" disabled style="border:1.5px solid #F0F2F7;background:#FAFBFC;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:600;font-family:'Nunito',sans-serif;color:#374151;width:100%">
+                  <option value="">—</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Customer Experience</label>
+                <select id="det-ce-id" class="editable-field" disabled style="border:1.5px solid #F0F2F7;background:#FAFBFC;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:600;font-family:'Nunito',sans-serif;color:#374151;width:100%">
                   <option value="">—</option>
                 </select>
               </div>
@@ -2839,13 +2848,14 @@ async function loadOrders() {
     .from('orders')
     .select(`
       id, order_no, status, source, kol_name, special_notes, date_tbd,
-      depart_date, end_date, created_at, td_id, has_contract, is_archived,
+      depart_date, end_date, created_at, td_id, ce_id, has_contract, is_archived,
       pax_total, price_total, insurance_total, discount, discount_type, selling_price,
       cost_currency, cost_foreign, cost_rm,
       customers ( name, salutation, notes, phone ),
       supplier_salespersons ( name ),
       regions ( city ),
       users ( name ),
+      ce:users!ce_id ( name ),
       payins ( amount_rm, gsh_check ),
       payouts ( amount_rm, amount_foreign, currency ),
       insurance ( id )
@@ -2853,7 +2863,7 @@ async function loadOrders() {
     .order('created_at', { ascending: false });
   // TD role: only show their own orders
   if (currentUser.roleKey === 'td' && currentUser.id) query = query.eq('td_id', currentUser.id);
-  // CE sees all orders (no td_id filter)
+  if (currentUser.roleKey === 'ce' && currentUser.id) query = query.eq('ce_id', currentUser.id);
   // Default: hide archived unless toggle is on
   if (!_showArchived) query = query.eq('is_archived', false);
   const { data: orders, error } = await query;
@@ -3106,6 +3116,7 @@ async function openOrder(uuid) {
   const supCode       = o.suppliers?.supplier_code || '';
   const supplierLabel = supCode ? supCode + ' · ' + spName : spName;
   const tdName    = o.users?.name || '—';
+  const ceName    = o.ce?.name || '—';
   const total     = parseFloat(o.selling_price) || 0;
   const paid      = (o.payins || []).reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
   const balance   = total - paid;
@@ -3205,6 +3216,7 @@ async function openOrder(uuid) {
     el.innerHTML = `<option value="${val || ''}">${label || '—'}</option>`;
   };
   setSelectCurrent('det-td-id',          o.td_id || '',                    tdName);
+  setSelectCurrent('det-ce-id',          o.ce_id || '',                    ceName);
   // Region combobox: set hidden value + display text
   const regHidden = document.getElementById('det-region-id'); if (regHidden) regHidden.value = o.region_id || '';
   const regDisp = document.getElementById('det-region-display'); if (regDisp) regDisp.value = region || '';
@@ -3721,6 +3733,15 @@ async function toggleEditMode() {
   tdSel.innerHTML = '<option value="">— 选择 TD —</option>' +
     (tds || []).map(u => `<option value="${u.id}"${u.id === curTdId ? ' selected' : ''}>${u.name}</option>`).join('');
 
+  // Load CEs → det-ce-id
+  const { data: cesEdit } = await sb.from('users').select('id, name').eq('role','ce').eq('is_active',true).order('name');
+  const ceSel = document.getElementById('det-ce-id');
+  const curCeId = _currentOrder.ce_id || '';
+  if (ceSel) {
+    ceSel.innerHTML = '<option value="">— 选择 CE —</option>' +
+      (cesEdit || []).map(u => `<option value="${u.id}"${u.id === curCeId ? ' selected' : ''}>${u.name}</option>`).join('');
+  }
+
   // Enable all editable fields
   document.querySelectorAll('#tab-basic .editable-field').forEach(f => {
     if (f.tagName === 'SELECT') { f.disabled = false; f.style.background = '#fff'; f.style.borderColor = '#3B7A68'; f.style.cursor = 'pointer'; }
@@ -3783,6 +3804,7 @@ async function saveEditMode() {
   btn.disabled = true; btn.textContent = '⏳ 保存中...';
 
   const tdId      = document.getElementById('det-td-id').value || null;
+  const ceId      = document.getElementById('det-ce-id')?.value || null;
   const regionId  = document.getElementById('det-region-id').value || null;
   const supId     = document.getElementById('det-supplier-id').value || null;
   const spId      = document.getElementById('det-salesperson-id').value || null;
@@ -3822,7 +3844,7 @@ async function saveEditMode() {
   const orderUpdate = { order_no: newOrderNo || _currentOrder.order_no };
   const { error } = await sb.from('orders').update({
     ...orderUpdate,
-    td_id: tdId, region_id: regionId,
+    td_id: tdId, ce_id: ceId, region_id: regionId,
     supplier_id: supId, supplier_salesperson_id: spId,
     source, kol_name: kolName, status,
     special_notes: notes,
@@ -3947,6 +3969,7 @@ async function loadDashboard() {
     .select('id,order_no,status,depart_date,end_date,date_tbd,selling_price,cost_rm,pax_total,customers(name),regions(city),payins(amount_rm,gsh_check)')
     .order('depart_date', { ascending: true });
   if (currentUser.roleKey === 'td' && currentUser.id) dashQuery = dashQuery.eq('td_id', currentUser.id);
+  if (currentUser.roleKey === 'ce' && currentUser.id) dashQuery = dashQuery.eq('ce_id', currentUser.id);
   const { data: orders } = await dashQuery;
   if (!orders) return;
 
@@ -5455,6 +5478,13 @@ async function initCreateForm() {
     tdSel.innerHTML = '<option value="">— 选择 TD —</option>' +
       tds.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
   }
+  // Load CEs → cr-ce
+  const { data: ces } = await sb.from('users').select('id,name').eq('role','ce').eq('is_active',true).order('name');
+  const ceSel = document.getElementById('cr-ce');
+  if (ceSel && ces) {
+    ceSel.innerHTML = '<option value="">— 选择 CE —</option>' +
+      ces.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+  }
   // Sync KOL list → cr-kol
   await loadKols();
   // Sync source list → cr-source
@@ -5572,6 +5602,7 @@ async function submitOrder() {
     customer_id: customerId,
     region_id: regionId,
     td_id: document.getElementById('cr-td')?.value || null,
+    ce_id: document.getElementById('cr-ce')?.value || null,
     supplier_id: supId,
     supplier_salesperson_id: salesId || null,
     source: source, kol_name: kolName,
@@ -6810,13 +6841,13 @@ async function submitInsFinish() {
   const _insFinishIdCopy = _insFinishId;
   const { error } = await sb.from('insurance').update({ premium_rm: fee, pdf_url: policyLink }).eq('id', _insFinishIdCopy);
   if (error) { showToast('❌ 更新失败: ' + error.message); return; }
-  // Trigger 4b: notify TD + CE that insurance is bought — send policy to customer
+  // Trigger 4b: notify TD + assigned CE that insurance is bought — send policy to customer
   try {
-    const { data: _insData } = await sb.from('insurance').select('order_id, orders!inner(order_no, td_id)').eq('id', _insFinishIdCopy).maybeSingle();
+    const { data: _insData } = await sb.from('insurance').select('order_id, orders!inner(order_no, td_id, ce_id)').eq('id', _insFinishIdCopy).maybeSingle();
     if (_insData?.orders?.order_no) {
       const _msg = `保险已完成（${_insData.orders.order_no}）— 请发保单给顾客`;
-      await sendNotif('insurance_done', _msg, _insData.orders.order_no, _insData.order_id, null, _insData.orders.td_id);
-      await sendNotif('insurance_done', _msg, _insData.orders.order_no, _insData.order_id, 'ce', null);
+      if (_insData.orders.td_id) await sendNotif('insurance_done', _msg, _insData.orders.order_no, _insData.order_id, null, _insData.orders.td_id);
+      if (_insData.orders.ce_id) await sendNotif('insurance_done', _msg, _insData.orders.order_no, _insData.order_id, null, _insData.orders.ce_id);
     }
   } catch(e) {}
   closeModal('modal-ins-finish');
