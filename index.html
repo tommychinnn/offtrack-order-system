@@ -4362,10 +4362,13 @@ let _payinsCache = [];
 async function loadPayIns() {
   const tbody = document.getElementById('payin-tbody');
   const isTD = currentUser.roleKey === 'td';
+  const isCE = currentUser.roleKey === 'ce';
+  const needsFilter = isTD || isCE;
   let query = sb.from('payins')
-    .select(`id,amount_rm,date,payment_type,bank,invoice_status,receipt_url,gsh_check,gsh_invoice_url,checked,finance_note,orders${isTD?'!inner':''}(order_no,td_id,customers(name))`)
+    .select(`id,amount_rm,date,payment_type,bank,invoice_status,receipt_url,gsh_check,gsh_invoice_url,checked,finance_note,orders${needsFilter?'!inner':''}(order_no,td_id,ce_id,customers(name))`)
     .order('date', { ascending: false });
   if (isTD) query = query.eq('orders.td_id', currentUser.id);
+  if (isCE) query = query.eq('orders.ce_id', currentUser.id);
   const { data, error } = await query;
   if (error) { tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:40px;color:#DC2626">加载失败</td></tr>'; return; }
   if (!data||!data.length) { tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:40px;color:#9CA3AF">暂无入账记录</td></tr>'; return; }
