@@ -3094,14 +3094,15 @@ async function openOrder(uuid) {
   const { data: o, error } = await sb.from('orders').select(`
     id, order_no, status, source, kol_name, special_notes, date_tbd,
     depart_date, end_date, created_at, has_contract, checklist,
-    td_id, region_id, supplier_id, supplier_salesperson_id, customer_id,
+    td_id, ce_id, region_id, supplier_id, supplier_salesperson_id, customer_id,
     pax_total, price_total, selling_price, insurance_total, discount, discount_type,
     cost_currency, cost_foreign, cost_rm, pricing_mode,
     customers ( name, salutation, notes, phone ),
     supplier_salespersons ( name ),
     suppliers ( id, supplier_code ),
     regions ( city ),
-    users ( name ),
+    users!td_id ( name ),
+    ce:users!ce_id ( name ),
     payins ( amount_rm, payment_type, date ),
     insurance ( id )
   `).eq('id', uuid).maybeSingle();
@@ -4097,7 +4098,7 @@ async function loadFinanceLedger() {
   if (outTbody) outTbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#9CA3AF">⏳ 加载中...</td></tr>';
 
   const [{ data: ins }, { data: outs }] = await Promise.all([
-    sb.from('payins').select('id,date,amount_rm,payment_type,bank,receipt_url,finance_note,orders(order_no,customers(name),users(name))').order('date', { ascending: false }),
+    sb.from('payins').select('id,date,amount_rm,payment_type,bank,receipt_url,finance_note,orders(order_no,customers(name),users!td_id(name))').order('date', { ascending: false }),
     sb.from('payouts').select('id,date,amount_rm,currency,receipt_url,finance_note,orders(order_no,regions(city)),suppliers(supplier_code)').order('date', { ascending: false }),
   ]);
 
