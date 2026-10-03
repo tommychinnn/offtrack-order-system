@@ -4924,6 +4924,26 @@ function syncSidebar() {
 // ── ORDER DETAIL price mode toggle ──
 function detSetPriceMode(mode) {
   const isPax = mode === 'pax';
+  const wasPax = document.getElementById('det-price-pax')?.style.display !== 'none';
+
+  // Sync values when toggling (not on initial load where caller sets values afterwards)
+  if (wasPax !== isPax) {
+    const g = id => parseFloat(document.getElementById(id)?.value) || 0;
+    if (!isPax) {
+      // pax → total: carry over computed totals
+      const totalPax = (g('qty-A') + g('qty-C') + g('qty-E')) || null;
+      const totalPrice = g('qty-A')*g('price-A') + g('qty-C')*g('price-C') + g('qty-E')*g('price-E') || null;
+      if (totalPax) document.getElementById('det-total-pax').value = totalPax;
+      if (totalPrice) document.getElementById('det-total-price').value = totalPrice;
+    } else {
+      // total → pax: put total pax into qty-A, price per pax into price-A
+      const totalPax = g('det-total-pax');
+      const totalPrice = g('det-total-price');
+      if (totalPax) { document.getElementById('qty-A').value = totalPax; document.getElementById('qty-C').value = ''; document.getElementById('qty-E').value = ''; }
+      if (totalPrice && totalPax) document.getElementById('price-A').value = Math.round(totalPrice / totalPax);
+    }
+  }
+
   document.getElementById('det-price-pax').style.display = isPax ? '' : 'none';
   document.getElementById('det-price-total').style.display = isPax ? 'none' : '';
   document.getElementById('det-mode-pax').style.cssText = isPax
@@ -4932,6 +4952,7 @@ function detSetPriceMode(mode) {
   document.getElementById('det-mode-total').style.cssText = isPax
     ? 'font-size:11px'
     : 'font-size:11px;font-weight:800;background:#EEF6F3;border-color:#3B7A68;color:#3B7A68';
+  if (isPax) calcTotal(); else detCalcTotal();
 }
 function detCalcTotal() {
   const tot = (parseFloat(document.getElementById('det-total-price')?.value) || 0)
