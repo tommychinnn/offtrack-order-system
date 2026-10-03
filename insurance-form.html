@@ -110,12 +110,12 @@ body{font-family:'Nunito',sans-serif;background:#F4F6FA;color:#2D2926;min-height
       <label>称谓 + 姓名<span>*</span></label>
       <div class="row2">
         <select id="f-ins-sal">
-          <option value="Mr">Mr</option>
-          <option value="Ms">Ms</option>
-          <option value="Mrs">Mrs</option>
-          <option value="Dr">Dr</option>
+          <option value="MR">MR</option>
+          <option value="MS">MS</option>
+          <option value="MRS">MRS</option>
+          <option value="DR">DR</option>
         </select>
-        <input type="text" id="f-ins-name" placeholder="Full Name 全名"/>
+        <input type="text" id="f-ins-name" placeholder="Full Name 全名" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"/>
       </div>
     </div>
 
@@ -139,12 +139,12 @@ body{font-family:'Nunito',sans-serif;background:#F4F6FA;color:#2D2926;min-height
       <label>称谓 + 姓名<span>*</span></label>
       <div class="row2">
         <select id="f-bene-sal">
-          <option value="Mr">Mr</option>
-          <option value="Ms">Ms</option>
-          <option value="Mrs">Mrs</option>
-          <option value="Dr">Dr</option>
+          <option value="MR">MR</option>
+          <option value="MS">MS</option>
+          <option value="MRS">MRS</option>
+          <option value="DR">DR</option>
         </select>
-        <input type="text" id="f-bene-name" placeholder="Full Name 全名"/>
+        <input type="text" id="f-bene-name" placeholder="Full Name 全名" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"/>
       </div>
     </div>
 
@@ -277,6 +277,21 @@ async function submitForm() {
     alert('提交失败，请重试。\n' + error.message);
     return;
   }
+
+  // Notify TD to verify customer info
+  try {
+    const { data: _ordInfo } = await sb.from('orders').select('td_id').eq('id', ord.id).maybeSingle();
+    if (_ordInfo?.td_id) {
+      await sb.from('notifications').insert({
+        type: 'insurance_buy',
+        message: `顾客已填写保险表格（${orderNo}）— 请核对资料`,
+        order_no: orderNo,
+        order_id: ord.id,
+        target_role: null,
+        target_user_id: _ordInfo.td_id
+      });
+    }
+  } catch(e) {}
 
   document.getElementById('success-order-no').textContent = orderNo;
   document.getElementById('form-body').style.display = 'none';

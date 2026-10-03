@@ -483,16 +483,19 @@ textarea{resize:none;line-height:1.5}
 body[data-active-role="master"] [data-role~="master"]{display:flex}
 body[data-active-role="operation"] [data-role~="operation"]{display:flex}
 body[data-active-role="td"] [data-role~="td"]{display:flex}
+body[data-active-role="ce"] [data-role~="td"]{display:flex}
 body[data-active-role="finance"] [data-role~="finance"]{display:flex}
 /* stats-row with data-role must use grid not flex */
 body[data-active-role="master"] .stats-row[data-role~="master"],
 body[data-active-role="operation"] .stats-row[data-role~="operation"],
 body[data-active-role="td"] .stats-row[data-role~="td"],
+body[data-active-role="ce"] .stats-row[data-role~="td"],
 body[data-active-role="finance"] .stats-row[data-role~="finance"]{display:grid}
 .nav-item[data-role]{display:none}
 body[data-active-role="master"] .nav-item[data-role~="master"]{display:flex}
 body[data-active-role="operation"] .nav-item[data-role~="operation"]{display:flex}
 body[data-active-role="td"] .nav-item[data-role~="td"]{display:flex}
+body[data-active-role="ce"] .nav-item[data-role~="td"]{display:flex}
 body[data-active-role="finance"] .nav-item[data-role~="finance"]{display:flex}
 
 /* ── ORDERS QUERY BAR (master/operation/finance only) ── */
@@ -516,10 +519,14 @@ body[data-active-role="master"] .ord-stats-admin,
 body[data-active-role="operation"] .ord-stats-admin,
 body[data-active-role="finance"] .ord-stats-admin{display:grid}
 body[data-active-role="td"] .ord-stats-td{display:grid}
-/* Hide top filter bar for TD (they use column filters instead) */
+body[data-active-role="ce"] .ord-stats-td{display:grid}
+/* Hide top filter bar for TD/CE (they use column filters instead) */
 body[data-active-role="td"] .orders-top-filterbar{display:none}
+body[data-active-role="ce"] .orders-top-filterbar{display:none}
 body[data-active-role="td"] #btn-show-archived{display:none!important}
+body[data-active-role="ce"] #btn-show-archived{display:none!important}
 body[data-active-role="td"] #btn-export-orders{display:none!important}
+body[data-active-role="ce"] #btn-export-orders{display:none!important}
 body[data-active-role="finance"] #btn-show-archived{display:none!important}
 /* Cost & profit columns — hidden from TD */
 .col-cost{display:none}
@@ -542,7 +549,9 @@ body[data-active-role="master"] .det-suppay-tab,
 body[data-active-role="operation"] .det-suppay-tab,
 body[data-active-role="finance"] .det-suppay-tab{display:block!important}
 body[data-active-role="td"] #tab-payout{display:none!important}
+body[data-active-role="ce"] #tab-payout{display:none!important}
 body[data-active-role="td"] .cr-profit-block{display:none!important}
+body[data-active-role="ce"] .cr-profit-block{display:none!important}
 /* Finance: hide edit/submit actions */
 body[data-active-role="finance"] .finance-hide{display:none!important}
 /* Compact filter rows */
@@ -621,6 +630,7 @@ body[data-active-role="finance"] .orders-tfoot{display:table-row-group}
 .usr-role-master{background:#E0E7FF;color:#3730A3}
 .usr-role-operation{background:#D1FAE5;color:#065F46}
 .usr-role-td{background:#FEF3C7;color:#92400E}
+.usr-role-ce{background:#FCE7F3;color:#9D174D}
 .usr-role-finance{background:#EDE9FE;color:#5B21B6}
 /* ── Export modal extras ── */
 .exp-check-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
@@ -1267,11 +1277,11 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             <div class="form-grid-3">
               <div class="form-group">
                 <label>称呼 <span class="req">*</span></label>
-                <select id="cr-sal"><option>Mr</option><option selected>Ms</option><option>Mrs</option><option>Mdm</option><option>Dr</option></select>
+                <select id="cr-sal"><option>MR</option><option selected>MS</option><option>MRS</option><option>MDM</option><option>DR</option></select>
               </div>
               <div class="form-group" style="grid-column:2/4">
                 <label>顾客全名 <span class="req">*</span></label>
-                <input type="text" id="cr-cust-name" placeholder="TAN MEI LING（大写）"/>
+                <input type="text" id="cr-cust-name" placeholder="TAN MEI LING（大写）" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"/>
               </div>
             </div>
           </div>
@@ -2068,7 +2078,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                 </div>
                 <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
                   <div class="form-grid">
-                    <div class="form-group"><label>称呼</label><select id="trav-title"><option value="Mr">Mr</option><option value="Ms">Ms</option><option value="Mrs">Mrs</option><option value="Mdm">Mdm</option><option value="Dr">Dr</option></select></div>
+                    <div class="form-group"><label>称呼</label><select id="trav-title"><option value="MR">MR</option><option value="MS">MS</option><option value="MRS">MRS</option><option value="MDM">MDM</option><option value="DR">DR</option></select></div>
                     <div class="form-group"><label>全名 <span class="req">*</span></label><input type="text" id="trav-name" placeholder="TAN KAH SENG"/></div>
                     <div class="form-group"><label>类别 <span class="req">*</span></label>
                       <select id="trav-type">
@@ -2843,6 +2853,7 @@ async function loadOrders() {
     .order('created_at', { ascending: false });
   // TD role: only show their own orders
   if (currentUser.roleKey === 'td' && currentUser.id) query = query.eq('td_id', currentUser.id);
+  // CE sees all orders (no td_id filter)
   // Default: hide archived unless toggle is on
   if (!_showArchived) query = query.eq('is_archived', false);
   const { data: orders, error } = await query;
@@ -4320,7 +4331,7 @@ async function loadPayIns() {
   const tbody = document.getElementById('payin-tbody');
   const isTD = currentUser.roleKey === 'td';
   let query = sb.from('payins')
-    .select(`id,amount_rm,date,payment_type,bank,invoice_status,receipt_url,gsh_check,gsh_invoice_url,checked,orders${isTD?'!inner':''}(order_no,td_id,customers(name))`)
+    .select(`id,amount_rm,date,payment_type,bank,invoice_status,receipt_url,gsh_check,gsh_invoice_url,checked,finance_note,orders${isTD?'!inner':''}(order_no,td_id,customers(name))`)
     .order('date', { ascending: false });
   if (isTD) query = query.eq('orders.td_id', currentUser.id);
   const { data, error } = await query;
@@ -4391,7 +4402,7 @@ function renderPayIns(data) {
       <td style="padding:10px 12px">${gshBtn}</td>
       <td style="padding:10px 12px">${invStatus}</td>
       <td class="check-col" style="padding:8px 12px">${checkBtn}</td>
-      <td style="padding:8px 12px;white-space:nowrap">${r.gsh_invoice_url ? `<a href="${r.gsh_invoice_url}" target="_blank" title="查看GSH发票" style="font-size:18px;text-decoration:none">📄</a> ` : ''}${canChangeGsh ? `<label style="font-size:10px;padding:2px 7px;border-radius:4px;border:1.5px solid #9CA3AF;background:#F9FAFB;color:#6B7280;cursor:pointer" title="上传GSH发票"><input type="file" accept="image/*,.pdf" style="display:none" onchange="uploadGshInvoice('${r.id}',this)"/>📎 上传</label>` : '—'}</td>
+      <td style="padding:8px 12px;font-size:11px;color:#6B7280;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${(r.finance_note||'').replace(/"/g,'&quot;')}">${r.finance_note||'—'}</td>
       <td style="padding:8px 12px;white-space:nowrap"><button class="edit-payin-btn" style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #3B7A68;background:#EEF6F3;color:#3B7A68;cursor:pointer" onclick="openEditPayIn('${r.id}')">✏️ 编辑</button> <button style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #DC2626;background:#FEF2F2;color:#DC2626;cursor:pointer" onclick="deletePayIn('${r.id}')">🗑️ 删除</button></td>
     </tr>`;
   }).join('');
@@ -5478,7 +5489,7 @@ async function submitOrder() {
   const dateTbd    = document.getElementById('cr-tbd-track')?.classList.contains('on') || false;
   const depart     = dateTbd ? null : (document.getElementById('cr-depart')?.value || null);
   const end        = dateTbd ? null : (document.getElementById('cr-end')?.value || null);
-  const sal        = document.getElementById('cr-sal')?.value || 'Mr';
+  const sal        = document.getElementById('cr-sal')?.value || 'MR';
   const custName   = (document.getElementById('cr-cust-name')?.value || '').trim().toUpperCase();
   const custPhone  = (document.getElementById('cr-cust-phone')?.value || '').trim();
   const supSel     = document.getElementById('sup-select');
@@ -5814,7 +5825,7 @@ function addCreateTraveler() {
   const div = document.createElement('div');
   div.className = 'create-traveler-row';
   div.innerHTML = `
-    <select><option>Mr</option><option>Ms</option><option>Mrs</option><option>Mdm</option><option>Dr</option></select>
+    <select><option>MR</option><option>MS</option><option>MRS</option><option>MDM</option><option>DR</option></select>
     <input type="text" placeholder="全名（大写）TAN KAH SENG"/>
     <button onclick="this.closest('.create-traveler-row').remove();reindexTravelers()" title="删除">✕</button>
   `;
@@ -5846,7 +5857,7 @@ async function loadDetailTravelers() {
     const { error: insErr } = await sb.from('travelers').insert({
       order_id: _currentOrder.id,
       name: _currentOrder.customers.name,
-      title: _currentOrder.customers.salutation || 'Mr',
+      title: _currentOrder.customers.salutation || 'MR',
       type: 'adult',
       is_main: true,
     });
@@ -5877,7 +5888,7 @@ async function loadDetailTravelers() {
 function showAddTraveler() {
   _editTravId = null;
   document.getElementById('trav-modal-title').textContent = '添加旅客';
-  document.getElementById('trav-title').value = 'Mr';
+  document.getElementById('trav-title').value = 'MR';
   document.getElementById('trav-name').value = '';
   document.getElementById('trav-type').value = 'adult';
   document.getElementById('trav-dob').value = '';
@@ -5898,7 +5909,7 @@ async function editTraveler(travId) {
   _editTravId = travId;
   _editTravIsMain = !!t.is_main;
   document.getElementById('trav-modal-title').textContent = '编辑旅客';
-  document.getElementById('trav-title').value = t.title || 'Mr';
+  document.getElementById('trav-title').value = t.title || 'MR';
   document.getElementById('trav-name').value = t.name || '';
   document.getElementById('trav-type').value = t.type || 'adult';
   document.getElementById('trav-dob').value = t.dob || '';
@@ -6515,8 +6526,8 @@ function doExport() {
 }
 
 /* ── USER MANAGEMENT ── */
-const _roleChip  = { master:'usr-role-master', operation:'usr-role-operation', td:'usr-role-td', finance:'usr-role-finance' };
-const _roleLabel = { master:'Master', operation:'Operation', td:'Travel Designer', finance:'Finance' };
+const _roleChip  = { master:'usr-role-master', operation:'usr-role-operation', td:'usr-role-td', ce:'usr-role-ce', finance:'usr-role-finance' };
+const _roleLabel = { master:'Master', operation:'Operation', td:'Travel Designer', ce:'Customer Experience', finance:'Finance' };
 
 async function loadUserMgmt() {
   const tbody = document.getElementById('user-mgmt-tbody');
@@ -6752,13 +6763,13 @@ async function submitInsCreate() {
     end_date: end,
   });
   if (error) { showToast('❌ 提交失败: ' + error.message); return; }
-  // Trigger 4a: notify Finance to buy insurance
+  // Trigger 4a: notify TD to verify customer info
   try {
-    const { data: _ordForIns } = await sb.from('orders').select('order_no').eq('id', orderId).maybeSingle();
-    if (_ordForIns) await sendNotif('insurance_buy', `保险申请（${_ordForIns.order_no}）— 请联系保险公司购买`, _ordForIns.order_no, orderId, 'finance', null);
+    const { data: _ordForIns } = await sb.from('orders').select('order_no, td_id').eq('id', orderId).maybeSingle();
+    if (_ordForIns) await sendNotif('insurance_buy', `保险申请（${_ordForIns.order_no}）— 请核对顾客资料后确认`, _ordForIns.order_no, orderId, null, _ordForIns.td_id);
   } catch(e) {}
   closeModal('modal-ins-create');
-  showToast('✅ 保单申请已提交，等待 Finance 处理');
+  showToast('✅ 保单申请已提交，等待 TD 核对资料');
   if (document.getElementById('page-insurance-global')?.classList.contains('active')) loadInsuranceGlobal();
   if (_currentOrder) loadDetailInsurance();
 }
@@ -6777,7 +6788,14 @@ function copyText(text, label) {
 async function quickCheckIns(insId) {
   const { error } = await sb.from('insurance').update({ status: 'td_verified' }).eq('id', insId);
   if (error) { showToast('❌ 更新失败: ' + error.message); return; }
-  showToast('✅ 已核对，Finance 可以处理了');
+  // Notify Finance to buy insurance
+  try {
+    const { data: _insOrd } = await sb.from('insurance').select('order_id, orders!inner(order_no)').eq('id', insId).maybeSingle();
+    if (_insOrd?.orders?.order_no) {
+      await sendNotif('insurance_buy', `保险资料已核对（${_insOrd.orders.order_no}）— 请联系保险公司购买`, _insOrd.orders.order_no, _insOrd.order_id, 'finance', null);
+    }
+  } catch(e) {}
+  showToast('✅ 已核对，Finance 已收到通知去购买保险');
   if (document.getElementById('page-insurance-global')?.classList.contains('active')) loadInsuranceGlobal();
   if (_currentOrder) loadDetailInsurance();
 }
@@ -6792,11 +6810,13 @@ async function submitInsFinish() {
   const _insFinishIdCopy = _insFinishId;
   const { error } = await sb.from('insurance').update({ premium_rm: fee, pdf_url: policyLink }).eq('id', _insFinishIdCopy);
   if (error) { showToast('❌ 更新失败: ' + error.message); return; }
-  // Trigger 4b: notify TD that insurance is bought — send policy to customer
+  // Trigger 4b: notify TD + CE that insurance is bought — send policy to customer
   try {
     const { data: _insData } = await sb.from('insurance').select('order_id, orders!inner(order_no, td_id)').eq('id', _insFinishIdCopy).maybeSingle();
     if (_insData?.orders?.order_no) {
-      await sendNotif('insurance_done', `保险已完成（${_insData.orders.order_no}）— 请发保单给顾客`, _insData.orders.order_no, _insData.order_id, null, _insData.orders.td_id);
+      const _msg = `保险已完成（${_insData.orders.order_no}）— 请发保单给顾客`;
+      await sendNotif('insurance_done', _msg, _insData.orders.order_no, _insData.order_id, null, _insData.orders.td_id);
+      await sendNotif('insurance_done', _msg, _insData.orders.order_no, _insData.order_id, 'ce', null);
     }
   } catch(e) {}
   closeModal('modal-ins-finish');
@@ -6835,12 +6855,12 @@ async function toggleInsCheckInModal() {
   if (_currentOrder) loadDetailInsurance();
 }
 function parseSal(fullName) {
-  const sals = ['Mr', 'Ms', 'Mrs', 'Dr'];
+  const sals = ['MR', 'MS', 'MRS', 'DR'];
   const parts = (fullName || '').trim().split(' ');
   if (parts.length > 1 && sals.includes(parts[0])) {
     return { sal: parts[0], name: parts.slice(1).join(' ') };
   }
-  return { sal: 'Mr', name: fullName || '' };
+  return { sal: 'MR', name: fullName || '' };
 }
 let _insEditId = null;
 async function openInsEditModal(insId) {
@@ -7331,6 +7351,7 @@ async function submitEditPayOut() {
         <select id="cu-role">
           <option value="operation">Operation</option>
           <option value="td">Travel Designer</option>
+          <option value="ce">Customer Experience</option>
           <option value="finance">Finance</option>
           <option value="master">Master</option>
         </select>
