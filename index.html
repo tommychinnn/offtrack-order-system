@@ -519,6 +519,7 @@ body[data-active-role="td"] .ord-stats-td{display:grid}
 /* Hide top filter bar for TD (they use column filters instead) */
 body[data-active-role="td"] .orders-top-filterbar{display:none}
 body[data-active-role="td"] #btn-show-archived{display:none!important}
+body[data-active-role="td"] #btn-export-orders{display:none!important}
 body[data-active-role="finance"] #btn-show-archived{display:none!important}
 /* Cost & profit columns — hidden from TD */
 .col-cost{display:none}
@@ -776,7 +777,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
     <button class="tb-btn btn-primary" onclick="showPage('create')">＋ 新增订单</button>
     <div class="spacer"></div>
     <button id="btn-show-archived" class="tb-btn btn-ghost" style="font-size:11px" data-role="master operation" onclick="toggleShowArchived()">📦 显示已归档</button>
-    <button class="tb-btn btn-ghost" onclick="openExportModal()">📥 导出</button>
+    <button id="btn-export-orders" class="tb-btn btn-ghost" onclick="openExportModal()">📥 导出</button>
   </div>
   <div class="content">
     <!-- Stats: master/op/finance view -->
@@ -6463,7 +6464,54 @@ function toggleExportRange() {
 }
 function doExport() {
   closeExportModal();
-  showToast('📥 导出成功，文件已下载（示例）');
+  const isNonTd = ['master','operation','finance'].includes(currentUser.roleKey);
+
+  // Collect visible order IDs
+  const visibleIds = new Set();
+  document.querySelectorAll('#orders-tbody tr[data-order-id]').forEach(tr => {
+    if (tr.style.display !== 'none') visibleIds.add(tr.dataset.orderId);
+  });
+  const orders = (_ordersCache || []).filter(o => visibleIds.has(o.id));
+  if (!orders.length) { showToast('没有可导出的数据'); return; }
+
+  const fmtD = d => d ? String(d).slice(0,10) : '';
+  const fmtN = v => (v != null && v !== '') ? Number(v).toLocaleString('en-MY') : '';
+  const esc  = v => { const s = String(v ?? ''); return (s.includes(',') || s.includes('"') || s.includes('\n')) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+
+  const headers = ['订单号','创建日期','顾客姓名','顾客电话','地区','出发日期','返程日期','人数','来源','定制师','付款状态','总售价(RM)'];
+  if (isNonTd) headers.push('总底价(RM)','待付Supplier(RM)','预计利润(RM)','实际利润(RM)');
+  headers.push('已付款(RM)','尾款(RM)','保险','合约','KOL/博主','备注');
+
+  const rows = orders.map(o => {
+    const total      = parseFloat(o.total_price) || 0;
+    const cost       = parseFloat(o.cost_rm || o.cost) || 0;
+    const paid       = (o.payins||[]).filter(p => p.gsh_check === 'verified').reduce((s,p) => s + (parseFloat(p.amount_rm)||0), 0);
+    const paidOut    = (o.payouts||[]).reduce((s,p) => s + (parseFloat(p.amount_rm)||0), 0);
+    const balance    = total - paid;
+    const profit     = total - cost;
+    const actualProfit = paid - paidOut;
+    const remainRM   = cost - paidOut;
+    const payStatus  = balance <= 0 && paid > 0 ? '已付全款' : paid > 0 ? '已付定金' : '未付';
+    const tdUser     = (o.users || (o.profiles)) || null;
+    const tdName     = tdUser?.name || o.td_name || '';
+
+    const cells = [
+      o.order_no, fmtD(o.created_at), o.customers?.name||'', o.customers?.phone||'',
+      o.region||'', fmtD(o.depart_date), fmtD(o.end_date), o.pax_total||0,
+      o.source||'', tdName, payStatus, fmtN(total),
+    ];
+    if (isNonTd) cells.push(fmtN(cost), fmtN(remainRM > 0 ? Math.round(remainRM) : 0), fmtN(profit), fmtN(actualProfit));
+    cells.push(fmtN(paid), fmtN(balance), (o.insurance||[]).length > 0 ? '有' : '无', o.has_contract ? '有' : '无', o.kol_name||'', o.customers?.notes||'');
+    return cells;
+  });
+
+  const csv = [headers, ...rows].map(r => r.map(esc).join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `offtrack_orders_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showToast('📥 已导出 ' + orders.length + ' 笔订单');
 }
 
 /* ── USER MANAGEMENT ── */
