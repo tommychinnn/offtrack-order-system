@@ -4170,10 +4170,13 @@ async function loadInsuranceGlobal() {
   const tbody = document.getElementById('ins-global-tbody');
   tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#9CA3AF">⏳ 加载中...</td></tr>';
   const isTD = currentUser.roleKey === 'td';
+  const isCE = currentUser.roleKey === 'ce';
+  const needsFilter = isTD || isCE;
   let query = sb.from('insurance')
-    .select(`id, premium_rm, insured_name, start_date, end_date, pdf_url, status, notes, orders${isTD?'!inner':''}(order_no, td_id, regions(city))`)
+    .select(`id, premium_rm, insured_name, start_date, end_date, pdf_url, status, notes, orders${needsFilter?'!inner':''}(order_no, td_id, ce_id, regions(city))`)
     .order('created_at', { ascending: false });
   if (isTD) query = query.eq('orders.td_id', currentUser.id);
+  if (isCE) query = query.eq('orders.ce_id', currentUser.id);
   const { data, error } = await query;
   if (error || !data) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:#DC2626">加载失败: '+(error?.message||'')+'</td></tr>'; return; }
   if (!data.length) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:#9CA3AF">暂无保险记录</td></tr>'; return; }
