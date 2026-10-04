@@ -2849,13 +2849,14 @@ async function loadOrders() {
   const tbody = document.getElementById('orders-tbody');
   tbody.innerHTML = '<tr><td colspan="26" style="text-align:center;padding:40px;color:#9CA3AF;font-weight:700">⏳ 加载订单中...</td></tr>';
 
+  const canSeeCost = ['master','operation','finance'].includes(currentUser.roleKey);
   let query = sb
     .from('orders')
     .select(`
       id, order_no, status, source, kol_name, special_notes, date_tbd,
       depart_date, end_date, created_at, td_id, ce_id, has_contract, is_archived,
       pax_total, price_total, insurance_total, discount, discount_type, selling_price,
-      cost_currency, cost_foreign, cost_rm,
+      ${canSeeCost ? 'cost_currency, cost_foreign, cost_rm,' : ''}
       customers ( name, salutation, notes, phone ),
       supplier_salespersons ( name ),
       regions ( city ),
@@ -3096,12 +3097,13 @@ async function openOrder(uuid) {
   document.getElementById('detail-oh-customer').textContent = '⏳ 加载中...';
   document.getElementById('detail-breadcrumb').textContent = '加载中...';
 
+  const _canSeeCost = ['master','operation','finance'].includes(currentUser.roleKey);
   const { data: o, error } = await sb.from('orders').select(`
     id, order_no, status, source, kol_name, special_notes, date_tbd,
     depart_date, end_date, created_at, has_contract, checklist,
     td_id, ce_id, region_id, supplier_id, supplier_salesperson_id, customer_id,
     pax_total, price_total, selling_price, insurance_total, discount, discount_type,
-    cost_currency, cost_foreign, cost_rm, pricing_mode,
+    ${_canSeeCost ? 'cost_currency, cost_foreign, cost_rm,' : ''} pricing_mode,
     customers ( name, salutation, notes, phone ),
     supplier_salespersons ( name ),
     suppliers ( id, supplier_code ),
@@ -3859,7 +3861,7 @@ async function saveEditMode() {
     pax_total: paxTotal, price_total: priceTotal,
     insurance_total: insTotal, discount: discountVal, selling_price: sellingPrice,
     discount_type: (isPaxMode ? document.getElementById('price-discount-type')?.value : document.getElementById('det-tot-discount-type')?.value) || 'KOL Promo',
-    cost_foreign: costForeign, cost_rm: costRM,
+    ...(['master','operation','finance'].includes(currentUser.roleKey) ? { cost_foreign: costForeign, cost_rm: costRM } : {}),
   }).eq('id', _currentOrder.id);
 
   btn.disabled = false; btn.textContent = '💾 保存更改';
