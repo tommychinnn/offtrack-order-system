@@ -2314,7 +2314,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
     <div class="stats-row" data-role="td" style="grid-template-columns:repeat(3,1fr)">
       <div class="stat-card good"><div class="label">当月订单</div><div class="val" id="dash-td-month">—</div><div class="sub">本月出发单数</div></div>
       <div class="stat-card"><div class="label">出发人数</div><div class="val" id="dash-td-pax">—</div><div class="sub">本月出发总人数</div></div>
-      <div class="stat-card warn"><div class="label">顾团人数</div><div class="val" id="dash-td-total-pax">—</div><div class="sub">所有进行中订单</div></div>
+      <div class="stat-card warn"><div class="label">顾团人数</div><div class="val" id="dash-td-total-pax">—</div><div class="sub">30天内出发</div></div>
     </div>
 
     <div class="dash-grid">
@@ -3977,6 +3977,7 @@ async function loadDashboard() {
   const fmt = v => (v||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
   const today = new Date(); today.setHours(0,0,0,0);
   const in14 = new Date(today); in14.setDate(today.getDate()+14);
+  const in30 = new Date(today); in30.setDate(today.getDate()+30);
   const in35 = new Date(today); in35.setDate(today.getDate()+35);
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0,10);
 
@@ -4041,7 +4042,10 @@ async function loadDashboard() {
   const monthEnd = new Date(today.getFullYear(), today.getMonth()+1, 0).toISOString().slice(0,10);
   const thisMonthDepart = orders.filter(o => (o.depart_date||'') >= monthStart && (o.depart_date||'') <= monthEnd);
   const tdMonthPax = thisMonthDepart.reduce((s,o)=>s+(parseInt(o.pax_total)||0),0);
-  const tdTotalPax = active.reduce((s,o)=>s+(parseInt(o.pax_total)||0),0);
+  const in30Str = in30.toISOString().slice(0,10);
+  const todayStr = today.toISOString().slice(0,10);
+  const depart30 = orders.filter(o => !o.date_tbd && o.depart_date && o.depart_date >= todayStr && o.depart_date <= in30Str && o.status !== 'cancelled');
+  const tdTotalPax = depart30.reduce((s,o)=>s+(parseInt(o.pax_total)||0),0);
   const tdMonthEl = document.getElementById('dash-td-month');
   const tdPaxEl = document.getElementById('dash-td-pax');
   const tdTotalPaxEl = document.getElementById('dash-td-total-pax');
