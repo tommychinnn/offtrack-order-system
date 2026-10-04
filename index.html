@@ -6379,13 +6379,12 @@ let _notifReadIds = new Set();
 
 async function sendNotif(type, message, orderNo, orderId, targetRole, targetUserId) {
   try {
-    await sb.from('notifications').insert({
-      type, message,
-      order_no: orderNo || null,
-      order_id: orderId || null,
-      target_role: targetRole || null,
-      target_user_id: targetUserId || null
-    });
+    const rows = [{ type, message, order_no: orderNo||null, order_id: orderId||null, target_role: targetRole||null, target_user_id: targetUserId||null }];
+    // Always CC master unless this notification is already targeting master role
+    if (targetRole !== 'master') {
+      rows.push({ type, message, order_no: orderNo||null, order_id: orderId||null, target_role: 'master', target_user_id: null });
+    }
+    await sb.from('notifications').insert(rows);
   } catch(e) {}
 }
 
