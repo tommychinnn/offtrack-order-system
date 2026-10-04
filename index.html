@@ -533,16 +533,18 @@ body[data-active-role="finance"] #btn-show-archived{display:none!important}
 body[data-active-role="master"] .col-cost,
 body[data-active-role="operation"] .col-cost,
 body[data-active-role="finance"] .col-cost{display:table-cell}
-/* Profit detail — hidden from TD/CE in order detail page */
+/* Profit detail — hidden from CE only (TD can see in order detail) */
 .detail-profit{display:none!important}
 body[data-active-role="master"] .detail-profit,
 body[data-active-role="operation"] .detail-profit,
-body[data-active-role="finance"] .detail-profit{display:flex!important}
-/* Cost block (底价 section) — block display, hidden from TD/CE */
+body[data-active-role="finance"] .detail-profit,
+body[data-active-role="td"] .detail-profit{display:flex!important}
+/* Cost block (底价 section) — hidden from CE only (TD can see in order detail) */
 .detail-cost-block{display:none!important}
 body[data-active-role="master"] .detail-cost-block,
 body[data-active-role="operation"] .detail-cost-block,
-body[data-active-role="finance"] .detail-cost-block{display:block!important}
+body[data-active-role="finance"] .detail-cost-block,
+body[data-active-role="td"] .detail-cost-block{display:block!important}
 /* Status toggles for ③ 资料状态 */
 .status-toggle{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid;transition:all .15s;font-family:'Nunito',sans-serif}
 .status-toggle.st-confirmed{background:#F0FDF4;border-color:#86EFAC;color:#15803D}
@@ -2849,7 +2851,7 @@ async function loadOrders() {
   const tbody = document.getElementById('orders-tbody');
   tbody.innerHTML = '<tr><td colspan="26" style="text-align:center;padding:40px;color:#9CA3AF;font-weight:700">⏳ 加载订单中...</td></tr>';
 
-  const canSeeCost = ['master','operation','finance'].includes(currentUser.roleKey);
+  const canSeeCost = ['master','operation','finance','td'].includes(currentUser.roleKey);
   let query = sb
     .from('orders')
     .select(`
@@ -2986,6 +2988,7 @@ function buildOrderRow(o) {
   return `<tr class="clickable-row" onclick="openOrder('${o.id}')"
     data-order-id="${o.id}"
     data-depart="${depart}"
+    data-end="${end}"
     data-region="${region}"
     data-status="${statusCn}"
     data-month="${month}"
@@ -3097,7 +3100,7 @@ async function openOrder(uuid) {
   document.getElementById('detail-oh-customer').textContent = '⏳ 加载中...';
   document.getElementById('detail-breadcrumb').textContent = '加载中...';
 
-  const _canSeeCost = ['master','operation','finance'].includes(currentUser.roleKey);
+  const _canSeeCost = ['master','operation','finance','td'].includes(currentUser.roleKey);
   const { data: o, error } = await sb.from('orders').select(`
     id, order_no, status, source, kol_name, special_notes, date_tbd,
     depart_date, end_date, created_at, has_contract, checklist,
@@ -3624,10 +3627,14 @@ function filterOrders() {
   allRows.forEach(tr => {
     const st = tr.dataset.status || '';
     const dep = tr.dataset.depart || '';
+    const endDate = tr.dataset.end || '';
     const bal = parseFloat(tr.dataset.balance) || 0;
     const month = tr.dataset.month || '';
-    const isDone = st==='行程结束'||st==='退团';
-    const isTrav = st==='旅途中';
+    const isCancelled = st==='退团';
+    // Date-based: trip is done if end_date exists and is before today
+    const tripEnded = endDate ? endDate < todayStr : false;
+    const isDone = isCancelled || tripEnded;
+    const isTrav = !isDone && dep && dep <= todayStr;
     if (!isDone) { sActive++; if(isTrav) sTrav++; }
     if (!isDone && dep && dep>=todayStr && dep<=in14) s14d++;
     if (!isDone && bal>0) { sBalCount++; sBalTotal+=bal; }
@@ -3861,7 +3868,7 @@ async function saveEditMode() {
     pax_total: paxTotal, price_total: priceTotal,
     insurance_total: insTotal, discount: discountVal, selling_price: sellingPrice,
     discount_type: (isPaxMode ? document.getElementById('price-discount-type')?.value : document.getElementById('det-tot-discount-type')?.value) || 'KOL Promo',
-    ...(['master','operation','finance'].includes(currentUser.roleKey) ? { cost_foreign: costForeign, cost_rm: costRM } : {}),
+    ...(['master','operation','finance','td'].includes(currentUser.roleKey) ? { cost_foreign: costForeign, cost_rm: costRM } : {}),
   }).eq('id', _currentOrder.id);
 
   btn.disabled = false; btn.textContent = '💾 保存更改';
@@ -3981,18 +3988,20 @@ async function loadDashboard() {
   const { data: orders } = await dashQuery;
   if (!orders) return;
 
-  const activeStatuses = ['confirmed','preparing','ready_to_depart','travelling'];
-  const active = orders.filter(o => activeStatuses.includes(o.status));
-  const travelling = orders.filter(o => {
-    if (o.status === 'travelling') return true;
-    if (!o.depart_date || o.date_tbd || !activeStatuses.includes(o.status)) return false;
-    const dep = new Date(o.depart_date + 'T00:00:00');
-    if (dep > today) return false;
-    if (o.end_date) { const end = new Date(o.end_date + 'T00:00:00'); if (end < today) return false; }
+  const isActiveDash = o => {
+    if (o.status === 'cancelled') return false;
+    if (o.end_date && new Date(o.end_date + 'T00:00:00') < today) return false;
     return true;
+  };
+  const active = orders.filter(isActiveDash);
+  const travelling = orders.filter(o => {
+    if (!isActiveDash(o)) return false;
+    if (!o.depart_date || o.date_tbd) return false;
+    const dep = new Date(o.depart_date + 'T00:00:00');
+    return dep <= today;
   });
   const upcoming = orders.filter(o => {
-    if (!o.depart_date || o.date_tbd || !activeStatuses.includes(o.status)) return false;
+    if (!isActiveDash(o) || !o.depart_date || o.date_tbd) return false;
     const d = new Date(o.depart_date+'T00:00:00');
     return d >= today && d <= in14;
   });
