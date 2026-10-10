@@ -8662,7 +8662,7 @@ async function submitEditPayOut() {
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">状态</th>
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">日期</th>
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">订单号</th>
-          <th style="padding:10px 12px;text-align:right;font-weight:800;white-space:nowrap">金额 (RM)</th>
+          <th style="padding:10px 12px;text-align:right;font-weight:800;white-space:nowrap">金额</th>
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">原因</th>
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">备注</th>
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">提交人</th>
@@ -8741,7 +8741,21 @@ async function submitEditPayOut() {
       <div class="mf-group"><label>订单号 *</label>
         <select id="rp-order-id"><option value="">— 选择订单 —</option></select>
       </div>
-      <div class="mf-group"><label>出账金额 (RM) *</label>
+      <div class="mf-group"><label>货币</label>
+        <select id="rp-currency" onchange="_rpToggleCurrency()">
+          <option value="MYR">MYR (马币)</option>
+          <option value="CNY">CNY (人民币)</option>
+          <option value="JPY">JPY (日元)</option>
+          <option value="USD">USD (美元)</option>
+          <option value="THB">THB (泰铢)</option>
+          <option value="EUR">EUR (欧元)</option>
+          <option value="GBP">GBP (英镑)</option>
+        </select>
+      </div>
+      <div class="mf-group" id="rp-foreign-group" style="display:none"><label>外币金额 *</label>
+        <input type="number" id="rp-amount-foreign" placeholder="0.00" step="0.01" min="0"/>
+      </div>
+      <div class="mf-group"><label>RM 金额 *</label>
         <input type="number" id="rp-amount" placeholder="0.00" step="0.01" min="0"/>
       </div>
       <div class="mf-group"><label>原因 *</label>
@@ -8781,9 +8795,12 @@ async function submitEditPayOut() {
 // ── REQUESTS: shared helpers ──────────────────────────────────────────────
 
 let _reqCache = { refund: [], payout: [], shipping: [] };
+let _editingReq = { refund: null, payout: null, shipping: null };
 
 const _reqCanManage = () => ['master','operation','finance'].includes(currentUser.roleKey);
 const _reqIsCreator = () => ['td','ce'].includes(currentUser.roleKey);
+const _reqCanEdit = (r) => r.created_by === currentUser.id && r.status === 'pending';
+const _reqCanDelete = (r) => r.created_by === currentUser.id || _reqCanManage();
 
 function _reqStatChip(status) {
   return status === 'done'
@@ -8798,7 +8815,20 @@ function _reqStatCard(label, count, color) {
   </div>`;
 }
 
-async function _loadOrderDropdown(selectId) {
+async function _sendReqNotif(type, message, orderNo, orderId, createdBy) {
+  const rows = [
+    { type, message, order_no: orderNo||null, order_id: orderId||null, target_role: 'master', target_user_id: null },
+    { type, message, order_no: orderNo||null, order_id: orderId||null, target_role: 'operation', target_user_id: null },
+    { type, message, order_no: orderNo||null, order_id: orderId||null, target_role: 'finance', target_user_id: null },
+  ];
+  // If status update: also notify the creator if different from current user
+  if (createdBy && createdBy !== currentUser.id) {
+    rows.push({ type, message, order_no: orderNo||null, order_id: orderId||null, target_role: null, target_user_id: createdBy });
+  }
+  try { await sb.from('notifications').insert(rows); } catch(e) {}
+}
+
+async function _loadOrderDropdown(selectId, preselect) {
   const sel = document.getElementById(selectId);
   if (!sel) return;
   sel.innerHTML = '<option value="">— 加载中… —</option>';
@@ -8809,18 +8839,44 @@ async function _loadOrderDropdown(selectId) {
   }
   const { data } = await q;
   sel.innerHTML = '<option value="">— 选择订单 —</option>' +
-    (data || []).map(o => `<option value="${o.id}" data-no="${o.order_no}">${o.order_no}${o.customers?.name ? ' · ' + o.customers.name : ''}</option>`).join('');
+    (data || []).map(o => `<option value="${o.id}" data-no="${o.order_no}"${o.id===preselect?' selected':''}>${o.order_no}${o.customers?.name ? ' · ' + o.customers.name : ''}</option>`).join('');
 }
 
-function openReqModal(type) {
+function openReqModal(type, record) {
   const modalId = 'modal-req-' + type;
+  _editingReq[type] = record || null;
+  const isEdit = !!record;
   const selId = { refund: 'rr-order-id', payout: 'rp-order-id', shipping: 'rs-order-id' }[type];
-  _loadOrderDropdown(selId);
-  // Reset form fields
-  if (type === 'refund') { document.getElementById('rr-amount').value=''; document.getElementById('rr-reason').value=''; document.getElementById('rr-notes').value=''; }
-  if (type === 'payout') { document.getElementById('rp-amount').value=''; document.getElementById('rp-reason').value=''; document.getElementById('rp-notes').value=''; }
-  if (type === 'shipping') { document.getElementById('rs-notes').value=''; }
+
+  if (type === 'refund') {
+    document.getElementById('rr-amount').value = isEdit ? (record.amount||'') : '';
+    document.getElementById('rr-reason').value = isEdit ? (record.reason||'') : '';
+    document.getElementById('rr-notes').value  = isEdit ? (record.notes||'') : '';
+    _loadOrderDropdown(selId, isEdit ? record.order_id : null);
+  } else if (type === 'payout') {
+    document.getElementById('rp-currency').value       = isEdit ? (record.currency||'MYR') : 'MYR';
+    document.getElementById('rp-amount-foreign').value = isEdit ? (record.amount_foreign||'') : '';
+    document.getElementById('rp-amount').value         = isEdit ? (record.amount||'') : '';
+    document.getElementById('rp-reason').value         = isEdit ? (record.reason||'') : '';
+    document.getElementById('rp-notes').value          = isEdit ? (record.notes||'') : '';
+    _rpToggleCurrency();
+    _loadOrderDropdown(selId, isEdit ? record.order_id : null);
+  } else if (type === 'shipping') {
+    document.getElementById('rs-notes').value = isEdit ? (record.notes||'') : '';
+    _loadOrderDropdown(selId, isEdit ? record.order_id : null);
+  }
+
+  // Update modal title
+  const titleEl = document.querySelector(`#${modalId} .modal-hd-title`);
+  if (titleEl) titleEl.textContent = isEdit ? '编辑申请' : { refund:'申请退款', payout:'申请出账', shipping:'申请寄货' }[type];
+
   document.getElementById(modalId).classList.add('open');
+}
+
+function _rpToggleCurrency() {
+  const cur = document.getElementById('rp-currency')?.value || 'MYR';
+  const fg = document.getElementById('rp-foreign-group');
+  if (fg) fg.style.display = cur === 'MYR' ? 'none' : '';
 }
 
 function filterReqTable(type) {
@@ -8828,17 +8884,28 @@ function filterReqTable(type) {
   const st = document.getElementById(type + '-req-status')?.value || '';
   const rows = document.querySelectorAll('#' + type + '-req-tbody tr[data-id]');
   rows.forEach(tr => {
-    const matchQ = !q || tr.dataset.no?.toLowerCase().includes(q);
+    const matchQ = !q || (tr.dataset.no||'').toLowerCase().includes(q);
     const matchSt = !st || tr.dataset.status === st;
     tr.style.display = matchQ && matchSt ? '' : 'none';
   });
+}
+
+function _reqActionBtns(type, r) {
+  const btns = [];
+  if (_reqCanManage() && r.status === 'pending')
+    btns.push(`<button class="tb-btn btn-primary" style="font-size:10px;padding:3px 10px" onclick="updateReqStatus('${type}','${r.id}','done','${r.created_by||''}','${r.order_no||''}','${r.order_id||''}')">标记完成</button>`);
+  if (_reqCanEdit(r))
+    btns.push(`<button class="tb-btn btn-ghost" style="font-size:10px;padding:3px 10px" onclick="openReqModal('${type}',_reqCache['${type}'].find(x=>x.id==='${r.id}'))">编辑</button>`);
+  if (_reqCanDelete(r))
+    btns.push(`<button class="tb-btn" style="font-size:10px;padding:3px 10px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;cursor:pointer" onclick="deleteReq('${type}','${r.id}')">删除</button>`);
+  return btns.join(' ');
 }
 
 // ── REFUND REQUESTS ──────────────────────────────────────────────────────
 
 async function loadReqRefund() {
   let q = sb.from('refund_requests')
-    .select('id,order_id,order_no,amount,reason,notes,status,created_at,users(name)')
+    .select('id,order_id,order_no,amount,reason,notes,status,created_at,created_by,users(name)')
     .order('created_at', { ascending: false });
   if (_reqIsCreator() && currentUser.id) q = q.eq('created_by', currentUser.id);
   const { data } = await q;
@@ -8859,7 +8926,8 @@ function _renderReqTable(type) {
     _reqStatCard('已完成', done, '#ECFDF5') +
     _reqStatCard('共计', rows.length, '#F0F9FF');
 
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="8" style="padding:24px;text-align:center;color:#9CA3AF">暂无申请记录</td></tr>`; return; }
+  const colspan = type === 'shipping' ? 6 : 9;
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="${colspan}" style="padding:24px;text-align:center;color:#9CA3AF">暂无申请记录</td></tr>`; return; }
 
   if (type === 'shipping') {
     tbody.innerHTML = rows.map(r => `<tr data-id="${r.id}" data-no="${r.order_no||''}" data-status="${r.status}" style="border-bottom:1px solid #F3F4F6">
@@ -8868,8 +8936,25 @@ function _renderReqTable(type) {
       <td style="padding:10px 12px"><span class="mono">${r.order_no||'—'}</span></td>
       <td style="padding:10px 12px;max-width:260px;white-space:pre-wrap;font-size:11px;color:#374151">${r.notes||'—'}</td>
       <td style="padding:10px 12px;color:#6B7280;font-size:11px">${r.users?.name||'—'}</td>
-      <td style="padding:10px 12px">${_reqCanManage() && r.status==='pending' ? `<button class="tb-btn btn-primary" style="font-size:10px;padding:3px 10px" onclick="updateReqStatus('shipping','${r.id}','done')">标记完成</button>` : ''}</td>
+      <td style="padding:10px 12px;white-space:nowrap">${_reqActionBtns(type, r)}</td>
     </tr>`).join('');
+  } else if (type === 'payout') {
+    tbody.innerHTML = rows.map(r => {
+      const cur = r.currency || 'MYR';
+      const amtFmt = cur !== 'MYR' && r.amount_foreign
+        ? `<span style="font-weight:700">${cur} ${parseFloat(r.amount_foreign||0).toLocaleString('en-MY',{minimumFractionDigits:2})}</span><br><span style="font-size:10px;color:#9CA3AF">≈ RM ${parseFloat(r.amount||0).toLocaleString('en-MY',{minimumFractionDigits:2})}</span>`
+        : `<span style="font-weight:700">RM ${parseFloat(r.amount||0).toLocaleString('en-MY',{minimumFractionDigits:2})}</span>`;
+      return `<tr data-id="${r.id}" data-no="${r.order_no||''}" data-status="${r.status}" style="border-bottom:1px solid #F3F4F6">
+        <td style="padding:10px 12px">${_reqStatChip(r.status)}</td>
+        <td style="padding:10px 12px;color:#6B7280;font-size:11px">${(r.created_at||'').slice(0,10)}</td>
+        <td style="padding:10px 12px"><span class="mono">${r.order_no||'—'}</span></td>
+        <td style="padding:10px 12px;text-align:right;line-height:1.5">${amtFmt}</td>
+        <td style="padding:10px 12px;color:#374151">${r.reason||'—'}</td>
+        <td style="padding:10px 12px;color:#6B7280;font-size:11px;max-width:160px">${r.notes||'—'}</td>
+        <td style="padding:10px 12px;color:#6B7280;font-size:11px">${r.users?.name||'—'}</td>
+        <td style="padding:10px 12px;white-space:nowrap">${_reqActionBtns(type, r)}</td>
+      </tr>`;
+    }).join('');
   } else {
     tbody.innerHTML = rows.map(r => `<tr data-id="${r.id}" data-no="${r.order_no||''}" data-status="${r.status}" style="border-bottom:1px solid #F3F4F6">
       <td style="padding:10px 12px">${_reqStatChip(r.status)}</td>
@@ -8879,7 +8964,7 @@ function _renderReqTable(type) {
       <td style="padding:10px 12px;color:#374151">${r.reason||'—'}</td>
       <td style="padding:10px 12px;color:#6B7280;font-size:11px;max-width:160px">${r.notes||'—'}</td>
       <td style="padding:10px 12px;color:#6B7280;font-size:11px">${r.users?.name||'—'}</td>
-      <td style="padding:10px 12px">${_reqCanManage() && r.status==='pending' ? `<button class="tb-btn btn-primary" style="font-size:10px;padding:3px 10px" onclick="updateReqStatus('${type}','${r.id}','done')">标记完成</button>` : ''}</td>
+      <td style="padding:10px 12px;white-space:nowrap">${_reqActionBtns(type, r)}</td>
     </tr>`).join('');
   }
 }
@@ -8893,25 +8978,35 @@ function _updateReqBadge(type) {
 }
 
 async function submitReqRefund() {
+  const editing = _editingReq.refund;
   const orderId = document.getElementById('rr-order-id').value;
-  const orderNo = document.getElementById('rr-order-id').selectedOptions[0]?.dataset?.no || '';
-  const amount = parseFloat(document.getElementById('rr-amount').value);
-  const reason = document.getElementById('rr-reason').value.trim();
-  const notes = document.getElementById('rr-notes').value.trim();
-  if (!orderId) { showToast('❌ 请选择订单'); return; }
+  const orderNo = document.getElementById('rr-order-id').selectedOptions[0]?.dataset?.no || (editing?.order_no||'');
+  const amount  = parseFloat(document.getElementById('rr-amount').value);
+  const reason  = document.getElementById('rr-reason').value.trim();
+  const notes   = document.getElementById('rr-notes').value.trim();
+  if (!orderId && !editing) { showToast('❌ 请选择订单'); return; }
   if (!amount || amount <= 0) { showToast('❌ 请填写金额'); return; }
   if (!reason) { showToast('❌ 请填写原因'); return; }
-  const { error } = await sb.from('refund_requests').insert({ order_id: orderId, order_no: orderNo, amount, reason, notes: notes||null, created_by: currentUser.id, status: 'pending' });
-  if (error) { showToast('❌ 提交失败: ' + error.message); return; }
+  const payload = { amount, reason, notes: notes||null };
+  let error;
+  if (editing) {
+    ({ error } = await sb.from('refund_requests').update(payload).eq('id', editing.id));
+  } else {
+    ({ error } = await sb.from('refund_requests').insert({ ...payload, order_id: orderId, order_no: orderNo, created_by: currentUser.id, status: 'pending' }));
+  }
+  if (error) { showToast('❌ 失败: ' + error.message); return; }
   closeModal('modal-req-refund');
-  showToast('✅ 退款申请已提交');
-  await sendNotif('req_refund', `退款申请 ${orderNo} — RM ${amount}`, orderNo, orderId, null, null);
+  showToast(editing ? '✅ 已更新' : '✅ 退款申请已提交');
+  const no = orderNo || editing?.order_no || '';
+  const oid = orderId || editing?.order_id || null;
+  const msg = editing ? `退款申请已更新 ${no} — RM ${amount}` : `新退款申请 ${no} — RM ${amount} (${currentUser.name||''})`;
+  await _sendReqNotif('req_refund', msg, no, oid, editing ? editing.created_by : null);
   loadReqRefund();
 }
 
 async function loadReqPayout() {
   let q = sb.from('payout_requests')
-    .select('id,order_id,order_no,amount,reason,notes,status,created_at,users(name)')
+    .select('id,order_id,order_no,amount,amount_foreign,currency,reason,notes,status,created_at,created_by,users(name)')
     .order('created_at', { ascending: false });
   if (_reqIsCreator() && currentUser.id) q = q.eq('created_by', currentUser.id);
   const { data } = await q;
@@ -8921,25 +9016,38 @@ async function loadReqPayout() {
 }
 
 async function submitReqPayout() {
-  const orderId = document.getElementById('rp-order-id').value;
-  const orderNo = document.getElementById('rp-order-id').selectedOptions[0]?.dataset?.no || '';
-  const amount = parseFloat(document.getElementById('rp-amount').value);
-  const reason = document.getElementById('rp-reason').value.trim();
-  const notes = document.getElementById('rp-notes').value.trim();
-  if (!orderId) { showToast('❌ 请选择订单'); return; }
-  if (!amount || amount <= 0) { showToast('❌ 请填写金额'); return; }
+  const editing  = _editingReq.payout;
+  const orderId  = document.getElementById('rp-order-id').value;
+  const orderNo  = document.getElementById('rp-order-id').selectedOptions[0]?.dataset?.no || (editing?.order_no||'');
+  const currency = document.getElementById('rp-currency').value;
+  const amtFor   = currency !== 'MYR' ? (parseFloat(document.getElementById('rp-amount-foreign').value)||0) : null;
+  const amount   = parseFloat(document.getElementById('rp-amount').value);
+  const reason   = document.getElementById('rp-reason').value.trim();
+  const notes    = document.getElementById('rp-notes').value.trim();
+  if (!orderId && !editing) { showToast('❌ 请选择订单'); return; }
+  if (!amount || amount <= 0) { showToast('❌ 请填写 RM 金额'); return; }
   if (!reason) { showToast('❌ 请填写原因'); return; }
-  const { error } = await sb.from('payout_requests').insert({ order_id: orderId, order_no: orderNo, amount, reason, notes: notes||null, created_by: currentUser.id, status: 'pending' });
-  if (error) { showToast('❌ 提交失败: ' + error.message); return; }
+  const payload = { amount, currency, amount_foreign: amtFor, reason, notes: notes||null };
+  let error;
+  if (editing) {
+    ({ error } = await sb.from('payout_requests').update(payload).eq('id', editing.id));
+  } else {
+    ({ error } = await sb.from('payout_requests').insert({ ...payload, order_id: orderId, order_no: orderNo, created_by: currentUser.id, status: 'pending' }));
+  }
+  if (error) { showToast('❌ 失败: ' + error.message); return; }
   closeModal('modal-req-payout');
-  showToast('✅ 出账申请已提交');
-  await sendNotif('req_payout', `出账申请 ${orderNo} — RM ${amount}`, orderNo, orderId, null, null);
+  showToast(editing ? '✅ 已更新' : '✅ 出账申请已提交');
+  const no = orderNo || editing?.order_no || '';
+  const oid = orderId || editing?.order_id || null;
+  const amtLabel = currency !== 'MYR' ? `${currency} ${amtFor} (≈RM ${amount})` : `RM ${amount}`;
+  const msg = editing ? `出账申请已更新 ${no} — ${amtLabel}` : `新出账申请 ${no} — ${amtLabel} (${currentUser.name||''})`;
+  await _sendReqNotif('req_payout', msg, no, oid, editing ? editing.created_by : null);
   loadReqPayout();
 }
 
 async function loadReqShipping() {
   let q = sb.from('shipping_requests')
-    .select('id,order_id,order_no,notes,status,created_at,users(name)')
+    .select('id,order_id,order_no,notes,status,created_at,created_by,users(name)')
     .order('created_at', { ascending: false });
   if (_reqIsCreator() && currentUser.id) q = q.eq('created_by', currentUser.id);
   const { data } = await q;
@@ -8949,24 +9057,46 @@ async function loadReqShipping() {
 }
 
 async function submitReqShipping() {
+  const editing = _editingReq.shipping;
   const orderId = document.getElementById('rs-order-id').value;
-  const orderNo = document.getElementById('rs-order-id').selectedOptions[0]?.dataset?.no || '';
-  const notes = document.getElementById('rs-notes').value.trim();
-  if (!orderId) { showToast('❌ 请选择订单'); return; }
+  const orderNo = document.getElementById('rs-order-id').selectedOptions[0]?.dataset?.no || (editing?.order_no||'');
+  const notes   = document.getElementById('rs-notes').value.trim();
+  if (!orderId && !editing) { showToast('❌ 请选择订单'); return; }
   if (!notes) { showToast('❌ 请填写备注（地址）'); return; }
-  const { error } = await sb.from('shipping_requests').insert({ order_id: orderId, order_no: orderNo, notes, created_by: currentUser.id, status: 'pending' });
-  if (error) { showToast('❌ 提交失败: ' + error.message); return; }
+  let error;
+  if (editing) {
+    ({ error } = await sb.from('shipping_requests').update({ notes }).eq('id', editing.id));
+  } else {
+    ({ error } = await sb.from('shipping_requests').insert({ order_id: orderId, order_no: orderNo, notes, created_by: currentUser.id, status: 'pending' }));
+  }
+  if (error) { showToast('❌ 失败: ' + error.message); return; }
   closeModal('modal-req-shipping');
-  showToast('✅ 寄货申请已提交');
-  await sendNotif('req_shipping', `寄货申请 ${orderNo}`, orderNo, orderId, null, null);
+  showToast(editing ? '✅ 已更新' : '✅ 寄货申请已提交');
+  const no = orderNo || editing?.order_no || '';
+  const oid = orderId || editing?.order_id || null;
+  const msg = editing ? `寄货申请已更新 ${no}` : `新寄货申请 ${no} (${currentUser.name||''})`;
+  await _sendReqNotif('req_shipping', msg, no, oid, editing ? editing.created_by : null);
   loadReqShipping();
 }
 
-async function updateReqStatus(type, id, status) {
+async function updateReqStatus(type, id, status, createdBy, orderNo, orderId) {
   const tableMap = { refund: 'refund_requests', payout: 'payout_requests', shipping: 'shipping_requests' };
   const { error } = await sb.from(tableMap[type]).update({ status }).eq('id', id);
   if (error) { showToast('❌ 更新失败'); return; }
-  showToast('✅ 状态已更新');
+  showToast('✅ 已标记完成');
+  const typeLabel = { refund:'退款申请', payout:'出账申请', shipping:'寄货申请' }[type];
+  await _sendReqNotif(type + '_done', `${typeLabel}已完成 ${orderNo||''}`, orderNo||null, orderId||null, createdBy||null);
+  if (type === 'refund') loadReqRefund();
+  else if (type === 'payout') loadReqPayout();
+  else loadReqShipping();
+}
+
+async function deleteReq(type, id) {
+  if (!confirm('确定要删除这条申请吗？')) return;
+  const tableMap = { refund: 'refund_requests', payout: 'payout_requests', shipping: 'shipping_requests' };
+  const { error } = await sb.from(tableMap[type]).delete().eq('id', id);
+  if (error) { showToast('❌ 删除失败'); return; }
+  showToast('🗑️ 已删除');
   if (type === 'refund') loadReqRefund();
   else if (type === 'payout') loadReqPayout();
   else loadReqShipping();
