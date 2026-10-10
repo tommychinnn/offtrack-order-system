@@ -3014,7 +3014,7 @@ function buildOrderRow(o) {
     data-cost="${cost}"
     data-profit="${profit.toFixed(2)}"
     data-actual-profit="${actualProfit.toFixed(2)}"
-    data-supplier-owed="${remainRM > 0 ? remainRM.toFixed(2) : '0'}"
+    data-supplier-owed="${(remainRM <= 0 || (costFor > 0 && costCur !== 'MYR' && remainFor <= 0)) ? '0' : remainRM.toFixed(2)}"
     data-kol="${(o.kol_name||'').toLowerCase()}"
     data-created="${(o.created_at||'').slice(0,10)}">
     <td class="sh-sticky sh-sep" style="left:0"><span class="mono">${o.order_no}</span></td>
