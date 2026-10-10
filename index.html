@@ -1989,8 +1989,8 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                     <option selected>CNY</option><option>JPY</option><option>USD</option><option>THB</option><option>MYR</option>
                   </select>
                 </div>
-                <div class="form-group"><label>底价 (外币)</label><input class="editable-field" id="cost-foreign" type="number" value="25784" readonly oninput="calcCostRM()"/></div>
-                <div class="form-group"><label>汇率 (1 外币 = RM)</label><input class="editable-field" id="cost-rate" type="number" value="0.62" step="0.001" readonly oninput="calcCostRM()"/></div>
+                <div class="form-group"><label>底价 (外币)</label><input class="editable-field" id="cost-foreign" type="number" placeholder="0" readonly oninput="calcCostRM()"/></div>
+                <div class="form-group"><label>汇率 (1 外币 = RM)</label><input class="editable-field" id="cost-rate" type="number" placeholder="0.62" step="0.001" readonly oninput="calcCostRM()"/></div>
                 <div class="form-group">
                   <label>总底价 (RM)</label>
                   <input class="editable-field" id="cost-rm-display" type="number" step="0.01" placeholder="自动计算或手填" readonly style="font-weight:700;color:#D97706" oninput="calcProfit()"/>
@@ -3340,7 +3340,10 @@ async function openOrder(uuid) {
   if (custNotesEl) custNotesEl.value = o.customers?.notes || '';
   const custPhoneEl = document.getElementById('det-cust-phone');
   if (custPhoneEl) custPhoneEl.value = o.customers?.phone || '';
-  // Cost inputs
+  // Cost inputs — clear first to avoid stale values from previous order
+  document.getElementById('cost-foreign').value = '';
+  document.getElementById('cost-rate').value = '';
+  document.getElementById('cost-rm-display').value = '';
   if (o.cost_foreign != null) document.getElementById('cost-foreign').value = o.cost_foreign;
   if (o.cost_rm != null) document.getElementById('cost-rm-display').value = o.cost_rm;
   if (o.cost_foreign && o.cost_rm) {
