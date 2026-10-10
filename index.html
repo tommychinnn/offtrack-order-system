@@ -6043,6 +6043,25 @@ async function saveTraveler() {
     ({ error } = await sb.from('travelers').insert({ ...payload, order_id: _currentOrder.id }));
   }
   if (error) { showToast('❌ 保存失败: ' + error.message); return; }
+  // If editing the main traveler, sync name to customer record (copy-on-write if shared)
+  if (isEditing && _editTravIsMain && _currentOrder.customer_id) {
+    const { data: sharedOrders } = await sb.from('orders').select('id').eq('customer_id', _currentOrder.customer_id).neq('id', _currentOrder.id);
+    if (sharedOrders && sharedOrders.length > 0) {
+      // Customer is shared — create a new record for this order only
+      const salutation = document.getElementById('trav-title').value || 'MS';
+      const { data: newCust } = await sb.from('customers').insert({ name, salutation }).select().maybeSingle();
+      if (newCust) {
+        await sb.from('orders').update({ customer_id: newCust.id }).eq('id', _currentOrder.id);
+        _currentOrder.customer_id = newCust.id;
+        _currentOrder.customers = { ..._currentOrder.customers, name };
+      }
+    } else {
+      await sb.from('customers').update({ name }).eq('id', _currentOrder.customer_id);
+      _currentOrder.customers = { ..._currentOrder.customers, name };
+    }
+    document.getElementById('detail-oh-customer').textContent = name;
+    document.getElementById('detail-breadcrumb').textContent = (_currentOrder.order_no || '') + ' · ' + name;
+  }
   showToast(isEditing ? '✅ 旅客资料已更新' : '✅ 旅客已添加');
   const continueAdd = !isEditing && document.getElementById('trav-continue').checked;
   _editTravId = null;
