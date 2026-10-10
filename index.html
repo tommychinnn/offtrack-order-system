@@ -8886,8 +8886,13 @@ function filterReqTable(type) {
 
 function _reqActionBtns(type, r) {
   const btns = [];
-  if (_reqCanManage() && r.status === 'pending')
-    btns.push(`<button class="tb-btn btn-primary" style="font-size:10px;padding:3px 10px" onclick="updateReqStatus('${type}','${r.id}','done','${r.created_by||''}','${r.order_no||''}','${r.order_id||''}')">标记完成</button>`);
+  const canToggle = _reqCanManage() || (type === 'shipping' && _reqIsCreator());
+  if (canToggle) {
+    if (r.status === 'pending')
+      btns.push(`<button class="tb-btn btn-primary" style="font-size:10px;padding:3px 10px" onclick="updateReqStatus('${type}','${r.id}','done','${r.created_by||''}','${r.order_no||''}','${r.order_id||''}')">标记完成</button>`);
+    else
+      btns.push(`<button class="tb-btn btn-ghost" style="font-size:10px;padding:3px 10px;border:1.5px solid #D1D5DB" onclick="updateReqStatus('${type}','${r.id}','pending','${r.created_by||''}','${r.order_no||''}','${r.order_id||''}')">撤回</button>`);
+  }
   if (_reqCanEdit(r))
     btns.push(`<button class="tb-btn btn-ghost" style="font-size:10px;padding:3px 10px" onclick="openReqModal('${type}',_reqCache['${type}'].find(x=>x.id==='${r.id}'))">编辑</button>`);
   if (_reqCanDelete(r))
@@ -9073,9 +9078,10 @@ async function updateReqStatus(type, id, status, createdBy, orderNo, orderId) {
   const tableMap = { refund: 'refund_requests', payout: 'payout_requests', shipping: 'shipping_requests' };
   const { error } = await sb.from(tableMap[type]).update({ status }).eq('id', id);
   if (error) { showToast('❌ 更新失败'); return; }
-  showToast('✅ 已标记完成');
+  showToast(status === 'done' ? '✅ 已标记完成' : '↩️ 已撤回');
   const typeLabel = { refund:'退款申请', payout:'出账申请', shipping:'寄货申请' }[type];
-  await _sendReqNotif(type + '_done', `${typeLabel}已完成 ${orderNo||''}`, orderNo||null, orderId||null, createdBy||null);
+  const notifMsg = status === 'done' ? `${typeLabel}已完成 ${orderNo||''}` : `${typeLabel}已撤回 ${orderNo||''}`;
+  await _sendReqNotif(type + (status === 'done' ? '_done' : '_reverted'), notifMsg, orderNo||null, orderId||null, createdBy||null);
   if (type === 'refund') loadReqRefund();
   else if (type === 'payout') loadReqPayout();
   else loadReqShipping();
