@@ -3085,7 +3085,7 @@ function showPage(p) {
   document.querySelectorAll('.nav-item[data-page]').forEach(el => {
     if (el.dataset.page === p) el.classList.add('active');
   });
-  if (p === 'orders') { filterOrders(); }
+  if (p === 'orders') { loadOrders(); }
   if (p === 'dashboard') { loadDashboard(); }
   if (p === 'insurance-global') { loadInsuranceGlobal(); }
   if (p === 'pay-in') { loadPayIns(); }
