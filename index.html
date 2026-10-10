@@ -8709,23 +8709,21 @@ async function submitEditPayOut() {
 </div>
 
 <!-- ── MODAL: 申请退款 ── -->
-<div class="modal-overlay" id="modal-req-refund" style="display:none">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header"><span>申请退款</span><button onclick="closeModal('modal-req-refund')">✕</button></div>
+<div class="modal-overlay" id="modal-req-refund" onclick="if(event.target===this)closeModal('modal-req-refund')">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-hd"><span class="modal-hd-title">申请退款</span><button class="modal-close" onclick="closeModal('modal-req-refund')">✕</button></div>
     <div class="modal-body">
       <div class="mf-group"><label>订单号 *</label>
-        <select id="rr-order-id" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px">
-          <option value="">— 选择订单 —</option>
-        </select>
+        <select id="rr-order-id"><option value="">— 选择订单 —</option></select>
       </div>
       <div class="mf-group"><label>退款金额 (RM) *</label>
-        <input type="number" id="rr-amount" placeholder="0.00" step="0.01" min="0" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box"/>
+        <input type="number" id="rr-amount" placeholder="0.00" step="0.01" min="0"/>
       </div>
       <div class="mf-group"><label>原因 *</label>
-        <input type="text" id="rr-reason" placeholder="退款原因…" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box"/>
+        <input type="text" id="rr-reason" placeholder="退款原因…"/>
       </div>
       <div class="mf-group"><label>备注</label>
-        <textarea id="rr-notes" rows="2" placeholder="其他备注…" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical"></textarea>
+        <textarea id="rr-notes" rows="2" placeholder="其他备注…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -8736,23 +8734,21 @@ async function submitEditPayOut() {
 </div>
 
 <!-- ── MODAL: 申请出账 ── -->
-<div class="modal-overlay" id="modal-req-payout" style="display:none">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header"><span>申请出账</span><button onclick="closeModal('modal-req-payout')">✕</button></div>
+<div class="modal-overlay" id="modal-req-payout" onclick="if(event.target===this)closeModal('modal-req-payout')">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-hd"><span class="modal-hd-title">申请出账</span><button class="modal-close" onclick="closeModal('modal-req-payout')">✕</button></div>
     <div class="modal-body">
       <div class="mf-group"><label>订单号 *</label>
-        <select id="rp-order-id" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px">
-          <option value="">— 选择订单 —</option>
-        </select>
+        <select id="rp-order-id"><option value="">— 选择订单 —</option></select>
       </div>
       <div class="mf-group"><label>出账金额 (RM) *</label>
-        <input type="number" id="rp-amount" placeholder="0.00" step="0.01" min="0" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box"/>
+        <input type="number" id="rp-amount" placeholder="0.00" step="0.01" min="0"/>
       </div>
       <div class="mf-group"><label>原因 *</label>
-        <input type="text" id="rp-reason" placeholder="出账原因…" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box"/>
+        <input type="text" id="rp-reason" placeholder="出账原因…"/>
       </div>
       <div class="mf-group"><label>备注</label>
-        <textarea id="rp-notes" rows="2" placeholder="其他备注…" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical"></textarea>
+        <textarea id="rp-notes" rows="2" placeholder="其他备注…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -8763,17 +8759,15 @@ async function submitEditPayOut() {
 </div>
 
 <!-- ── MODAL: 申请寄货 ── -->
-<div class="modal-overlay" id="modal-req-shipping" style="display:none">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header"><span>申请寄货</span><button onclick="closeModal('modal-req-shipping')">✕</button></div>
+<div class="modal-overlay" id="modal-req-shipping" onclick="if(event.target===this)closeModal('modal-req-shipping')">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-hd"><span class="modal-hd-title">申请寄货</span><button class="modal-close" onclick="closeModal('modal-req-shipping')">✕</button></div>
     <div class="modal-body">
       <div class="mf-group"><label>订单号 *</label>
-        <select id="rs-order-id" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px">
-          <option value="">— 选择订单 —</option>
-        </select>
+        <select id="rs-order-id"><option value="">— 选择订单 —</option></select>
       </div>
       <div class="mf-group"><label>备注（收件地址 / 物品 / 说明）*</label>
-        <textarea id="rs-notes" rows="4" placeholder="请填写收件人姓名、地址、联系电话、寄送物品说明…" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical"></textarea>
+        <textarea id="rs-notes" rows="4" placeholder="请填写收件人姓名、地址、联系电话、寄送物品说明…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -8822,7 +8816,11 @@ function openReqModal(type) {
   const modalId = 'modal-req-' + type;
   const selId = { refund: 'rr-order-id', payout: 'rp-order-id', shipping: 'rs-order-id' }[type];
   _loadOrderDropdown(selId);
-  document.getElementById(modalId).style.display = 'flex';
+  // Reset form fields
+  if (type === 'refund') { document.getElementById('rr-amount').value=''; document.getElementById('rr-reason').value=''; document.getElementById('rr-notes').value=''; }
+  if (type === 'payout') { document.getElementById('rp-amount').value=''; document.getElementById('rp-reason').value=''; document.getElementById('rp-notes').value=''; }
+  if (type === 'shipping') { document.getElementById('rs-notes').value=''; }
+  document.getElementById(modalId).classList.add('open');
 }
 
 function filterReqTable(type) {
