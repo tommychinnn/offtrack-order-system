@@ -7131,13 +7131,16 @@ async function submitPayIn() {
   const notes   = document.getElementById('pi-notes').value.trim() || null;
   if (!date || !orderNo || !type || !amt || !bank) { showToast('⚠️ 请填写日期、订单号、类型、金额、Bank'); return; }
 
-  // Upload receipt if selected
+  // Upload receipt if selected, else use link
   const receiptFile = document.getElementById('pi-receipt')?.files[0];
+  const receiptLink = document.getElementById('pi-receipt-link')?.value.trim() || null;
   let receiptUrl = null;
   if (receiptFile) {
     showToast('⏳ 上传收据中...');
     receiptUrl = await uploadToStorage(receiptFile, 'receipts');
     if (!receiptUrl) return;
+  } else if (receiptLink) {
+    receiptUrl = receiptLink;
   }
 
   // Resolve order UUID
@@ -7157,6 +7160,7 @@ async function submitPayIn() {
   // Trigger 2: notify Finance to check and issue invoice
   await sendNotif('pay_in', `收到入账 ${orderNo}（RM ${amt.toFixed(2)}）— 请 check 并开 Invoice`, orderNo, orderId, 'finance', null);
   closeModal('modal-pay-in');
+  document.getElementById('pi-receipt-link').value = '';
   showToast('✅ 入账记录已提交');
   if (document.getElementById('page-payin')?.classList.contains('active')) await loadPayIns();
 }
@@ -7174,11 +7178,13 @@ async function submitPayOut() {
   if (!date || !orderNo || (!foreign && !rm)) { showToast('⚠️ 请填写日期、订单号、金额'); return; }
   if (!supplierId) { showToast('⚠️ 请选择 Supplier'); return; }
 
-  // Upload files if selected
+  // Upload files if selected, else use link inputs
   const receiptFile  = document.getElementById('po-receipt')?.files[0];
   const invoiceFile  = document.getElementById('po-invoice')?.files[0];
   const transferFile = document.getElementById('po-transfer')?.files[0];
-  let receiptUrl = null, invoiceUrl = null, transferUrl = null;
+  let receiptUrl = document.getElementById('po-receipt-link')?.value.trim() || null;
+  let invoiceUrl = document.getElementById('po-invoice-link')?.value.trim() || null;
+  let transferUrl = document.getElementById('po-transfer-link')?.value.trim() || null;
   if (receiptFile) {
     showToast('⏳ 上传收据中...');
     receiptUrl = await uploadToStorage(receiptFile, 'receipts');
@@ -7216,6 +7222,7 @@ async function submitPayOut() {
   // Trigger 5: notify Finance of the payout
   await sendNotif('pay_out', `出账已录入（${orderNo}）— Finance 请知悉`, orderNo, orderId, 'finance', null);
   closeModal('modal-pay-out');
+  ['po-receipt-link','po-invoice-link','po-transfer-link'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   showToast('✅ 出账记录已提交');
   if (_currentOrder) loadDetailPayouts();
   if (document.getElementById('page-payout')?.classList.contains('active')) await loadPayOuts();
@@ -7905,12 +7912,13 @@ async function submitEditPayOut() {
         </div>
       </div>
       <div class="mf-group">
-        <label>Upload Receipt 上传收据 <span style="font-size:10px;color:#9CA3AF;font-weight:400">（可选）</span></label>
+        <label>收据 <span style="font-size:10px;color:#9CA3AF;font-weight:400">（上传文件 或 粘贴链接，可选）</span></label>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 12px;border:1.5px dashed #D1D5DB;border-radius:8px;background:#FAFBFF;font-size:12px;color:#6B7280">
           <span>🧾</span>
           <span id="pi-receipt-name">选择文件（JPG · PNG · PDF）</span>
           <input type="file" id="pi-receipt" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="document.getElementById('pi-receipt-name').textContent=this.files[0]?.name||'选择文件'"/>
         </label>
+        <input type="url" id="pi-receipt-link" placeholder="或粘贴链接（Google Drive / PDF URL）" style="margin-top:6px;width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;box-sizing:border-box"/>
       </div>
       <div class="mf-row col2">
         <div class="mf-group">
@@ -8006,27 +8014,36 @@ async function submitEditPayOut() {
       <div style="border-top:1px solid #F0F2F7;margin:8px 0;padding-top:4px">
         <div style="font-size:10px;font-weight:800;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px">文件</div>
       </div>
-      <div class="mf-row col3">
-        <div class="mf-group">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="mf-group" style="margin:0">
           <label>收据 <span style="font-size:10px;color:#9CA3AF;font-weight:400">（可选）</span></label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 10px;border:1.5px dashed #D1D5DB;border-radius:8px;background:#FAFBFF;font-size:11px;color:#6B7280">
-            🧾 <span id="po-receipt-name">选择文件</span>
-            <input type="file" id="po-receipt" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="document.getElementById('po-receipt-name').textContent=this.files[0]?.name||'选择文件'"/>
-          </label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 10px;border:1.5px dashed #D1D5DB;border-radius:8px;background:#FAFBFF;font-size:11px;color:#6B7280;flex-shrink:0">
+              🧾 <span id="po-receipt-name">上传文件</span>
+              <input type="file" id="po-receipt" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="document.getElementById('po-receipt-name').textContent=this.files[0]?.name||'上传文件'"/>
+            </label>
+            <input type="url" id="po-receipt-link" placeholder="或粘贴链接" style="flex:1;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:11px"/>
+          </div>
         </div>
-        <div class="mf-group">
+        <div class="mf-group" style="margin:0">
           <label>Supplier Invoice <span style="font-size:10px;color:#9CA3AF;font-weight:400">（可选）</span></label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 10px;border:1.5px dashed #D1D5DB;border-radius:8px;background:#FAFBFF;font-size:11px;color:#6B7280">
-            📋 <span id="po-invoice-name">选择文件</span>
-            <input type="file" id="po-invoice" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="document.getElementById('po-invoice-name').textContent=this.files[0]?.name||'选择文件'"/>
-          </label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 10px;border:1.5px dashed #D1D5DB;border-radius:8px;background:#FAFBFF;font-size:11px;color:#6B7280;flex-shrink:0">
+              📋 <span id="po-invoice-name">上传文件</span>
+              <input type="file" id="po-invoice" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="document.getElementById('po-invoice-name').textContent=this.files[0]?.name||'上传文件'"/>
+            </label>
+            <input type="url" id="po-invoice-link" placeholder="或粘贴链接" style="flex:1;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:11px"/>
+          </div>
         </div>
-        <div class="mf-group">
+        <div class="mf-group" style="margin:0">
           <label>转账凭证 <span style="font-size:10px;color:#9CA3AF;font-weight:400">（可选）</span></label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 10px;border:1.5px dashed #D1D5DB;border-radius:8px;background:#FAFBFF;font-size:11px;color:#6B7280">
-            🏦 <span id="po-transfer-name">选择文件</span>
-            <input type="file" id="po-transfer" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="document.getElementById('po-transfer-name').textContent=this.files[0]?.name||'选择文件'"/>
-          </label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 10px;border:1.5px dashed #D1D5DB;border-radius:8px;background:#FAFBFF;font-size:11px;color:#6B7280;flex-shrink:0">
+              🏦 <span id="po-transfer-name">上传文件</span>
+              <input type="file" id="po-transfer" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="document.getElementById('po-transfer-name').textContent=this.files[0]?.name||'上传文件'"/>
+            </label>
+            <input type="url" id="po-transfer-link" placeholder="或粘贴链接" style="flex:1;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:11px"/>
+          </div>
         </div>
       </div>
       <div class="mf-group">
