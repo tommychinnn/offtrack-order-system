@@ -1500,8 +1500,8 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
               <div class="form-group"><label>底价 (外币)</label><input type="number" id="cr-cost-foreign" placeholder="25000" class="inline-num" style="width:100%" oninput="crCalcCostRM()"/></div>
               <div class="form-group"><label>汇率 (1外币 = RM)</label><input type="number" id="cr-cost-rate" placeholder="0.62" step="0.001" class="inline-num" style="width:100%" oninput="crCalcCostRM()"/></div>
               <div class="form-group">
-                <label>估算 RM</label>
-                <div id="cr-cost-rm" style="font-size:14px;font-weight:800;color:#D97706;padding:8px 0">—</div>
+                <label>总底价 (RM) *</label>
+                <input type="number" id="cr-cost-rm" placeholder="自动计算或手填" step="0.01" class="inline-num" style="width:100%;font-weight:700;color:#D97706" oninput="crCalcProfit()"/>
               </div>
             </div>
           </div>
@@ -1992,8 +1992,8 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
                 <div class="form-group"><label>底价 (外币)</label><input class="editable-field" id="cost-foreign" type="number" value="25784" readonly oninput="calcCostRM()"/></div>
                 <div class="form-group"><label>汇率 (1 外币 = RM)</label><input class="editable-field" id="cost-rate" type="number" value="0.62" step="0.001" readonly oninput="calcCostRM()"/></div>
                 <div class="form-group">
-                  <label>估算 RM</label>
-                  <div id="cost-rm-display" style="font-size:14px;font-weight:800;color:#D97706;padding:8px 0">≈ RM 15,264</div>
+                  <label>总底价 (RM)</label>
+                  <input class="editable-field" id="cost-rm-display" type="number" step="0.01" placeholder="自动计算或手填" readonly style="font-weight:700;color:#D97706" oninput="calcProfit()"/>
                 </div>
               </div>
             </div>
@@ -2945,9 +2945,7 @@ function buildOrderRow(o) {
   const sp        = o.supplier_salespersons?.name || '—';
   const tdName    = o.users?.name || '—';
   const total     = parseFloat(o.selling_price) || 0;
-  // Only count GSH-verified payments toward paid amount (Bug #5 fix)
-  // gsh_check: 'pending' (default), 'verified', 'issue' - only 'verified' counts
-  const paid      = (o.payins || []).filter(p => p.gsh_check === 'verified').reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
+  const paid      = (o.payins || []).reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
   const paidOut   = (o.payouts || []).reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
   const balance   = total - paid;
   const cost      = parseFloat(o.cost_rm) || 0;
@@ -3344,11 +3342,12 @@ async function openOrder(uuid) {
   if (custPhoneEl) custPhoneEl.value = o.customers?.phone || '';
   // Cost inputs
   if (o.cost_foreign != null) document.getElementById('cost-foreign').value = o.cost_foreign;
+  if (o.cost_rm != null) document.getElementById('cost-rm-display').value = o.cost_rm;
   if (o.cost_foreign && o.cost_rm) {
     const rate = parseFloat(o.cost_rm) / parseFloat(o.cost_foreign);
     document.getElementById('cost-rate').value = rate.toFixed(4);
   }
-  calcCostRM();
+  calcProfit();
 
   setTimeout(() => { syncTodoList(); syncSidebar(); }, 50);
 
@@ -3876,7 +3875,8 @@ async function saveEditMode() {
   sellingPrice = ((priceTotal||0) + (insTotal||0) - (discountVal||0)) || null;
   const costForeign = g('cost-foreign') || null;
   const costRate    = g('cost-rate') || null;
-  const costRM      = (costForeign && costRate) ? Math.round(costForeign * costRate * 100) / 100 : null;
+  const costRMInput = parseFloat(document.getElementById('cost-rm-display')?.value) || null;
+  const costRM      = costRMInput || ((costForeign && costRate) ? Math.round(costForeign * costRate * 100) / 100 : null);
 
   const newOrderNo = (document.getElementById('det-order-no')?.value || '').trim().toUpperCase();
   if (newOrderNo && newOrderNo !== _currentOrder.order_no) {
@@ -4044,10 +4044,10 @@ async function loadDashboard() {
   document.getElementById('dash-month').textContent = thisMonth.length;
   document.getElementById('dash-14d').textContent = upcoming.length;
 
-  // Balance unpaid - only count GSH-verified payments
+  // Balance unpaid
   const withBalance = orders.filter(o => {
     const total = parseFloat(o.selling_price)||0;
-    const paid = (o.payins||[]).filter(p=>p.gsh_check==='verified').reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
+    const paid = (o.payins||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
     if (!(total > 0 && paid < total)) return false;
     // 行程结束但未付清
     if (o.status === 'completed') return true;
@@ -4060,7 +4060,7 @@ async function loadDashboard() {
   document.getElementById('dash-balance').textContent = withBalance.length;
   const totalBalance = withBalance.reduce((s,o)=>{
     const total=parseFloat(o.selling_price)||0;
-    const paid=(o.payins||[]).filter(p=>p.gsh_check==='verified').reduce((ss,p)=>ss+(parseFloat(p.amount_rm)||0),0);
+    const paid=(o.payins||[]).reduce((ss,p)=>ss+(parseFloat(p.amount_rm)||0),0);
     return s+(total-paid);
   },0);
   document.getElementById('dash-balance-sub').textContent = `总 RM ${fmt(totalBalance)}`;
@@ -4313,10 +4313,9 @@ async function loadReport() {
   orders.forEach(o => {
     const revenue   = parseFloat(o.selling_price)||0;
     const cost      = parseFloat(o.cost_rm)||0;
-    // Only count GSH-verified payments (gsh_check === 'verified')
-    const paid      = (o.payins||[]).filter(p=>p.gsh_check==='verified').reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
+    const paid      = (o.payins||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
     const paidOut   = (o.payouts||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
-    const estProfit = revenue - cost - (parseFloat(o.insurance_total) || 0);
+    const estProfit = revenue - cost;
     const actProfit = paid - paidOut;
     const pax       = parseInt(o.pax_total)||0;
     const departMon = (o.depart_date||'').slice(0,7);
@@ -4891,7 +4890,7 @@ function calcCostRM() {
   const rate = parseFloat(document.getElementById('cost-rate')?.value) || 0;
   const rm = foreign * rate;
   const el = document.getElementById('cost-rm-display');
-  if (el) el.textContent = '≈ RM ' + rm.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
+  if (el && rm > 0) el.value = rm.toFixed(2);
   calcProfit();
 }
 function detAutoCalcIns() {
@@ -5020,7 +5019,7 @@ function calcProfit() {
   if (!el) return;
   const foreign = parseFloat(document.getElementById('cost-foreign')?.value) || 0;
   const rate = parseFloat(document.getElementById('cost-rate')?.value) || 0;
-  const costRM = foreign * rate;
+  const costRM = parseFloat(document.getElementById('cost-rm-display')?.value) || (foreign * rate);
   const totEl = document.getElementById('total-display');
   const sell = totEl ? parseFloat(totEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
   const profit = sell - costRM;
@@ -5630,7 +5629,8 @@ async function submitOrder() {
   const costCurrency = document.getElementById('cr-cost-currency')?.value || null;
   const costForeign  = parseFloat(document.getElementById('cr-cost-foreign')?.value) || null;
   const costRate     = parseFloat(document.getElementById('cr-cost-rate')?.value) || null;
-  const costRM       = (costForeign && costRate) ? Math.round(costForeign * costRate * 100) / 100 : null;
+  const costRMInput  = parseFloat(document.getElementById('cr-cost-rm')?.value) || null;
+  const costRM       = costRMInput || ((costForeign && costRate) ? Math.round(costForeign * costRate * 100) / 100 : null);
 
   // Order number — use user's manual entry if provided, else auto-generate
   const opt     = supSel.options[supSel.selectedIndex];
@@ -5827,8 +5827,8 @@ function crCalcCostRM() {
   const rate = parseFloat(document.getElementById('cr-cost-rate')?.value) || 0;
   const rm = foreign * rate;
   const el = document.getElementById('cr-cost-rm');
-  if (el) el.textContent = rm > 0 ? '≈ RM ' + rm.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0}) : '—';
-  _paxCost = rm;
+  if (el && rm > 0) el.value = rm.toFixed(2);
+  _paxCost = parseFloat(document.getElementById('cr-cost-rm')?.value) || rm;
   crCalcProfit();
 }
 function crCalcProfit() {
@@ -6601,7 +6601,7 @@ function doExport() {
   const rows = orders.map(o => {
     const total      = parseFloat(o.total_price) || 0;
     const cost       = parseFloat(o.cost_rm || o.cost) || 0;
-    const paid       = (o.payins||[]).filter(p => p.gsh_check === 'verified').reduce((s,p) => s + (parseFloat(p.amount_rm)||0), 0);
+    const paid       = (o.payins||[]).reduce((s,p) => s + (parseFloat(p.amount_rm)||0), 0);
     const paidOut    = (o.payouts||[]).reduce((s,p) => s + (parseFloat(p.amount_rm)||0), 0);
     const balance    = total - paid;
     const profit     = total - cost;
