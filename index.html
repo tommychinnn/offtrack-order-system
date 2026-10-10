@@ -5655,19 +5655,12 @@ async function submitOrder() {
     }
   }
 
-  // Find or create customer
-  let customerId = null;
-  if (custPhone) {
-    const { data: existing } = await sb.from('customers').select('id').eq('phone', custPhone).maybeSingle();
-    if (existing?.id) { customerId = existing.id; }
-  }
-  if (!customerId) {
-    const { data: newCust, error: custErr } = await sb.from('customers')
-      .insert({ salutation: sal, name: custName, phone: custPhone || null })
-      .select('id').single();
-    if (custErr) { alert('创建顾客失败: ' + custErr.message); return; }
-    customerId = newCust.id;
-  }
+  // Always create a new customer record per order
+  const { data: newCust, error: custErr } = await sb.from('customers')
+    .insert({ salutation: sal, name: custName, phone: custPhone || null })
+    .select('id').single();
+  if (custErr) { alert('创建顾客失败: ' + custErr.message); return; }
+  const customerId = newCust.id;
 
   // Insert order
   const brand = document.getElementById('cr-brand')?.value || 'Offtrack Travel';
