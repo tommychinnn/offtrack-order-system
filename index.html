@@ -528,6 +528,10 @@ body[data-active-role="ce"] #btn-show-archived{display:none!important}
 body[data-active-role="td"] #btn-export-orders{display:none!important}
 body[data-active-role="ce"] #btn-export-orders{display:none!important}
 body[data-active-role="finance"] #btn-show-archived{display:none!important}
+/* 新建申请 button — only for TD/CE */
+.req-create-btn{display:none}
+body[data-active-role="td"] .req-create-btn,
+body[data-active-role="ce"] .req-create-btn{display:inline-flex}
 /* Cost & profit columns — hidden from TD */
 .col-cost{display:none}
 body[data-active-role="master"] .col-cost,
@@ -758,6 +762,10 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
     <div class="nav-item" data-role="master operation td finance" data-page="insurance-global" onclick="showPage('insurance-global')"><span class="icon">🛡️</span>保险</div>
     <div class="nav-item" data-role="master operation td finance" data-page="pay-in" onclick="showPage('pay-in')"><span class="icon">💰</span>入账</div>
     <div class="nav-item" data-role="master operation finance" data-page="pay-out" onclick="showPage('pay-out')"><span class="icon">💸</span>出账</div>
+    <div class="nav-section" data-role="master operation td finance">申请</div>
+    <div class="nav-item" data-role="master operation td finance" data-page="req-refund" onclick="showPage('req-refund')"><span class="icon">🔄</span>申请退款<span class="badge req-refund-badge" style="display:none"></span></div>
+    <div class="nav-item" data-role="master operation td finance" data-page="req-payout" onclick="showPage('req-payout')"><span class="icon">📤</span>申请出账<span class="badge req-payout-badge" style="display:none"></span></div>
+    <div class="nav-item" data-role="master operation td finance" data-page="req-shipping" onclick="showPage('req-shipping')"><span class="icon">📦</span>申请寄货<span class="badge req-shipping-badge" style="display:none"></span></div>
     <div class="nav-item" data-role="master operation td finance" data-page="notifications" onclick="showPage('notifications')"><span class="icon">🔔</span>通知<span class="badge" id="notif-badge">7</span></div>
     <div class="nav-item" data-role="master operation td finance" data-page="files-global" onclick="showPage('files-global')"><span class="icon">📁</span>文件与行程</div>
     <div class="nav-item" data-role="master operation" data-page="anomaly" onclick="showPage('anomaly')"><span class="icon">⚠️</span>异常中心<span class="badge" style="background:#EF4444">5</span></div>
@@ -2139,9 +2147,21 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
           </div>
         </div>
 
-        <!-- ⑧ 文件 -->
+        <!-- ⑧ 退款申请 -->
+        <div class="ov-section" style="margin-bottom:12px" id="det-refund-section">
+          <div class="ov-section-title">⑧ 退款申请</div>
+          <div style="padding:10px 14px" id="det-refund-list"><span style="color:#9CA3AF;font-size:12px">暂无退款申请</span></div>
+        </div>
+
+        <!-- ⑨ 寄货申请 -->
+        <div class="ov-section" style="margin-bottom:12px" id="det-shipping-section">
+          <div class="ov-section-title">⑨ 寄货申请</div>
+          <div style="padding:10px 14px" id="det-shipping-list"><span style="color:#9CA3AF;font-size:12px">暂无寄货申请</span></div>
+        </div>
+
+        <!-- ⑩ 文件 -->
         <div class="ov-section" style="margin-bottom:12px">
-          <div class="ov-section-title">⑧ 文件</div>
+          <div class="ov-section-title">⑩ 文件</div>
           <div style="padding:14px">
             <input type="file" id="det-file-input" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" onchange="handleDetFileSelected(this)"/>
 
@@ -3055,6 +3075,9 @@ function showPage(p) {
     'finance-ledger': 'page-finance-ledger',
     'pay-in': 'page-pay-in',
     'pay-out': 'page-pay-out',
+    'req-refund': 'page-req-refund',
+    'req-payout': 'page-req-payout',
+    'req-shipping': 'page-req-shipping',
     'user-mgmt': 'page-user-mgmt',
     'alert-rules': 'page-alert-rules',
   };
@@ -3069,6 +3092,9 @@ function showPage(p) {
   if (p === 'insurance-global') { loadInsuranceGlobal(); }
   if (p === 'pay-in') { loadPayIns(); }
   if (p === 'pay-out') { loadPayOuts(); }
+  if (p === 'req-refund') { loadReqRefund(); }
+  if (p === 'req-payout') { loadReqPayout(); }
+  if (p === 'req-shipping') { loadReqShipping(); }
   if (p === 'report') { loadReport(); }
   if (p === 'files-global') { loadGlobalFiles(); }
   if (p === 'notifications') { loadNotifications(); }
@@ -3119,6 +3145,7 @@ async function openOrder(uuid) {
 
   if (error || !o) { showToast('❌ 无法加载订单'); return; }
   _currentOrder = o;
+  loadOrderRequests(uuid);
   _detDateTbd = !!o.date_tbd;
 
   const custName  = (o.customers?.salutation ? o.customers.salutation + ' ' : '') + (o.customers?.name || '—');
@@ -8573,6 +8600,428 @@ async function submitEditPayOut() {
     </div>
   </div>
 </div>
+
+
+<!-- ══════════════════════════════════════════
+     PAGE: 申请退款
+═══════════════════════════════════════════ -->
+<div class="page" id="page-req-refund">
+  <div class="topbar">
+    <div><div class="page-title">申请退款</div><div class="breadcrumb">退款申请管理</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="tb-btn btn-primary req-create-btn" onclick="openReqModal('refund')">＋ 新建申请</button>
+    </div>
+  </div>
+  <div class="content-area">
+    <div id="refund-req-stats" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="refund-req-search" placeholder="搜索订单号…" oninput="filterReqTable('refund')" style="min-width:180px;padding:6px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px"/>
+      <select id="refund-req-status" onchange="filterReqTable('refund')" style="padding:6px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px">
+        <option value="">全部状态</option><option value="pending">⏳ 待处理</option><option value="done">✅ 已完成</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto;background:#fff;border:1px solid #E5E7EB;border-radius:10px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#F7F8FA;border-bottom:2px solid #E5E7EB">
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">状态</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">日期</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">订单号</th>
+          <th style="padding:10px 12px;text-align:right;font-weight:800;white-space:nowrap">金额 (RM)</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">原因</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">备注</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">提交人</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">操作</th>
+        </tr></thead>
+        <tbody id="refund-req-tbody"><tr><td colspan="8" style="padding:20px;text-align:center;color:#9CA3AF">加载中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: 申请出账
+═══════════════════════════════════════════ -->
+<div class="page" id="page-req-payout">
+  <div class="topbar">
+    <div><div class="page-title">申请出账</div><div class="breadcrumb">出账申请管理</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="tb-btn btn-primary req-create-btn" onclick="openReqModal('payout')">＋ 新建申请</button>
+    </div>
+  </div>
+  <div class="content-area">
+    <div id="payout-req-stats" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="payout-req-search" placeholder="搜索订单号…" oninput="filterReqTable('payout')" style="min-width:180px;padding:6px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px"/>
+      <select id="payout-req-status" onchange="filterReqTable('payout')" style="padding:6px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px">
+        <option value="">全部状态</option><option value="pending">⏳ 待处理</option><option value="done">✅ 已完成</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto;background:#fff;border:1px solid #E5E7EB;border-radius:10px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#F7F8FA;border-bottom:2px solid #E5E7EB">
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">状态</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">日期</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">订单号</th>
+          <th style="padding:10px 12px;text-align:right;font-weight:800;white-space:nowrap">金额 (RM)</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">原因</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">备注</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">提交人</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">操作</th>
+        </tr></thead>
+        <tbody id="payout-req-tbody"><tr><td colspan="8" style="padding:20px;text-align:center;color:#9CA3AF">加载中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: 申请寄货
+═══════════════════════════════════════════ -->
+<div class="page" id="page-req-shipping">
+  <div class="topbar">
+    <div><div class="page-title">申请寄货</div><div class="breadcrumb">寄货申请管理</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="tb-btn btn-primary req-create-btn" onclick="openReqModal('shipping')">＋ 新建申请</button>
+    </div>
+  </div>
+  <div class="content-area">
+    <div id="shipping-req-stats" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="shipping-req-search" placeholder="搜索订单号…" oninput="filterReqTable('shipping')" style="min-width:180px;padding:6px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px"/>
+      <select id="shipping-req-status" onchange="filterReqTable('shipping')" style="padding:6px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px">
+        <option value="">全部状态</option><option value="pending">⏳ 待处理</option><option value="done">✅ 已完成</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto;background:#fff;border:1px solid #E5E7EB;border-radius:10px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#F7F8FA;border-bottom:2px solid #E5E7EB">
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">状态</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">日期</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">订单号</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">备注（地址）</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">提交人</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">操作</th>
+        </tr></thead>
+        <tbody id="shipping-req-tbody"><tr><td colspan="6" style="padding:20px;text-align:center;color:#9CA3AF">加载中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: 申请退款 ── -->
+<div class="modal-overlay" id="modal-req-refund" style="display:none">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><span>申请退款</span><button onclick="closeModal('modal-req-refund')">✕</button></div>
+    <div class="modal-body">
+      <div class="mf-group"><label>订单号 *</label>
+        <select id="rr-order-id" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px">
+          <option value="">— 选择订单 —</option>
+        </select>
+      </div>
+      <div class="mf-group"><label>退款金额 (RM) *</label>
+        <input type="number" id="rr-amount" placeholder="0.00" step="0.01" min="0" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box"/>
+      </div>
+      <div class="mf-group"><label>原因 *</label>
+        <input type="text" id="rr-reason" placeholder="退款原因…" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box"/>
+      </div>
+      <div class="mf-group"><label>备注</label>
+        <textarea id="rr-notes" rows="2" placeholder="其他备注…" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="tb-btn btn-ghost" onclick="closeModal('modal-req-refund')">取消</button>
+      <button class="tb-btn btn-primary" onclick="submitReqRefund()">提交申请</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: 申请出账 ── -->
+<div class="modal-overlay" id="modal-req-payout" style="display:none">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><span>申请出账</span><button onclick="closeModal('modal-req-payout')">✕</button></div>
+    <div class="modal-body">
+      <div class="mf-group"><label>订单号 *</label>
+        <select id="rp-order-id" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px">
+          <option value="">— 选择订单 —</option>
+        </select>
+      </div>
+      <div class="mf-group"><label>出账金额 (RM) *</label>
+        <input type="number" id="rp-amount" placeholder="0.00" step="0.01" min="0" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box"/>
+      </div>
+      <div class="mf-group"><label>原因 *</label>
+        <input type="text" id="rp-reason" placeholder="出账原因…" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box"/>
+      </div>
+      <div class="mf-group"><label>备注</label>
+        <textarea id="rp-notes" rows="2" placeholder="其他备注…" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="tb-btn btn-ghost" onclick="closeModal('modal-req-payout')">取消</button>
+      <button class="tb-btn btn-primary" onclick="submitReqPayout()">提交申请</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: 申请寄货 ── -->
+<div class="modal-overlay" id="modal-req-shipping" style="display:none">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><span>申请寄货</span><button onclick="closeModal('modal-req-shipping')">✕</button></div>
+    <div class="modal-body">
+      <div class="mf-group"><label>订单号 *</label>
+        <select id="rs-order-id" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px">
+          <option value="">— 选择订单 —</option>
+        </select>
+      </div>
+      <div class="mf-group"><label>备注（收件地址 / 物品 / 说明）*</label>
+        <textarea id="rs-notes" rows="4" placeholder="请填写收件人姓名、地址、联系电话、寄送物品说明…" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="tb-btn btn-ghost" onclick="closeModal('modal-req-shipping')">取消</button>
+      <button class="tb-btn btn-primary" onclick="submitReqShipping()">提交申请</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── REQUESTS: shared helpers ──────────────────────────────────────────────
+
+let _reqCache = { refund: [], payout: [], shipping: [] };
+
+const _reqCanManage = () => ['master','operation','finance'].includes(currentUser.roleKey);
+const _reqIsCreator = () => ['td','ce'].includes(currentUser.roleKey);
+
+function _reqStatChip(status) {
+  return status === 'done'
+    ? '<span style="background:#D1FAE5;color:#065F46;font-weight:700;font-size:10px;padding:2px 8px;border-radius:999px">✅ 已完成</span>'
+    : '<span style="background:#FEF3C7;color:#92400E;font-weight:700;font-size:10px;padding:2px 8px;border-radius:999px">⏳ 待处理</span>';
+}
+
+function _reqStatCard(label, count, color) {
+  return `<div style="background:${color};border-radius:10px;padding:10px 18px;min-width:110px">
+    <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.4px">${label}</div>
+    <div style="font-size:22px;font-weight:900;color:#1F2937">${count}</div>
+  </div>`;
+}
+
+async function _loadOrderDropdown(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— 加载中… —</option>';
+  let q = sb.from('orders').select('id,order_no,customers(name)').neq('status','cancelled').order('order_no', { ascending: false });
+  if (_reqIsCreator() && currentUser.id) {
+    const field = currentUser.roleKey === 'ce' ? 'ce_id' : 'td_id';
+    q = q.eq(field, currentUser.id);
+  }
+  const { data } = await q;
+  sel.innerHTML = '<option value="">— 选择订单 —</option>' +
+    (data || []).map(o => `<option value="${o.id}" data-no="${o.order_no}">${o.order_no}${o.customers?.name ? ' · ' + o.customers.name : ''}</option>`).join('');
+}
+
+function openReqModal(type) {
+  const modalId = 'modal-req-' + type;
+  const selId = { refund: 'rr-order-id', payout: 'rp-order-id', shipping: 'rs-order-id' }[type];
+  _loadOrderDropdown(selId);
+  document.getElementById(modalId).style.display = 'flex';
+}
+
+function filterReqTable(type) {
+  const q = (document.getElementById(type + '-req-search')?.value || '').toLowerCase();
+  const st = document.getElementById(type + '-req-status')?.value || '';
+  const rows = document.querySelectorAll('#' + type + '-req-tbody tr[data-id]');
+  rows.forEach(tr => {
+    const matchQ = !q || tr.dataset.no?.toLowerCase().includes(q);
+    const matchSt = !st || tr.dataset.status === st;
+    tr.style.display = matchQ && matchSt ? '' : 'none';
+  });
+}
+
+// ── REFUND REQUESTS ──────────────────────────────────────────────────────
+
+async function loadReqRefund() {
+  let q = sb.from('refund_requests')
+    .select('id,order_id,order_no,amount,reason,notes,status,created_at,users(name)')
+    .order('created_at', { ascending: false });
+  if (_reqIsCreator() && currentUser.id) q = q.eq('created_by', currentUser.id);
+  const { data } = await q;
+  _reqCache.refund = data || [];
+  _renderReqTable('refund');
+  _updateReqBadge('refund');
+}
+
+function _renderReqTable(type) {
+  const rows = _reqCache[type];
+  const tbody = document.getElementById(type + '-req-tbody');
+  const statsEl = document.getElementById(type + '-req-stats');
+  if (!tbody) return;
+  const pending = rows.filter(r => r.status === 'pending').length;
+  const done = rows.filter(r => r.status === 'done').length;
+  if (statsEl) statsEl.innerHTML =
+    _reqStatCard('待处理', pending, '#FEF3C7') +
+    _reqStatCard('已完成', done, '#ECFDF5') +
+    _reqStatCard('共计', rows.length, '#F0F9FF');
+
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="8" style="padding:24px;text-align:center;color:#9CA3AF">暂无申请记录</td></tr>`; return; }
+
+  if (type === 'shipping') {
+    tbody.innerHTML = rows.map(r => `<tr data-id="${r.id}" data-no="${r.order_no||''}" data-status="${r.status}" style="border-bottom:1px solid #F3F4F6">
+      <td style="padding:10px 12px">${_reqStatChip(r.status)}</td>
+      <td style="padding:10px 12px;color:#6B7280;font-size:11px">${(r.created_at||'').slice(0,10)}</td>
+      <td style="padding:10px 12px"><span class="mono">${r.order_no||'—'}</span></td>
+      <td style="padding:10px 12px;max-width:260px;white-space:pre-wrap;font-size:11px;color:#374151">${r.notes||'—'}</td>
+      <td style="padding:10px 12px;color:#6B7280;font-size:11px">${r.users?.name||'—'}</td>
+      <td style="padding:10px 12px">${_reqCanManage() && r.status==='pending' ? `<button class="tb-btn btn-primary" style="font-size:10px;padding:3px 10px" onclick="updateReqStatus('shipping','${r.id}','done')">标记完成</button>` : ''}</td>
+    </tr>`).join('');
+  } else {
+    tbody.innerHTML = rows.map(r => `<tr data-id="${r.id}" data-no="${r.order_no||''}" data-status="${r.status}" style="border-bottom:1px solid #F3F4F6">
+      <td style="padding:10px 12px">${_reqStatChip(r.status)}</td>
+      <td style="padding:10px 12px;color:#6B7280;font-size:11px">${(r.created_at||'').slice(0,10)}</td>
+      <td style="padding:10px 12px"><span class="mono">${r.order_no||'—'}</span></td>
+      <td style="padding:10px 12px;text-align:right;font-weight:700">RM ${parseFloat(r.amount||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:10px 12px;color:#374151">${r.reason||'—'}</td>
+      <td style="padding:10px 12px;color:#6B7280;font-size:11px;max-width:160px">${r.notes||'—'}</td>
+      <td style="padding:10px 12px;color:#6B7280;font-size:11px">${r.users?.name||'—'}</td>
+      <td style="padding:10px 12px">${_reqCanManage() && r.status==='pending' ? `<button class="tb-btn btn-primary" style="font-size:10px;padding:3px 10px" onclick="updateReqStatus('${type}','${r.id}','done')">标记完成</button>` : ''}</td>
+    </tr>`).join('');
+  }
+}
+
+function _updateReqBadge(type) {
+  const pending = _reqCache[type].filter(r => r.status === 'pending').length;
+  document.querySelectorAll('.req-' + type + '-badge').forEach(el => {
+    el.textContent = pending || '';
+    el.style.display = pending ? '' : 'none';
+  });
+}
+
+async function submitReqRefund() {
+  const orderId = document.getElementById('rr-order-id').value;
+  const orderNo = document.getElementById('rr-order-id').selectedOptions[0]?.dataset?.no || '';
+  const amount = parseFloat(document.getElementById('rr-amount').value);
+  const reason = document.getElementById('rr-reason').value.trim();
+  const notes = document.getElementById('rr-notes').value.trim();
+  if (!orderId) { showToast('❌ 请选择订单'); return; }
+  if (!amount || amount <= 0) { showToast('❌ 请填写金额'); return; }
+  if (!reason) { showToast('❌ 请填写原因'); return; }
+  const { error } = await sb.from('refund_requests').insert({ order_id: orderId, order_no: orderNo, amount, reason, notes: notes||null, created_by: currentUser.id, status: 'pending' });
+  if (error) { showToast('❌ 提交失败: ' + error.message); return; }
+  closeModal('modal-req-refund');
+  showToast('✅ 退款申请已提交');
+  await sendNotif('req_refund', `退款申请 ${orderNo} — RM ${amount}`, orderNo, orderId, null, null);
+  loadReqRefund();
+}
+
+async function loadReqPayout() {
+  let q = sb.from('payout_requests')
+    .select('id,order_id,order_no,amount,reason,notes,status,created_at,users(name)')
+    .order('created_at', { ascending: false });
+  if (_reqIsCreator() && currentUser.id) q = q.eq('created_by', currentUser.id);
+  const { data } = await q;
+  _reqCache.payout = data || [];
+  _renderReqTable('payout');
+  _updateReqBadge('payout');
+}
+
+async function submitReqPayout() {
+  const orderId = document.getElementById('rp-order-id').value;
+  const orderNo = document.getElementById('rp-order-id').selectedOptions[0]?.dataset?.no || '';
+  const amount = parseFloat(document.getElementById('rp-amount').value);
+  const reason = document.getElementById('rp-reason').value.trim();
+  const notes = document.getElementById('rp-notes').value.trim();
+  if (!orderId) { showToast('❌ 请选择订单'); return; }
+  if (!amount || amount <= 0) { showToast('❌ 请填写金额'); return; }
+  if (!reason) { showToast('❌ 请填写原因'); return; }
+  const { error } = await sb.from('payout_requests').insert({ order_id: orderId, order_no: orderNo, amount, reason, notes: notes||null, created_by: currentUser.id, status: 'pending' });
+  if (error) { showToast('❌ 提交失败: ' + error.message); return; }
+  closeModal('modal-req-payout');
+  showToast('✅ 出账申请已提交');
+  await sendNotif('req_payout', `出账申请 ${orderNo} — RM ${amount}`, orderNo, orderId, null, null);
+  loadReqPayout();
+}
+
+async function loadReqShipping() {
+  let q = sb.from('shipping_requests')
+    .select('id,order_id,order_no,notes,status,created_at,users(name)')
+    .order('created_at', { ascending: false });
+  if (_reqIsCreator() && currentUser.id) q = q.eq('created_by', currentUser.id);
+  const { data } = await q;
+  _reqCache.shipping = data || [];
+  _renderReqTable('shipping');
+  _updateReqBadge('shipping');
+}
+
+async function submitReqShipping() {
+  const orderId = document.getElementById('rs-order-id').value;
+  const orderNo = document.getElementById('rs-order-id').selectedOptions[0]?.dataset?.no || '';
+  const notes = document.getElementById('rs-notes').value.trim();
+  if (!orderId) { showToast('❌ 请选择订单'); return; }
+  if (!notes) { showToast('❌ 请填写备注（地址）'); return; }
+  const { error } = await sb.from('shipping_requests').insert({ order_id: orderId, order_no: orderNo, notes, created_by: currentUser.id, status: 'pending' });
+  if (error) { showToast('❌ 提交失败: ' + error.message); return; }
+  closeModal('modal-req-shipping');
+  showToast('✅ 寄货申请已提交');
+  await sendNotif('req_shipping', `寄货申请 ${orderNo}`, orderNo, orderId, null, null);
+  loadReqShipping();
+}
+
+async function updateReqStatus(type, id, status) {
+  const tableMap = { refund: 'refund_requests', payout: 'payout_requests', shipping: 'shipping_requests' };
+  const { error } = await sb.from(tableMap[type]).update({ status }).eq('id', id);
+  if (error) { showToast('❌ 更新失败'); return; }
+  showToast('✅ 状态已更新');
+  if (type === 'refund') loadReqRefund();
+  else if (type === 'payout') loadReqPayout();
+  else loadReqShipping();
+}
+
+// ── Order detail: load refund + shipping requests ──
+async function loadOrderRequests(orderId) {
+  const [{ data: refunds }, { data: shippings }] = await Promise.all([
+    sb.from('refund_requests').select('id,amount,reason,notes,status,created_at,users(name)').eq('order_id', orderId).order('created_at'),
+    sb.from('shipping_requests').select('id,notes,status,created_at,users(name)').eq('order_id', orderId).order('created_at'),
+  ]);
+
+  const refundEl = document.getElementById('det-refund-list');
+  if (refundEl) {
+    if (!refunds?.length) { refundEl.innerHTML = '<span style="color:#9CA3AF;font-size:12px">暂无退款申请</span>'; }
+    else refundEl.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="border-bottom:1.5px solid #E5E7EB">
+        <th style="padding:6px 10px;text-align:left;font-weight:700;color:#6B7280">状态</th>
+        <th style="padding:6px 10px;text-align:left;font-weight:700;color:#6B7280">日期</th>
+        <th style="padding:6px 10px;text-align:right;font-weight:700;color:#6B7280">金额</th>
+        <th style="padding:6px 10px;text-align:left;font-weight:700;color:#6B7280">原因</th>
+        <th style="padding:6px 10px;text-align:left;font-weight:700;color:#6B7280">提交人</th>
+      </tr></thead>
+      <tbody>${refunds.map(r=>`<tr style="border-bottom:1px solid #F3F4F6">
+        <td style="padding:6px 10px">${_reqStatChip(r.status)}</td>
+        <td style="padding:6px 10px;color:#6B7280;font-size:11px">${(r.created_at||'').slice(0,10)}</td>
+        <td style="padding:6px 10px;text-align:right;font-weight:700">RM ${parseFloat(r.amount||0).toLocaleString('en-MY',{minimumFractionDigits:2})}</td>
+        <td style="padding:6px 10px">${r.reason||'—'}</td>
+        <td style="padding:6px 10px;color:#6B7280;font-size:11px">${r.users?.name||'—'}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  const shipEl = document.getElementById('det-shipping-list');
+  if (shipEl) {
+    if (!shippings?.length) { shipEl.innerHTML = '<span style="color:#9CA3AF;font-size:12px">暂无寄货申请</span>'; }
+    else shipEl.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="border-bottom:1.5px solid #E5E7EB">
+        <th style="padding:6px 10px;text-align:left;font-weight:700;color:#6B7280">状态</th>
+        <th style="padding:6px 10px;text-align:left;font-weight:700;color:#6B7280">日期</th>
+        <th style="padding:6px 10px;text-align:left;font-weight:700;color:#6B7280">备注</th>
+        <th style="padding:6px 10px;text-align:left;font-weight:700;color:#6B7280">提交人</th>
+      </tr></thead>
+      <tbody>${shippings.map(r=>`<tr style="border-bottom:1px solid #F3F4F6">
+        <td style="padding:6px 10px">${_reqStatChip(r.status)}</td>
+        <td style="padding:6px 10px;color:#6B7280;font-size:11px">${(r.created_at||'').slice(0,10)}</td>
+        <td style="padding:6px 10px;font-size:11px;white-space:pre-wrap;max-width:300px">${r.notes||'—'}</td>
+        <td style="padding:6px 10px;color:#6B7280;font-size:11px">${r.users?.name||'—'}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+}
+</script>
 
 </body>
 </html>
