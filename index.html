@@ -9003,7 +9003,7 @@ async function submitReqRefund() {
 
 async function loadReqPayout() {
   let q = sb.from('payout_requests')
-    .select('id,order_id,order_no,amount,amount_foreign,currency,reason,notes,status,created_at,created_by,users(name)')
+    .select('id,order_id,order_no,amount,currency,reason,notes,status,created_at,created_by,users(name)')
     .order('created_at', { ascending: false });
   if (_reqIsCreator() && currentUser.id) q = q.eq('created_by', currentUser.id);
   const { data } = await q;
