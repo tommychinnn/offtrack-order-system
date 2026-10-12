@@ -2949,10 +2949,10 @@ function buildOrderRow(o) {
   const paidOut   = (o.payouts || []).reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
   const insCost   = parseFloat(o.insurance_total) || 0;
   const refundTotal = (o.refund_requests || []).filter(r => r.status === 'done').reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-  const balance   = total - paid;
+  const balance   = total - paid + refundTotal;
   const cost      = parseFloat(o.cost_rm) || 0;
-  const profit    = total - cost - insCost - refundTotal;
-  const actualProfit = paid - paidOut - insCost;
+  const profit    = total - cost - insCost;
+  const actualProfit = paid - paidOut - insCost - refundTotal;
   // Supplier remaining payment
   const costCur   = o.cost_currency || 'MYR';
   const costFor   = parseFloat(o.cost_foreign) || 0;
@@ -4330,8 +4330,8 @@ async function loadReport() {
     const paidOut   = (o.payouts||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
     const insCost     = parseFloat(o.insurance_total) || 0;
     const refundTotal = (o.refund_requests||[]).filter(r=>r.status==='done').reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
-    const estProfit = revenue - cost - insCost - refundTotal;
-    const actProfit = paid - paidOut - insCost;
+    const estProfit = revenue - cost - insCost;
+    const actProfit = paid - paidOut - insCost - refundTotal;
     const pax       = parseInt(o.pax_total)||0;
     const departMon = (o.depart_date||'').slice(0,7);
     const createdMon= (o.created_at||'').slice(0,7);
@@ -5044,7 +5044,7 @@ function calcProfit() {
   const sell = totEl ? parseFloat(totEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
   const insCost = parseFloat(_currentOrder?.insurance_total) || 0;
   const refundTotal = (_currentOrder?.refund_requests||[]).filter(r=>r.status==='done').reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
-  const profit = sell - costRM - insCost - refundTotal;
+  const profit = sell - costRM - insCost;
   el.textContent = 'RM ' + profit.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
   el.style.color = profit >= 0 ? '#059669' : '#DC2626';
   // actual-profit-display: TDs see estimated profit (sell - cost); Finance/Master/Operation see 入账 - 出账
@@ -5059,7 +5059,7 @@ function calcProfit() {
       const paidOut = document.querySelector('#tab-payout .pay-summary-row td:nth-child(3)');
       const totalIn = paidEl ? parseFloat(paidEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
       const totalOut = paidOut ? parseFloat(paidOut.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
-      const actual = totalIn - totalOut - insCost;
+      const actual = totalIn - totalOut - insCost - refundTotal;
       actualEl.textContent = (totalIn > 0 || totalOut > 0) ? fmt(actual) : 'RM —';
       actualEl.style.color = actual >= 0 ? '#059669' : '#DC2626';
     }
@@ -6666,9 +6666,9 @@ function doExport() {
     const paidOut    = (o.payouts||[]).reduce((s,p) => s + (parseFloat(p.amount_rm)||0), 0);
     const insCost     = parseFloat(o.insurance_total) || 0;
     const refundTotal = (o.refund_requests||[]).filter(r=>r.status==='done').reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
-    const balance    = total - paid;
-    const profit     = total - cost - insCost - refundTotal;
-    const actualProfit = paid - paidOut - insCost;
+    const balance    = total - paid + refundTotal;
+    const profit     = total - cost - insCost;
+    const actualProfit = paid - paidOut - insCost - refundTotal;
     const remainRM   = cost - paidOut;
     const payStatus  = balance <= 0 && paid > 0 ? '已付全款' : paid > 0 ? '已付定金' : '未付';
     const tdUser     = (o.users || (o.profiles)) || null;
