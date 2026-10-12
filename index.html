@@ -4413,16 +4413,21 @@ async function loadPayIns() {
   if (error) { tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:40px;color:#DC2626">加载失败</td></tr>'; return; }
   if (!data||!data.length) { tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:40px;color:#9CA3AF">暂无入账记录</td></tr>'; return; }
 
-  _payinsCache = data;
-  
+  // Client-side safety filter for TD/CE roles
+  let filtered = data;
+  if (isTD) filtered = data.filter(p => p.orders?.td_id === currentUser.id);
+  if (isCE) filtered = data.filter(p => p.orders?.ce_id === currentUser.id);
+
+  _payinsCache = filtered;
+
   // Populate month filter from data
-  const months = [...new Set(data.map(r => (r.date||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  const months = [...new Set(filtered.map(r => (r.date||'').slice(0,7)).filter(Boolean))].sort().reverse();
   const monthSel = document.getElementById('payin-month-filter');
   if (monthSel) {
     monthSel.innerHTML = '<option value="">全部月份</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
   }
-  
-  renderPayIns(data);
+
+  renderPayIns(filtered);
 }
 
 function renderPayIns(data) {
