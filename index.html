@@ -2878,6 +2878,7 @@ async function loadOrders() {
       pax_total, price_total, insurance_total, discount, discount_type, selling_price,
       finance_check, finance_remark,
       ${canSeeCost ? 'cost_currency, cost_foreign, cost_rm,' : ''}
+      refund_requests ( amount, status ),
       customers ( name, salutation, notes, phone ),
       supplier_salespersons ( name ),
       regions ( city ),
@@ -2947,10 +2948,11 @@ function buildOrderRow(o) {
   const paid      = (o.payins || []).reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
   const paidOut   = (o.payouts || []).reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
   const insCost   = parseFloat(o.insurance_total) || 0;
+  const refundTotal = (o.refund_requests || []).filter(r => r.status === 'done').reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
   const balance   = total - paid;
   const cost      = parseFloat(o.cost_rm) || 0;
-  const profit    = total - cost - insCost;
-  const actualProfit = paid - paidOut - insCost;
+  const profit    = total - cost - insCost - refundTotal;
+  const actualProfit = paid - paidOut - insCost - refundTotal;
   // Supplier remaining payment
   const costCur   = o.cost_currency || 'MYR';
   const costFor   = parseFloat(o.cost_foreign) || 0;
@@ -3140,7 +3142,8 @@ async function openOrder(uuid) {
     users!td_id ( name ),
     ce:users!ce_id ( name ),
     payins ( amount_rm, payment_type, date ),
-    insurance ( id, premium_rm )
+    insurance ( id, premium_rm ),
+    refund_requests ( amount, status )
   `).eq('id', uuid).maybeSingle();
 
   if (error || !o) { showToast('❌ 无法加载订单'); return; }
@@ -4296,7 +4299,7 @@ async function loadReport() {
   document.getElementById('rpt-completed-tbody').innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:#9CA3AF">⏳ 加载中...</td></tr>';
 
   let query = sb.from('orders')
-    .select('id, order_no, status, created_at, depart_date, end_date, pax_total, selling_price, cost_rm, insurance_total, customers(name), regions(city), payins(amount_rm,gsh_check), payouts(amount_rm)')
+    .select('id, order_no, status, created_at, depart_date, end_date, pax_total, selling_price, cost_rm, insurance_total, customers(name), regions(city), payins(amount_rm,gsh_check), payouts(amount_rm), refund_requests(amount,status)')
     .neq('status', 'cancelled')
     .order('created_at', { ascending: false });
   if (fromVal) query = query.gte('created_at', fromVal);
@@ -4325,9 +4328,10 @@ async function loadReport() {
     const cost      = parseFloat(o.cost_rm)||0;
     const paid      = (o.payins||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
     const paidOut   = (o.payouts||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
-    const insCost   = parseFloat(o.insurance_total) || 0;
-    const estProfit = revenue - cost - insCost;
-    const actProfit = paid - paidOut - insCost;
+    const insCost     = parseFloat(o.insurance_total) || 0;
+    const refundTotal = (o.refund_requests||[]).filter(r=>r.status==='done').reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+    const estProfit = revenue - cost - insCost - refundTotal;
+    const actProfit = paid - paidOut - insCost - refundTotal;
     const pax       = parseInt(o.pax_total)||0;
     const departMon = (o.depart_date||'').slice(0,7);
     const createdMon= (o.created_at||'').slice(0,7);
@@ -5039,7 +5043,8 @@ function calcProfit() {
   const totEl = document.getElementById('total-display');
   const sell = totEl ? parseFloat(totEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
   const insCost = parseFloat(_currentOrder?.insurance_total) || 0;
-  const profit = sell - costRM - insCost;
+  const refundTotal = (_currentOrder?.refund_requests||[]).filter(r=>r.status==='done').reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+  const profit = sell - costRM - insCost - refundTotal;
   el.textContent = 'RM ' + profit.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
   el.style.color = profit >= 0 ? '#059669' : '#DC2626';
   // actual-profit-display: TDs see estimated profit (sell - cost); Finance/Master/Operation see 入账 - 出账
@@ -5054,7 +5059,7 @@ function calcProfit() {
       const paidOut = document.querySelector('#tab-payout .pay-summary-row td:nth-child(3)');
       const totalIn = paidEl ? parseFloat(paidEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
       const totalOut = paidOut ? parseFloat(paidOut.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
-      const actual = totalIn - totalOut - insCost;
+      const actual = totalIn - totalOut - insCost - refundTotal;
       actualEl.textContent = (totalIn > 0 || totalOut > 0) ? fmt(actual) : 'RM —';
       actualEl.style.color = actual >= 0 ? '#059669' : '#DC2626';
     }
@@ -6659,10 +6664,11 @@ function doExport() {
     const cost       = parseFloat(o.cost_rm || o.cost) || 0;
     const paid       = (o.payins||[]).reduce((s,p) => s + (parseFloat(p.amount_rm)||0), 0);
     const paidOut    = (o.payouts||[]).reduce((s,p) => s + (parseFloat(p.amount_rm)||0), 0);
-    const insCost    = parseFloat(o.insurance_total) || 0;
+    const insCost     = parseFloat(o.insurance_total) || 0;
+    const refundTotal = (o.refund_requests||[]).filter(r=>r.status==='done').reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
     const balance    = total - paid;
-    const profit     = total - cost - insCost;
-    const actualProfit = paid - paidOut - insCost;
+    const profit     = total - cost - insCost - refundTotal;
+    const actualProfit = paid - paidOut - insCost - refundTotal;
     const remainRM   = cost - paidOut;
     const payStatus  = balance <= 0 && paid > 0 ? '已付全款' : paid > 0 ? '已付定金' : '未付';
     const tdUser     = (o.users || (o.profiles)) || null;
