@@ -2949,7 +2949,7 @@ function buildOrderRow(o) {
   const paidOut   = (o.payouts || []).reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
   const insCost   = parseFloat(o.insurance_total) || 0;
   const refundTotal = (o.refund_requests || []).filter(r => r.status === 'done').reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-  const balance   = total - paid;
+  const balance   = total - paid - refundTotal;
   const cost      = parseFloat(o.cost_rm) || 0;
   const profit    = total - cost - insCost - refundTotal;
   const actualProfit = paid - paidOut - insCost - refundTotal;
@@ -3160,7 +3160,8 @@ async function openOrder(uuid) {
   const ceName    = o.ce?.name || '—';
   const total     = parseFloat(o.selling_price) || 0;
   const paid      = (o.payins || []).reduce((s, p) => s + (parseFloat(p.amount_rm) || 0), 0);
-  const balance   = total - paid;
+  const refundTot = (o.refund_requests || []).filter(r => r.status === 'done').reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  const balance   = total - paid - refundTot;
 
   const fmtDate = d => {
     if (!d) return '—';
@@ -6666,7 +6667,7 @@ function doExport() {
     const paidOut    = (o.payouts||[]).reduce((s,p) => s + (parseFloat(p.amount_rm)||0), 0);
     const insCost     = parseFloat(o.insurance_total) || 0;
     const refundTotal = (o.refund_requests||[]).filter(r=>r.status==='done').reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
-    const balance    = total - paid;
+    const balance    = total - paid - refundTotal;
     const profit     = total - cost - insCost - refundTotal;
     const actualProfit = paid - paidOut - insCost - refundTotal;
     const remainRM   = cost - paidOut;
