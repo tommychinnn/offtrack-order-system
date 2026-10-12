@@ -2946,7 +2946,7 @@ function buildOrderRow(o) {
   const insCost   = (o.insurance || []).reduce((s, i) => s + (parseFloat(i.premium_rm) || 0), 0);
   const balance   = total - paid;
   const cost      = parseFloat(o.cost_rm) || 0;
-  const profit    = total - cost;
+  const profit    = total - cost - insCost;
   const actualProfit = paid - paidOut - insCost;
   // Supplier remaining payment
   const costCur   = o.cost_currency || 'MYR';
@@ -4321,7 +4321,7 @@ async function loadReport() {
     const paid      = (o.payins||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
     const paidOut   = (o.payouts||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
     const insCost   = (o.insurance||[]).reduce((s,i)=>s+(parseFloat(i.premium_rm)||0),0);
-    const estProfit = revenue - cost;
+    const estProfit = revenue - cost - insCost;
     const actProfit = paid - paidOut - insCost;
     const pax       = parseInt(o.pax_total)||0;
     const departMon = (o.depart_date||'').slice(0,7);
@@ -5033,7 +5033,8 @@ function calcProfit() {
   const costRM = parseFloat(document.getElementById('cost-rm-display')?.value) || (foreign * rate);
   const totEl = document.getElementById('total-display');
   const sell = totEl ? parseFloat(totEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
-  const profit = sell - costRM;
+  const insCost = (_currentOrder?.insurance||[]).reduce((s,i)=>s+(parseFloat(i.premium_rm)||0),0);
+  const profit = sell - costRM - insCost;
   el.textContent = 'RM ' + profit.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
   el.style.color = profit >= 0 ? '#059669' : '#DC2626';
   // actual-profit-display: TDs see estimated profit (sell - cost); Finance/Master/Operation see 入账 - 出账
@@ -5048,7 +5049,7 @@ function calcProfit() {
       const paidOut = document.querySelector('#tab-payout .pay-summary-row td:nth-child(3)');
       const totalIn = paidEl ? parseFloat(paidEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
       const totalOut = paidOut ? parseFloat(paidOut.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
-      const actual = totalIn - totalOut;
+      const actual = totalIn - totalOut - insCost;
       actualEl.textContent = (totalIn > 0 || totalOut > 0) ? fmt(actual) : 'RM —';
       actualEl.style.color = actual >= 0 ? '#059669' : '#DC2626';
     }
@@ -6620,7 +6621,7 @@ function doExport() {
     const paidOut    = (o.payouts||[]).reduce((s,p) => s + (parseFloat(p.amount_rm)||0), 0);
     const insCost    = (o.insurance||[]).reduce((s,i) => s + (parseFloat(i.premium_rm)||0), 0);
     const balance    = total - paid;
-    const profit     = total - cost;
+    const profit     = total - cost - insCost;
     const actualProfit = paid - paidOut - insCost;
     const remainRM   = cost - paidOut;
     const payStatus  = balance <= 0 && paid > 0 ? '已付全款' : paid > 0 ? '已付定金' : '未付';
