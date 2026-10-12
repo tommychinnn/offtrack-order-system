@@ -2963,7 +2963,7 @@ function buildOrderRow(o) {
   const depart    = o.date_tbd ? '' : (o.depart_date || '');
   const end       = o.end_date || '';
   const month     = (o.created_at || '').substring(0, 7);
-  const fmt       = v => (v || 0).toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const fmt       = v => (v || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtDate   = d => {
     if (!d) return '—';
     const dt = new Date(d + 'T00:00:00');
@@ -3164,7 +3164,7 @@ async function openOrder(uuid) {
     const dt = new Date(d + 'T00:00:00');
     return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   };
-  const fmt = v => (v || 0).toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const fmt = v => (v || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const paxLabel = (o.pax_total || 0) + ' 人';
 
@@ -3378,7 +3378,7 @@ async function loadDetailPayins() {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9CA3AF;padding:24px;font-size:12px">暂无入账记录</td></tr>';
     return;
   }
-  const fmt = n => (parseFloat(n)||0).toLocaleString('en-MY', {minimumFractionDigits:0,maximumFractionDigits:0});
+  const fmt = n => (parseFloat(n)||0).toLocaleString('en-MY', {minimumFractionDigits:2,maximumFractionDigits:2});
   // Only verified payments count toward total
   const verifiedTotal = data.filter(r=>r.gsh_check==='verified').reduce((s,r) => s + (parseFloat(r.amount_rm)||0), 0);
   const pendingTotal = data.filter(r=>r.gsh_check!=='verified').reduce((s,r) => s + (parseFloat(r.amount_rm)||0), 0);
@@ -3420,7 +3420,7 @@ async function loadDetailPayouts() {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:24px;font-size:12px">暂无出账记录</td></tr>';
     return;
   }
-  const fmt = n => n != null ? (parseFloat(n)||0).toLocaleString('en-MY', {minimumFractionDigits:0,maximumFractionDigits:0}) : '—';
+  const fmt = n => n != null ? (parseFloat(n)||0).toLocaleString('en-MY', {minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
   const totalRM = data.reduce((s,r) => s + (parseFloat(r.amount_rm)||0), 0);
   tbody.innerHTML = data.map((r, i) => `
     <tr>
@@ -3453,7 +3453,7 @@ async function loadDetailInsurance() {
     return;
   }
 
-  const fmt = n => n != null ? parseFloat(n).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0}) : '—';
+  const fmt = n => n != null ? parseFloat(n).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
   tbody.innerHTML = data.map((r, i) => {
     const isDone = r.status === 'purchased' || (!!r.premium_rm && r.status !== 'pending');
     const statusChip = isDone
@@ -3615,7 +3615,7 @@ function filterOrders() {
     sumSupplierOwed += parseFloat(tr.dataset.supplierOwed)  || 0;
   });
 
-  const fmt = v => v.toLocaleString('en-MY');
+  const fmt = v => v.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 
   // Summary bar
   document.getElementById('sum-count').textContent   = n + ' 笔';
@@ -3671,7 +3671,7 @@ function filterOrders() {
     if (!isDone && bal>0) { sBalCount++; sBalTotal+=bal; }
     if (!dep && st!=='行程结束'&&st!=='退团') sInc++;
   });
-  const fmtRM = v => v.toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const fmtRM = v => v.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   const setEl = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   setEl('ords-active', sActive);
   setEl('ords-active-sub', '包括出行中 '+sTrav+' 单');
@@ -4006,7 +4006,7 @@ function tickTodo(el) {
 // ── SUPABASE PAGE LOADERS ──────────────────────────────────────────────────
 
 async function loadDashboard() {
-  const fmt = v => (v||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const fmt = v => (v||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   const today = new Date(); today.setHours(0,0,0,0);
   const in14 = new Date(today); in14.setDate(today.getDate()+14);
   const in30 = new Date(today); in30.setDate(today.getDate()+30);
@@ -4141,7 +4141,7 @@ async function loadDashboard() {
 }
 
 async function loadFinanceLedger() {
-  const fmt = v => Math.round(v||0).toLocaleString('en-MY');
+  const fmt = v => (v||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   const setEl = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
 
   const inTbody  = document.getElementById('fl-in-tbody');
@@ -4267,7 +4267,7 @@ async function loadInsuranceGlobal() {
       <td style="padding:10px 12px;color:#6B7280">${r.start_date||'—'}</td>
       <td style="padding:10px 12px;color:#6B7280">${r.end_date||'—'}</td>
       <td style="padding:10px 12px;color:#6B7280">${r.orders?.regions?.city||'—'}</td>
-      <td style="padding:10px 12px;text-align:right;font-weight:700">${r.premium_rm ? parseFloat(r.premium_rm).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0}) : '—'}</td>
+      <td style="padding:10px 12px;text-align:right;font-weight:700">${r.premium_rm ? parseFloat(r.premium_rm).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—'}</td>
       <td style="padding:10px 12px">${pdfCell}</td>
       <td style="padding:10px 12px;white-space:nowrap;display:flex;gap:5px;align-items:center">
         ${actionBtns}
@@ -4280,11 +4280,11 @@ async function loadInsuranceGlobal() {
   const verifiedEl = document.getElementById('ins-stat-verified');
   if (verifiedEl) verifiedEl.textContent = cntVerified+' 份';
   document.getElementById('ins-stat-done').textContent = cntDone+' 份';
-  document.getElementById('ins-stat-premium').textContent = 'RM '+premium.toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
+  document.getElementById('ins-stat-premium').textContent = 'RM '+premium.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
 async function loadReport() {
-  const fmtN = n => Math.round(n||0).toLocaleString('en-MY');
+  const fmtN = n => (n||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   const setEl = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   const fromVal = document.getElementById('rpt-from')?.value;
   const toVal   = document.getElementById('rpt-to')?.value;
@@ -4447,7 +4447,7 @@ function renderPayIns(data) {
   if (!data||!data.length) { tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:40px;color:#9CA3AF">暂无入账记录</td></tr>'; return; }
 
   const canChangeGsh = ['master','operation','finance'].includes(currentUser.roleKey);
-  const fmt = v=>(v||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const fmt = v=>(v||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   let total=0; const thisMonth=new Date().toISOString().slice(0,7); let monthTotal=0;
   tbody.innerHTML = data.map(r => {
     const amt = parseFloat(r.amount_rm)||0; total+=amt;
@@ -4577,7 +4577,7 @@ async function loadPayOuts() {
   if (error) { tbody.innerHTML='<tr><td colspan="14" style="text-align:center;padding:40px;color:#DC2626">加载失败</td></tr>'; return; }
   if (!data||!data.length) { tbody.innerHTML='<tr><td colspan="14" style="text-align:center;padding:40px;color:#9CA3AF">暂无出账记录</td></tr>'; return; }
 
-  const fmt = v=>(v||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const fmt = v=>(v||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
   const thisMonth=new Date().toISOString().slice(0,7);
   let totalRM=0,monthRM=0,totalForeign=0,totalCharges=0;
   tbody.innerHTML = data.map(r => {
@@ -4929,11 +4929,11 @@ function detCalcInsBreakdown() {
   const qS = parseFloat(document.getElementById('det-ins-qty-special')?.value) || 0;
   const rS = parseFloat(document.getElementById('det-ins-rate-special')?.value) || 0;
   const sub1 = qY * rY, sub2 = qE * rE, sub3 = qS * rS, total = sub1 + sub2 + sub3;
-  const fmt = n => n > 0 ? n.toLocaleString('en-MY') : '—';
+  const fmt = n => n > 0 ? n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
   const setCell = (id, n) => { const el = document.getElementById(id); if (!el) return; el.textContent = fmt(n); el.style.color = n > 0 ? '#D97706' : '#9CA3AF'; };
   setCell('det-ins-sub-young', sub1); setCell('det-ins-sub-elder', sub2); setCell('det-ins-sub-special', sub3);
   const totalCell = document.getElementById('det-ins-total-cell');
-  if (totalCell) totalCell.textContent = 'RM ' + (total > 0 ? total.toLocaleString('en-MY') : '0');
+  if (totalCell) totalCell.textContent = 'RM ' + (total > 0 ? total.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}) : '0.00');
   const insEl = document.getElementById('price-insurance');
   if (insEl) insEl.value = total || '';
   const insTotEl = document.getElementById('det-tot-insurance');
@@ -4949,19 +4949,19 @@ function calcTotal() {
   const ins = g('price-insurance');
   const disc = g('price-discount');
   const total = stA + stC + stE + ins - disc;
-  const cell = (id, n) => { const el = document.getElementById(id); if (!el) return; el.textContent = n > 0 ? n.toLocaleString('en-MY') : '—'; el.style.color = n > 0 ? '#2D2926' : '#9CA3AF'; };
+  const cell = (id, n) => { const el = document.getElementById(id); if (!el) return; el.textContent = n > 0 ? n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—'; el.style.color = n > 0 ? '#2D2926' : '#9CA3AF'; };
   cell('subtotal-A', stA); cell('subtotal-C', stC); cell('subtotal-E', stE);
   const tot = document.getElementById('total-display');
-  if (tot) tot.textContent = 'RM ' + Math.max(0, total).toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
+  if (tot) tot.textContent = 'RM ' + Math.max(0, total).toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
   // Also update pax-total-display (shown in pax mode)
   const ptot = document.getElementById('pax-total-display');
-  if (ptot) ptot.textContent = 'RM ' + Math.max(0, total).toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
+  if (ptot) ptot.textContent = 'RM ' + Math.max(0, total).toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
   calcProfit();
   syncSidebar();
   syncTodoList();
 }
 function syncSidebar() {
-  const fmt = n => 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
+  const fmt = n => 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
   // When a real order is loaded, use DB values — don't read stale static HTML
   if (_currentOrder) {
     const totalVal = parseFloat(_currentOrder.selling_price) || 0;
@@ -5027,7 +5027,7 @@ function detCalcTotal() {
     + (parseFloat(document.getElementById('det-tot-insurance')?.value) || 0)
     - (parseFloat(document.getElementById('det-tot-discount')?.value) || 0);
   const el = document.getElementById('total-display');
-  if (el) el.textContent = 'RM ' + Math.max(0, tot).toLocaleString('en-MY', {minimumFractionDigits:0,maximumFractionDigits:0});
+  if (el) el.textContent = 'RM ' + Math.max(0, tot).toLocaleString('en-MY', {minimumFractionDigits:2,maximumFractionDigits:2});
   calcProfit(); syncSidebar(); syncTodoList();
 }
 function calcProfit() {
@@ -5040,12 +5040,12 @@ function calcProfit() {
   const sell = totEl ? parseFloat(totEl.textContent.replace(/[^0-9.]/g,'').replace(/,/g,'')) || 0 : 0;
   const insCost = parseFloat(_currentOrder?.insurance_total) || 0;
   const profit = sell - costRM - insCost;
-  el.textContent = 'RM ' + profit.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
+  el.textContent = 'RM ' + profit.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
   el.style.color = profit >= 0 ? '#059669' : '#DC2626';
   // actual-profit-display: TDs see estimated profit (sell - cost); Finance/Master/Operation see 入账 - 出账
   const actualEl = document.getElementById('actual-profit-display');
   if (actualEl) {
-    const fmt = n => 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
+    const fmt = n => 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
     if (currentUser?.roleKey === 'td') {
       actualEl.textContent = sell > 0 ? fmt(profit) : 'RM —';
       actualEl.style.color = profit >= 0 ? '#059669' : '#DC2626';
@@ -5806,11 +5806,11 @@ function calcInsBreakdown() {
   const qS = parseFloat(document.getElementById('ins-qty-special')?.value) || 0;
   const rS = parseFloat(document.getElementById('ins-rate-special')?.value) || 0;
   const sub1 = qY * rY, sub2 = qE * rE, sub3 = qS * rS, total = sub1 + sub2 + sub3;
-  const fmt = n => n > 0 ? n.toLocaleString('en-MY') : '—';
+  const fmt = n => n > 0 ? n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
   const setCell = (id, n) => { const el = document.getElementById(id); if (!el) return; el.textContent = fmt(n); el.style.color = n > 0 ? '#D97706' : '#9CA3AF'; };
   setCell('ins-sub-young', sub1); setCell('ins-sub-elder', sub2); setCell('ins-sub-special', sub3);
   const totalCell = document.getElementById('ins-total-cell');
-  if (totalCell) totalCell.textContent = 'RM ' + (total > 0 ? total.toLocaleString('en-MY') : '0');
+  if (totalCell) totalCell.textContent = 'RM ' + (total > 0 ? total.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}) : '0.00');
   const insEl = document.getElementById('cr-insurance');
   if (insEl) insEl.value = total || '';
   const insTotEl = document.getElementById('cr-tot-insurance');
@@ -5826,10 +5826,10 @@ function calcPaxTotal() {
   const ins = g('cr-insurance');
   const disc = g('cr-discount');
   const total = stA + stC + stE + ins - disc;
-  const cell = (id, n) => { const el = document.getElementById(id); if (!el) return; el.textContent = n > 0 ? n.toLocaleString('en-MY') : '—'; el.style.color = n > 0 ? '#2D2926' : '#9CA3AF'; };
+  const cell = (id, n) => { const el = document.getElementById(id); if (!el) return; el.textContent = n > 0 ? n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—'; el.style.color = n > 0 ? '#2D2926' : '#9CA3AF'; };
   cell('cr-sub-A', stA); cell('cr-sub-C', stC); cell('cr-sub-E', stE);
   const te = document.getElementById('cr-pax-total');
-  if (te) te.textContent = 'RM ' + Math.max(0, total).toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
+  if (te) te.textContent = 'RM ' + Math.max(0, total).toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
   _paxSell = total;
   crCalcProfit();
 }
@@ -5845,7 +5845,7 @@ function calcPaxTotal_OLD() {
     totalCost += pax * cost;
     totalSell += pax * sell;
   });
-  const fmt = n => n ? 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:0,maximumFractionDigits:0}) : 'RM —';
+  const fmt = n => n ? 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:2,maximumFractionDigits:2}) : 'RM —';
   const c = document.getElementById('pax-total-count');
   const co = document.getElementById('pax-total-cost');
   const se = document.getElementById('pax-total-sell');
@@ -5863,7 +5863,7 @@ function calcTotalMode() {
   const base = parseFloat(document.getElementById('cr-tot-price')?.value) || 0;
   const total = base + ins - disc;
   const te = document.getElementById('cr-tot-total');
-  if (te) te.textContent = 'RM ' + Math.max(0, total).toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
+  if (te) te.textContent = 'RM ' + Math.max(0, total).toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
   _paxSell = total;
   crCalcProfit();
 }
@@ -5880,7 +5880,7 @@ function crCalcProfit() {
   const profit = _paxSell - _paxCost;
   const fe = document.getElementById('final-sell-price');
   const pe = document.getElementById('est-profit');
-  const fmt = n => 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:0, maximumFractionDigits:0});
+  const fmt = n => 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
   if (fe) fe.textContent = fmt(Math.max(0, _paxSell));
   if (pe) { pe.textContent = fmt(profit); pe.style.color = profit >= 0 ? '#3B7A68' : '#DC2626'; }
 }
@@ -5896,7 +5896,7 @@ function calcFinalPrice() {
   const compNet = compType === 'add' ? compAmt : compType === 'sub' ? -compAmt : 0;
   const final = _paxSell - totalDisc + compNet + insTotal;
   const profit = final - insTotal - _paxCost;
-  const fmt = n => 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:0,maximumFractionDigits:0});
+  const fmt = n => 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:2,maximumFractionDigits:2});
   const fe = document.getElementById('final-sell-price');
   const pe = document.getElementById('est-profit');
   if (fe) fe.textContent = _paxSell > 0 ? fmt(final) : 'RM —';
@@ -6647,7 +6647,7 @@ function doExport() {
   if (!orders.length) { showToast('没有可导出的数据'); return; }
 
   const fmtD = d => d ? String(d).slice(0,10) : '';
-  const fmtN = v => (v != null && v !== '') ? Number(v).toLocaleString('en-MY') : '';
+  const fmtN = v => (v != null && v !== '') ? Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
   const esc  = v => { const s = String(v ?? ''); return (s.includes(',') || s.includes('"') || s.includes('\n')) ? '"' + s.replace(/"/g,'""') + '"' : s; };
 
   const headers = ['订单号','创建日期','顾客姓名','顾客电话','地区','出发日期','返程日期','人数','来源','定制师','付款状态','总售价(RM)'];
