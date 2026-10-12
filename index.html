@@ -877,11 +877,13 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
       <div class="table-header">
         <div class="th-left" id="orders-count-display">共 9 笔订单</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <span style="font-size:11px;color:#9CA3AF">每页</span>
+          <button onclick="document.getElementById('sheet-outer').scrollBy({left:-400,behavior:'smooth'})" style="background:#F3F4F6;border:1px solid #E5E8EE;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:14px;color:#374151;line-height:1" title="向左滑动">‹</button>
+          <button onclick="document.getElementById('sheet-outer').scrollBy({left:400,behavior:'smooth'})" style="background:#F3F4F6;border:1px solid #E5E8EE;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:14px;color:#374151;line-height:1" title="向右滑动">›</button>
+          <span style="font-size:11px;color:#9CA3AF;margin-left:4px">每页</span>
           <select class="filter-select" style="padding:4px 8px;font-size:11px"><option>25</option><option>50</option><option>100</option></select>
         </div>
       </div>
-      <div class="sheet-outer">
+      <div class="sheet-outer" id="sheet-outer">
         <table class="sheet-tbl">
           <thead>
             <tr>
