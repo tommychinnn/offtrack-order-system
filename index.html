@@ -3670,7 +3670,7 @@ function filterOrders() {
 
   // ── Stat cards: compute from ALL rows (ignore current filter) ──
   const allRows = document.querySelectorAll('#orders-tbody tr[data-status]');
-  const now = new Date(); const todayStr = now.toISOString().slice(0,10);
+  const now = new Date();
   const in14 = new Date(now.getTime() + 14*86400000).toISOString().slice(0,10);
   const thisMonthPfx = now.toISOString().slice(0,7);
   const activeRole2 = document.body.dataset.activeRole || '';
