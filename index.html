@@ -832,6 +832,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
         <div class="filter-chip" id="chip-balance" onclick="toggleOrderChip('balance',this)"><span class="dot"></span>尾款未付</div>
         <div class="filter-chip" id="chip-tbd" onclick="toggleOrderChip('tbd',this)"><span class="dot"></span>日期未定</div>
         <div class="filter-chip" id="chip-ins" onclick="toggleOrderChip('ins',this)"><span class="dot"></span>保险</div>
+        <div class="filter-chip" id="chip-upcoming" onclick="toggleOrderChip('upcoming',this)"><span class="dot"></span>倒数行程</div>
         <button class="tb-btn btn-ghost" style="font-size:11px;padding:4px 10px;margin-left:auto" onclick="clearOrderFilters()">✕ 清除</button>
       </div>
       <!-- Date range (compact) -->
@@ -3022,6 +3023,7 @@ function buildOrderRow(o) {
     data-actual-profit="${actualProfit.toFixed(2)}"
     data-supplier-owed="${(remainRM <= 0 || (costFor > 0 && costCur !== 'MYR' && remainFor <= 0)) ? '0' : remainRM.toFixed(2)}"
     data-kol="${(o.kol_name||'').toLowerCase()}"
+    data-ins="${insCount > 0 ? 'yes' : ''}"
     data-created="${(o.created_at||'').slice(0,10)}">
     <td class="sh-sticky sh-sep" style="left:0"><span class="mono">${o.order_no}</span></td>
     <td class="muted" style="font-size:11px">${fmtDate((o.created_at||'').slice(0,10))}</td>
@@ -3553,8 +3555,12 @@ function filterOrders() {
   const dateTo      = document.getElementById('ord-date-to')?.value      || '';
   const createdFrom = document.getElementById('ord-created-from')?.value || '';
   const createdTo   = document.getElementById('ord-created-to')?.value   || '';
-  const chipBalance = _ordChips['balance'];
-  const chipTbd     = _ordChips['tbd'];
+  const chipBalance  = _ordChips['balance'];
+  const chipTbd      = _ordChips['tbd'];
+  const chipIns      = _ordChips['ins'];
+  const chipUpcoming = _ordChips['upcoming'];
+  const today        = new Date(); today.setHours(0,0,0,0);
+  const todayStr     = today.toISOString().slice(0,10);
   const activeRole  = document.body.dataset.activeRole || '';
 
 
@@ -3595,6 +3601,10 @@ function filterOrders() {
     if (chipBalance && balance <= 0) { tr.style.display='none'; return; }
     // Chip: 日期未定
     if (chipTbd && depart !== '') { tr.style.display='none'; return; }
+    // Chip: 保险
+    if (chipIns && (tr.dataset.ins || '') !== 'yes') { tr.style.display='none'; return; }
+    // Chip: 倒数行程 — 只显示未来出发的订单
+    if (chipUpcoming && (!depart || depart < todayStr)) { tr.style.display='none'; return; }
     // Departure date range
     if (dateFrom || dateTo) {
       if (dateFrom && depart < dateFrom) { tr.style.display='none'; return; }
@@ -3617,6 +3627,14 @@ function filterOrders() {
     sumActualProfit += parseFloat(tr.dataset.actualProfit)  || 0;
     sumSupplierOwed += parseFloat(tr.dataset.supplierOwed)  || 0;
   });
+
+  // 倒数行程: 按出发日期升序排列
+  if (chipUpcoming) {
+    const tbody = document.getElementById('orders-tbody');
+    const visibleRows = Array.from(rows).filter(tr => tr.style.display !== 'none');
+    visibleRows.sort((a, b) => (a.dataset.depart || '').localeCompare(b.dataset.depart || ''));
+    visibleRows.forEach(tr => tbody.appendChild(tr));
+  }
 
   const fmt = v => v.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 
@@ -3714,7 +3732,7 @@ function clearOrderFilters() {
   document.getElementById('ord-date-to').value       = '';
   document.getElementById('ord-created-from').value  = '';
   document.getElementById('ord-created-to').value    = '';
-  ['balance','tbd','ins'].forEach(k => {
+  ['balance','tbd','ins','upcoming'].forEach(k => {
     _ordChips[k] = false;
     const c = document.getElementById('chip-' + k);
     if (c) c.classList.remove('active');
