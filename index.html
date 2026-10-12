@@ -976,6 +976,8 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
               <th style="min-width:52px">合约</th>
               <th style="min-width:100px">KOL/博主</th>
               <th style="min-width:150px">顾客备注</th>
+              <th style="min-width:52px;text-align:center">财务核对</th>
+              <th style="min-width:160px">财务备注</th>
               <th style="min-width:36px"></th>
             </tr>
           </thead>
@@ -1160,7 +1162,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
               <td class="col-cost" style="text-align:right;color:#059669;font-weight:900" id="tfoot-actual-profit">—</td>
               <td style="text-align:right;color:#065F46" id="tfoot-paid">—</td>
               <td style="text-align:right;color:#DC2626" id="tfoot-balance">—</td>
-              <td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
             </tr>
           </tfoot>
         </table>
@@ -2874,6 +2876,7 @@ async function loadOrders() {
       id, order_no, status, source, kol_name, special_notes, date_tbd,
       depart_date, end_date, created_at, td_id, ce_id, has_contract, is_archived,
       pax_total, price_total, insurance_total, discount, discount_type, selling_price,
+      finance_check, finance_remark,
       ${canSeeCost ? 'cost_currency, cost_foreign, cost_rm,' : ''}
       customers ( name, salutation, notes, phone ),
       supplier_salespersons ( name ),
@@ -3043,6 +3046,8 @@ function buildOrderRow(o) {
     <td>${o.has_contract ? '<span class="chip chip-confirmed" style="font-size:9px">Yes</span>' : '<span class="chip chip-draft" style="font-size:9px">No</span>'}</td>
     <td class="muted" style="font-size:11px">${o.kol_name || '—'}</td>
     <td style="font-size:11px;color:#6B7280;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${(o.customers?.notes||'').replace(/"/g,'&quot;')}">${o.customers?.notes || '—'}</td>
+    <td style="text-align:center"><button onclick="event.stopPropagation();cycleFinanceCheck('${o.id}',this)" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 6px" title="点击切换核对状态">${o.finance_check === 'approved' ? '✅' : o.finance_check === 'rejected' ? '❌' : '❗'}</button></td>
+    <td style="font-size:11px;color:#374151;max-width:200px"><span class="fin-remark-text" style="cursor:pointer;display:inline-block;min-width:40px;min-height:16px" onclick="event.stopPropagation();editFinanceRemark('${o.id}',this)" title="点击编辑">${o.finance_remark || '<span style=\'color:#D1D5DB\'>—</span>'}</span></td>
     <td><div style="position:relative"><button class="action-dots" onclick="toggleDotMenu(this,event)">⋯</button><div class="dot-menu">
       ${o.is_archived
         ? `<div class="dot-menu-item" style="color:#059669" onclick="unarchiveOrder('${o.id}',this)">♻️ 复原订单</div>`
@@ -5062,6 +5067,41 @@ function showToast(msg) {
   if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1C2132;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:700;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:opacity .3s'; document.body.appendChild(t); }
   t.textContent = msg; t.style.opacity = '1'; t.style.display = 'block';
   setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.style.display = 'none', 300); }, 2500);
+}
+
+// ── FINANCE CHECK & REMARK ──
+async function cycleFinanceCheck(orderId, btn) {
+  const cur = btn.textContent.trim();
+  const next = cur === '❗' ? 'approved' : cur === '✅' ? 'rejected' : null;
+  const { error } = await sb.from('orders').update({ finance_check: next }).eq('id', orderId);
+  if (error) { showToast('❌ 更新失败'); return; }
+  btn.textContent = next === 'approved' ? '✅' : next === 'rejected' ? '❌' : '❗';
+  const row = btn.closest('tr');
+  if (row) row.dataset.financeCheck = next || '';
+}
+
+async function editFinanceRemark(orderId, span) {
+  const cur = span.dataset.val || span.innerText.trim().replace('—','');
+  const input = document.createElement('input');
+  input.value = cur === '—' ? '' : cur;
+  input.style.cssText = 'font-size:11px;border:1.5px solid #6366F1;border-radius:4px;padding:2px 6px;width:160px;outline:none;font-family:inherit;font-weight:600';
+  span.replaceWith(input);
+  input.focus();
+  const save = async () => {
+    const val = input.value.trim();
+    const { error } = await sb.from('orders').update({ finance_remark: val || null }).eq('id', orderId);
+    if (error) { showToast('❌ 更新失败'); return; }
+    const newSpan = document.createElement('span');
+    newSpan.className = 'fin-remark-text';
+    newSpan.style.cssText = 'cursor:pointer;display:inline-block;min-width:40px;min-height:16px';
+    newSpan.title = '点击编辑';
+    newSpan.dataset.val = val;
+    newSpan.onclick = () => editFinanceRemark(orderId, newSpan);
+    newSpan.innerHTML = val || '<span style="color:#D1D5DB">—</span>';
+    input.replaceWith(newSpan);
+  };
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } if (e.key === 'Escape') { input.value = cur; input.blur(); } });
 }
 
 // ── DOT MENU ──
