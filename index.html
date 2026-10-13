@@ -10,7 +10,20 @@
 body{font-family:'Nunito',sans-serif;background:#F0F2F7;color:#2D2926;min-height:100vh;display:flex}
 
 /* ── SIDEBAR ── */
-.sidebar{width:220px;min-height:100vh;background:#1C2132;display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sidebar{width:220px;min-height:100vh;background:#1C2132;display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:left .25s ease}
+.sidebar-collapsed .sidebar{left:-220px}
+.sidebar-collapsed .main{margin-left:0;max-width:100vw}
+.sidebar-toggle{position:fixed;top:12px;left:12px;z-index:200;background:#1C2132;border:none;border-radius:8px;width:36px;height:36px;display:none;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.sidebar-collapsed .sidebar-toggle{display:flex}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+.sidebar-open .sidebar-overlay{display:block}
+@media(max-width:768px){
+  .sidebar{left:-220px}
+  .sidebar-toggle{display:flex}
+  .sidebar-open .sidebar{left:0}
+  .sidebar-collapsed .sidebar{left:-220px}
+  .main{margin-left:0!important;max-width:100vw!important}
+}
 .sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
 .sidebar-logo .brand{font-size:13px;font-weight:800;color:#fff;letter-spacing:.3px}
 .sidebar-logo .brand em{color:#E8906B;font-style:normal}
@@ -751,9 +764,12 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
 
 <!-- SIDEBAR -->
 <div class="sidebar" id="app-sidebar" style="display:none">
-  <div class="sidebar-logo">
-    <div class="brand">Offtrack <em>Travel</em></div>
-    <div class="role-badge">OPERATION</div>
+  <div class="sidebar-logo" style="display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div class="brand">Offtrack <em>Travel</em></div>
+      <div class="role-badge">OPERATION</div>
+    </div>
+    <button onclick="toggleSidebar()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:18px;cursor:pointer;padding:4px 6px;line-height:1;border-radius:6px" title="收起侧边栏">✕</button>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section">主菜单</div>
@@ -788,6 +804,8 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
 </div>
 
 <!-- MAIN -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<button class="sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()">☰</button>
 <div class="main" id="app-main" style="display:none">
 
 <!-- ═══════════════════════════════════════════
@@ -6440,6 +6458,15 @@ async function doLogin() {
     await sb.auth.signOut();
   }
   btn.disabled = false; btn.textContent = '登入 →';
+}
+
+function toggleSidebar() {
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    document.body.classList.toggle('sidebar-open');
+  } else {
+    document.body.classList.toggle('sidebar-collapsed');
+  }
 }
 
 async function doLogout() {
