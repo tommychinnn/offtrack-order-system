@@ -788,6 +788,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
     <div class="nav-item" data-role="master operation" data-page="anomaly" onclick="showPage('anomaly')"><span class="icon">⚠️</span>异常中心<span class="badge" style="background:#EF4444">5</span></div>
     <div class="nav-item" data-role="master" data-page="report" onclick="showPage('report')"><span class="icon">📈</span>报表</div>
     <div class="nav-section" data-role="master operation">设置</div>
+    <div class="nav-item" data-role="master" data-page="user-mgmt" onclick="showPage('user-mgmt')"><span class="icon">👥</span>员工管理</div>
     <div class="nav-item" data-role="master operation" data-page="supplier-settings" onclick="showPage('supplier-settings')"><span class="icon">🏢</span>Supplier 设置</div>
     <div class="nav-item" data-role="master operation" data-page="bank-settings" onclick="showPage('bank-settings')"><span class="icon">🏦</span>收款银行</div>
     <div class="nav-item" data-role="master operation" data-page="regions" onclick="showPage('regions')"><span class="icon">🌏</span>地区与来源</div>
@@ -2522,6 +2523,76 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
           <tr><td colspan="8" style="text-align:center;padding:40px;color:#9CA3AF;font-weight:600">暂无文件</td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: USER MANAGEMENT
+═══════════════════════════════════════════ -->
+<div class="page" id="page-user-mgmt">
+  <div class="topbar">
+    <div><div class="page-title">员工管理</div></div>
+    <div class="spacer"></div>
+    <button class="tb-btn btn-primary" onclick="openCreateUserModal()">＋ 新增员工</button>
+  </div>
+  <div style="padding:20px;max-width:900px">
+    <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#92400E">
+      ⚠️ 新账号创建后员工需要验证邮箱才能登入。如需跳过验证，请在 Supabase → Authentication → Configuration → 关闭 <strong>Enable email confirmations</strong>。
+    </div>
+    <div class="table-wrap">
+      <table class="tbl" style="width:100%">
+        <thead><tr>
+          <th>姓名</th>
+          <th>邮箱</th>
+          <th>职位</th>
+          <th style="text-align:center">状态</th>
+          <th>注册日期</th>
+          <th>操作</th>
+        </tr></thead>
+        <tbody id="user-mgmt-tbody">
+          <tr><td colspan="6" style="text-align:center;padding:30px;color:#9CA3AF">加载中...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create User Modal -->
+  <div id="create-user-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:12px;width:420px;max-width:95vw;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+      <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:18px">新增员工账号</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <label style="font-size:11px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">姓名 *</label>
+          <input id="cu-name" type="text" placeholder="Full Name" style="width:100%;padding:8px 10px;border:1.5px solid #E5E8EE;border-radius:7px;font-size:13px;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">邮箱 *</label>
+          <input id="cu-email" type="email" placeholder="name@offtracktravel.com.my" style="width:100%;padding:8px 10px;border:1.5px solid #E5E8EE;border-radius:7px;font-size:13px;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">初始密码 * (最少6位)</label>
+          <input id="cu-pwd" type="password" placeholder="••••••••" style="width:100%;padding:8px 10px;border:1.5px solid #E5E8EE;border-radius:7px;font-size:13px;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:#6B7280;display:block;margin-bottom:4px">职位 *</label>
+          <select id="cu-role" style="width:100%;padding:8px 10px;border:1.5px solid #E5E8EE;border-radius:7px;font-size:13px;box-sizing:border-box">
+            <option value="operation">Operation</option>
+            <option value="td">Travel Designer</option>
+            <option value="ce">Customer Experience</option>
+            <option value="finance">Finance</option>
+            <option value="master">Master</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input id="cu-is-td" type="checkbox" style="width:16px;height:16px;cursor:pointer">
+          <label for="cu-is-td" style="font-size:12px;color:#374151;cursor:pointer">也可作为 TD（出现在TD下拉选项）</label>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+        <button onclick="closeCreateUserModal()" style="padding:8px 18px;border:1.5px solid #E5E8EE;border-radius:7px;font-size:13px;cursor:pointer;background:#fff;color:#374151">取消</button>
+        <button onclick="saveNewUser()" style="padding:8px 18px;background:#3B7A68;border:none;border-radius:7px;font-size:13px;cursor:pointer;color:#fff;font-weight:600">创建账号</button>
+      </div>
     </div>
   </div>
 </div>
