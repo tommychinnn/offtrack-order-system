@@ -578,6 +578,7 @@ body[data-active-role="td"] .cr-profit-block{display:none!important}
 body[data-active-role="ce"] .cr-profit-block{display:none!important}
 /* Finance: hide edit/submit actions */
 body[data-active-role="finance"] .finance-hide{display:none!important}
+body[data-active-role="finance"] .finance-no-total{display:none!important}
 /* Compact filter rows */
 .compact-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
 .compact-filter input,.compact-filter select{
@@ -886,9 +887,9 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
       <div class="ord-sum-sep"></div>
       <div class="ord-sum-item"><div class="osl">总底价</div><div class="osv" style="color:#7C3AED" id="sum-cost">—</div></div>
       <div class="ord-sum-sep"></div>
-      <div class="ord-sum-item"><div class="osl">预计利润</div><div class="osv" id="sum-profit">—</div></div>
-      <div class="ord-sum-sep"></div>
-      <div class="ord-sum-item"><div class="osl">实际利润</div><div class="osv" id="sum-actual-profit">—</div></div>
+      <div class="ord-sum-item finance-no-total"><div class="osl">预计利润</div><div class="osv" id="sum-profit">—</div></div>
+      <div class="ord-sum-sep finance-no-total"></div>
+      <div class="ord-sum-item finance-no-total"><div class="osl">实际利润</div><div class="osv" id="sum-actual-profit">—</div></div>
     </div>
     <!-- Spreadsheet Table -->
     <div class="table-wrap">
