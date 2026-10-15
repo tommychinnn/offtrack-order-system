@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Offtrack Operations — Staff Portal</title>
+<link rel="icon" type="image/png" href="/assets/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -671,6 +672,8 @@ body[data-active-role="td"] .edit-payin-btn{display:inline-flex!important;align-
 body[data-active-role="master"] .edit-payout-btn,
 body[data-active-role="operation"] .edit-payout-btn,
 body[data-active-role="finance"] .edit-payout-btn{display:inline-flex!important;align-items:center}
+.delete-payout-btn{display:none!important}
+body[data-active-role="master"] .delete-payout-btn{display:inline-flex!important;align-items:center}
 /* 检查 column (visible to master/operation/finance, hidden from td) */
 .check-col{display:none!important}
 /* Finance-only badge — shown to roles that cannot edit Finance fields */
@@ -4715,7 +4718,7 @@ async function loadPayOuts() {
       <td style="padding:10px 12px"><span style="color:#9CA3AF">—</span></td>
       <td class="check-col" style="padding:8px 12px"><button onclick="cycleCheck(this)" data-state="0" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid #E2E6EA;background:#F3F4F6;color:#6B7280;cursor:pointer;white-space:nowrap">未检查</button></td>
       <td style="padding:10px 12px;color:#9CA3AF;font-size:11px">—</td>
-      <td style="padding:8px 12px;white-space:nowrap"><button class="edit-payout-btn" style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #3B7A68;background:#EEF6F3;color:#3B7A68;cursor:pointer" onclick="openEditPayOut('${r.id}')">✏️ 编辑</button></td>
+      <td style="padding:8px 12px;white-space:nowrap;display:flex;gap:6px;align-items:center"><button class="edit-payout-btn" style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #3B7A68;background:#EEF6F3;color:#3B7A68;cursor:pointer" onclick="openEditPayOut('${r.id}')">✏️ 编辑</button><button class="delete-payout-btn" style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #DC2626;background:#FEF2F2;color:#DC2626;cursor:pointer" onclick="deletePayOut('${r.id}','${r.orders?.order_no||''}')">🗑️ 删除</button></td>
     </tr>`;
   }).join('');
   document.getElementById('payout-stat-month').textContent = 'RM '+fmt(monthRM);
@@ -7519,6 +7522,14 @@ async function submitEditPayIn() {
 
 /* ── Edit pay-out ── */
 let _editPayOutId = null;
+async function deletePayOut(id, orderNo) {
+  if (!confirm(`确定要删除这笔出账记录吗？\n订单：${orderNo}\n此操作无法撤销。`)) return;
+  const { error } = await sb.from('payouts').delete().eq('id', id);
+  if (error) { showToast('❌ 删除失败: ' + error.message); return; }
+  showToast('🗑️ 已删除出账记录');
+  loadPayOuts();
+}
+
 async function openEditPayOut(id) {
   _editPayOutId = id;
   const { data: r } = await sb.from('payouts').select('*,orders(order_no),suppliers(supplier_code)').eq('id', id).maybeSingle();
