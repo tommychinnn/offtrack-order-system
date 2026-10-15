@@ -853,7 +853,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
         <div class="filter-chip" id="chip-balance" onclick="toggleOrderChip('balance',this)"><span class="dot"></span>尾款未付</div>
         <div class="filter-chip" id="chip-tbd" onclick="toggleOrderChip('tbd',this)"><span class="dot"></span>日期未定</div>
         <div class="filter-chip" id="chip-ins" onclick="toggleOrderChip('ins',this)"><span class="dot"></span>保险</div>
-        <div class="filter-chip" id="chip-upcoming" onclick="toggleOrderChip('upcoming',this)"><span class="dot"></span>倒数行程</div>
+        <select id="ord-filter-countdown" onchange="filterOrders()" style="min-width:120px"><option value="">所有倒数</option><option value="urgent">⏰ 7天内</option><option value="soon">🟠 30天内</option><option value="ok">🟢 30天以上</option><option value="travelling">✈️ 旅途中</option><option value="ended">行程结束</option><option value="cancelled">退团</option><option value="tbd">日期未定</option></select>
         <button class="tb-btn btn-ghost" style="font-size:11px;padding:4px 10px;margin-left:auto" onclick="clearOrderFilters()">✕ 清除</button>
       </div>
       <!-- Date range (compact) -->
@@ -3071,20 +3071,20 @@ function buildOrderRow(o) {
   const statusCn = statusMap[o.status] || o.status || '已付定金';
 
   // Countdown chip
-  let countdown = '';
-  if (o.status === 'completed') countdown = '<span class="countdown ended">行程结束</span>';
-  else if (o.status === 'cancelled') countdown = '<span class="countdown ended">退团</span>';
-  else if (o.status === 'travelling') countdown = '<span class="countdown travelling">旅途中</span>';
-  else if (o.date_tbd || !depart) countdown = '<span class="countdown tbd">日期未定</span>';
+  let countdown = '', countdownKey = '';
+  if (o.status === 'completed') { countdown = '<span class="countdown ended">行程结束</span>'; countdownKey = 'ended'; }
+  else if (o.status === 'cancelled') { countdown = '<span class="countdown ended">退团</span>'; countdownKey = 'cancelled'; }
+  else if (o.status === 'travelling') { countdown = '<span class="countdown travelling">旅途中</span>'; countdownKey = 'travelling'; }
+  else if (o.date_tbd || !depart) { countdown = '<span class="countdown tbd">日期未定</span>'; countdownKey = 'tbd'; }
   else {
     const _now = new Date(); _now.setHours(0,0,0,0);
     const daysToDepart = Math.ceil((new Date(depart + 'T00:00:00') - _now) / 86400000);
     const daysToEnd = end ? Math.ceil((new Date(end + 'T00:00:00') - _now) / 86400000) : null;
-    if (daysToDepart < 0 && (daysToEnd === null || daysToEnd >= 0)) countdown = '<span class="countdown travelling">旅途中</span>';
-    else if (daysToDepart < 0) countdown = '<span class="countdown ended">行程结束</span>';
-    else if (daysToDepart <= 7)  countdown = `<span class="countdown urgent">还剩 ${daysToDepart} 天</span>`;
-    else if (daysToDepart <= 30) countdown = `<span class="countdown soon">还剩 ${daysToDepart} 天</span>`;
-    else                         countdown = `<span class="countdown ok">还剩 ${daysToDepart} 天</span>`;
+    if (daysToDepart < 0 && (daysToEnd === null || daysToEnd >= 0)) { countdown = '<span class="countdown travelling">旅途中</span>'; countdownKey = 'travelling'; }
+    else if (daysToDepart < 0) { countdown = '<span class="countdown ended">行程结束</span>'; countdownKey = 'ended'; }
+    else if (daysToDepart <= 7)  { countdown = `<span class="countdown urgent">还剩 ${daysToDepart} 天</span>`; countdownKey = 'urgent'; }
+    else if (daysToDepart <= 30) { countdown = `<span class="countdown soon">还剩 ${daysToDepart} 天</span>`; countdownKey = 'soon'; }
+    else                         { countdown = `<span class="countdown ok">还剩 ${daysToDepart} 天</span>`; countdownKey = 'ok'; }
   }
 
   // Payment chip
@@ -3115,7 +3115,8 @@ function buildOrderRow(o) {
     data-supplier-owed="${(remainRM <= 0 || (costFor > 0 && costCur !== 'MYR' && remainFor <= 0)) ? '0' : remainRM.toFixed(2)}"
     data-kol="${(o.kol_name||'').toLowerCase()}"
     data-ins="${insCount > 0 ? 'yes' : ''}"
-    data-created="${(o.created_at||'').slice(0,10)}">
+    data-created="${(o.created_at||'').slice(0,10)}"
+    data-countdown="${countdownKey}">
     <td class="sh-sticky sh-sep" style="left:0"><span class="mono">${o.order_no}</span></td>
     <td class="muted" style="font-size:11px">${fmtDate((o.created_at||'').slice(0,10))}</td>
     <td><strong>${custName}</strong>${o.pax_total > 1 ? ' <span class="muted">+' + (o.pax_total - 1) + '</span>' : ''}${o.customers?.phone ? '<br><span style="font-size:10px;font-weight:500;color:#9CA3AF">' + o.customers.phone + '</span>' : ''}</td>
@@ -3647,7 +3648,8 @@ function filterOrders() {
   const fRegion = document.getElementById('ord-filter-region')?.value || '';
   const fTd     = document.getElementById('ord-filter-td')?.value     || '';
   const fMonth  = document.getElementById('ord-filter-month')?.value  || '';
-  const fKol    = (document.getElementById('ord-filter-kol')?.value || '').toLowerCase().trim();
+  const fKol      = (document.getElementById('ord-filter-kol')?.value || '').toLowerCase().trim();
+  const fCountdown = document.getElementById('ord-filter-countdown')?.value || '';
   const dateFrom    = document.getElementById('ord-date-from')?.value    || '';
   const dateTo      = document.getElementById('ord-date-to')?.value      || '';
   const createdFrom = document.getElementById('ord-created-from')?.value || '';
@@ -3702,6 +3704,8 @@ function filterOrders() {
     if (chipIns && (tr.dataset.ins || '') !== 'yes') { tr.style.display='none'; return; }
     // Chip: 倒数行程 — 只显示未来出发的订单
     if (chipUpcoming && (!depart || depart < todayStr)) { tr.style.display='none'; return; }
+    // Dropdown: 倒数行程 filter
+    if (fCountdown && (tr.dataset.countdown || '') !== fCountdown) { tr.style.display='none'; return; }
     // Departure date range
     if (dateFrom || dateTo) {
       if (dateFrom && depart < dateFrom) { tr.style.display='none'; return; }
@@ -3825,6 +3829,7 @@ function clearOrderFilters() {
   document.getElementById('ord-filter-td').value     = '';
   document.getElementById('ord-filter-month').value  = '';
   const kolF = document.getElementById('ord-filter-kol'); if (kolF) kolF.value = '';
+  const cdF = document.getElementById('ord-filter-countdown'); if (cdF) cdF.value = '';
   document.getElementById('ord-date-from').value     = '';
   document.getElementById('ord-date-to').value       = '';
   document.getElementById('ord-created-from').value  = '';
