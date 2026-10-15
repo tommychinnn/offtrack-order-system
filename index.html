@@ -2058,7 +2058,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
           <div style="padding-bottom:12px">
             <table class="pay-table">
               <thead>
-                <tr><th>#</th><th>日期</th><th>类型</th><th style="text-align:right">金额 (RM)</th><th>Bank</th><th>GSH</th><th>备注</th></tr>
+                <tr><th>#</th><th>日期</th><th>类型</th><th style="text-align:right">金额 (RM)</th><th>Bank</th><th>GSH</th><th>收据</th><th>备注</th></tr>
               </thead>
               <tbody id="det-payin-tbody">
                 <tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:24px;font-size:12px">⏳ 加载中...</td></tr>
@@ -3467,15 +3467,15 @@ async function openOrder(uuid) {
 async function loadDetailPayins() {
   const tbody = document.getElementById('det-payin-tbody');
   if (!tbody || !_currentOrder) return;
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:24px;font-size:12px">⏳ 加载中...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9CA3AF;padding:24px;font-size:12px">⏳ 加载中...</td></tr>';
 
   const { data, error } = await sb.from('payins')
-    .select('id, date, payment_type, amount_rm, bank, finance_note, invoice_status, gsh_check')
+    .select('id, date, payment_type, amount_rm, bank, finance_note, invoice_status, gsh_check, receipt_url')
     .eq('order_id', _currentOrder.id)
     .order('date', { ascending: true });
 
   if (error || !data?.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9CA3AF;padding:24px;font-size:12px">暂无入账记录</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9CA3AF;padding:24px;font-size:12px">暂无入账记录</td></tr>';
     return;
   }
   const fmt = n => (parseFloat(n)||0).toLocaleString('en-MY', {minimumFractionDigits:2,maximumFractionDigits:2});
@@ -3489,6 +3489,9 @@ async function loadDetailPayins() {
   };
   tbody.innerHTML = data.map((r, i) => {
     const gs = gshStyles[r.gsh_check] || gshStyles.pending;
+    const receiptCell = r.receipt_url
+      ? `<a href="${r.receipt_url}" target="_blank"><div style="width:28px;height:28px;background:#F0F2F7;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer">🧾</div></a>`
+      : '<span style="color:#9CA3AF">—</span>';
     return `<tr>
       <td style="color:#9CA3AF;font-size:11px">#${i+1}</td>
       <td>${r.date || '—'}</td>
@@ -3496,13 +3499,14 @@ async function loadDetailPayins() {
       <td style="text-align:right;font-weight:800">${fmt(r.amount_rm)}</td>
       <td style="font-size:11px;color:#6B7280">${r.bank || '—'}</td>
       <td><span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:${gs.bg};color:${gs.color}">${gs.label}</span></td>
+      <td>${receiptCell}</td>
       <td style="font-size:11px;color:#6B7280">${r.finance_note || '—'}</td>
     </tr>`;
   }).join('') +
     `<tr class="pay-summary-row">
       <td colspan="3" style="font-size:11px;color:#6B7280">已核实</td>
       <td style="text-align:right;font-weight:800;color:#059669">RM ${fmt(verifiedTotal)}</td>
-      <td colspan="3" style="font-size:10px;color:#9CA3AF">${pendingTotal > 0 ? '(待核实 RM '+fmt(pendingTotal)+')' : ''}</td>
+      <td colspan="4" style="font-size:10px;color:#9CA3AF">${pendingTotal > 0 ? '(待核实 RM '+fmt(pendingTotal)+')' : ''}</td>
     </tr>`;
 }
 
