@@ -3142,7 +3142,7 @@ function buildOrderRow(o) {
     <td>${o.has_contract ? '<span class="chip chip-confirmed" style="font-size:9px">Yes</span>' : '<span class="chip chip-draft" style="font-size:9px">No</span>'}</td>
     <td class="muted" style="font-size:11px">${o.kol_name || '—'}</td>
     <td style="font-size:11px;color:#6B7280;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${(o.customers?.notes||'').replace(/"/g,'&quot;')}">${o.customers?.notes || '—'}</td>
-    <td style="text-align:center"><button onclick="event.stopPropagation();cycleFinanceCheck('${o.id}',this)" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 6px" title="点击切换核对状态">${o.finance_check === 'approved' ? '✅' : o.finance_check === 'rejected' ? '❌' : '❗'}</button></td>
+    <td style="text-align:center"><button onclick="event.stopPropagation();cycleFinanceCheck('${o.id}',this)" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px 6px" title="点击切换核对状态">${o.finance_check === 'approved' ? '✅' : o.finance_check === 'rejected' ? '❌' : '✗'}</button></td>
     <td style="font-size:11px;color:#374151;max-width:200px"><span class="fin-remark-text" style="cursor:pointer;display:inline-block;min-width:40px;min-height:16px" onclick="event.stopPropagation();editFinanceRemark('${o.id}',this)" title="点击编辑">${o.finance_remark || '<span style=\'color:#D1D5DB\'>—</span>'}</span></td>
     <td><div style="position:relative"><button class="action-dots" onclick="toggleDotMenu(this,event)">⋯</button><div class="dot-menu">
       ${o.is_archived
