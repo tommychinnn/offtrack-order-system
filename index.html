@@ -7481,6 +7481,8 @@ async function openEditPayIn(id) {
   if (info) info.innerHTML = r.receipt_url ? `<a href="${r.receipt_url}" target="_blank" style="font-size:11px;color:#3B7A68;font-weight:700">📎 查看当前收据</a>` : '<span style="font-size:11px;color:#9CA3AF">暂无收据</span>';
   const fileInput = document.getElementById('epi-receipt-file');
   if (fileInput) fileInput.value = '';
+  const linkInput = document.getElementById('epi-receipt-link');
+  if (linkInput) linkInput.value = '';
   const canFinance = ['master','operation','finance'].includes(currentUser?.roleKey);
   ['epi-gsh','epi-invoice-status'].forEach(id => {
     const el = document.getElementById(id);
@@ -7501,11 +7503,14 @@ async function submitEditPayIn() {
   const newOrderEntry = newOrderNo ? _ordersCache.find(o => o.id === newOrderNo) : null;
   if (newOrderNo && !newOrderEntry) { showToast('⚠️ 找不到订单号 ' + newOrderNo); return; }
   const receiptFile = document.getElementById('epi-receipt-file')?.files[0];
+  const receiptLink = document.getElementById('epi-receipt-link')?.value.trim() || null;
   let receiptUrl = null;
   if (receiptFile) {
     showToast('⏳ 上传收据中...');
     receiptUrl = await uploadToStorage(receiptFile, 'receipts');
     if (!receiptUrl) return;
+  } else if (receiptLink) {
+    receiptUrl = receiptLink;
   }
   const upd = { date, payment_type: type, amount_rm: amt, bank, invoice_status: invStat, gsh_check: gshCheck, finance_note: notes };
   if (newOrderEntry) upd.order_id = newOrderEntry.uuid;
@@ -8612,6 +8617,7 @@ async function submitEditPayOut() {
           <span id="epi-receipt-fname">替换收据（JPG · PNG · PDF）</span>
           <input type="file" id="epi-receipt-file" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="document.getElementById('epi-receipt-fname').textContent=this.files[0]?.name||'替换收据'"/>
         </label>
+        <input type="url" id="epi-receipt-link" placeholder="或粘贴链接（Google Drive / PDF URL）" style="margin-top:6px;width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;box-sizing:border-box"/>
       </div>
       <div class="mf-row col2">
         <div class="mf-group">
