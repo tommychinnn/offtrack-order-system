@@ -4693,7 +4693,7 @@ function filterPayIns() {
 async function loadPayOuts() {
   const tbody = document.getElementById('payout-tbody');
   const { data, error } = await sb.from('payouts')
-    .select('id,amount_foreign,amount_rm,currency,bank_charges_rm,date,receipt_url,orders(order_no),suppliers(supplier_code,currency)')
+    .select('id,amount_foreign,amount_rm,currency,bank_charges_rm,date,receipt_url,invoice_url,transfer_proof_url,invoice_name,orders(order_no),suppliers(supplier_code,currency)')
     .order('date', { ascending: false });
   if (error) { tbody.innerHTML='<tr><td colspan="14" style="text-align:center;padding:40px;color:#DC2626">加载失败</td></tr>'; return; }
   if (!data||!data.length) { tbody.innerHTML='<tr><td colspan="14" style="text-align:center;padding:40px;color:#9CA3AF">暂无出账记录</td></tr>'; return; }
@@ -4706,9 +4706,9 @@ async function loadPayOuts() {
     const foreign=parseFloat(r.amount_foreign)||0; totalForeign+=foreign;
     const charges=parseFloat(r.bank_charges_rm)||0; totalCharges+=charges;
     if ((r.date||'').startsWith(thisMonth)) monthRM+=rm;
-    const receipt = r.receipt_url ? `<a href="${r.receipt_url}" target="_blank"><div style="width:32px;height:32px;background:#F0F2F7;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">🧾</div></a>` : '<span style="color:#9CA3AF">—</span>';
+    const fileIcon = (url, emoji) => url ? `<a href="${url}" target="_blank"><div style="width:32px;height:32px;background:#F0F2F7;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">${emoji}</div></a>` : '<span style="color:#9CA3AF">—</span>';
     const cur = r.suppliers?.currency || r.currency || '—';
-    return `<tr style="border-bottom:1px solid #F0F2F7">
+    return `<tr style="border-bottom:1px solid #F0F2F7" data-order="${(r.orders?.order_no||'').toLowerCase()}" data-supplier="${(r.suppliers?.supplier_code||'').toLowerCase()}" data-invoice="${(r.invoice_name||'').toLowerCase()}">
       <td style="padding:10px 12px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#059669"></span></td>
       <td style="padding:10px 12px;color:#6B7280;font-size:12px">${r.date||'—'}</td>
       <td style="padding:10px 12px"><a href="#" onclick="showPage('detail')" style="color:#3B7A68;font-weight:700;text-decoration:none">${r.orders?.order_no||'—'}</a></td>
@@ -4717,9 +4717,9 @@ async function loadPayOuts() {
       <td style="padding:10px 12px;text-align:right;font-weight:700">${fmt(foreign)}</td>
       <td style="padding:10px 12px;text-align:right;font-weight:900;color:#DC2626">${fmt(rm)}</td>
       <td style="padding:10px 12px;text-align:right;color:#6B7280">${charges > 0 ? fmt(charges) : '—'}</td>
-      <td style="padding:10px 12px">${receipt}</td>
-      <td style="padding:10px 12px"><span style="color:#9CA3AF">—</span></td>
-      <td style="padding:10px 12px"><span style="color:#9CA3AF">—</span></td>
+      <td style="padding:10px 12px">${fileIcon(r.receipt_url,'🧾')}</td>
+      <td style="padding:10px 12px;min-width:120px"><div style="display:flex;flex-direction:column;gap:2px">${fileIcon(r.invoice_url,'📋')}${r.invoice_name ? `<span style="font-size:10px;color:#6B7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px" title="${r.invoice_name}">${r.invoice_name}</span>` : ''}</div></td>
+      <td style="padding:10px 12px">${fileIcon(r.transfer_proof_url,'🏦')}</td>
       <td class="check-col" style="padding:8px 12px"><button onclick="cycleCheck(this)" data-state="0" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid #E2E6EA;background:#F3F4F6;color:#6B7280;cursor:pointer;white-space:nowrap">未检查</button></td>
       <td style="padding:10px 12px;color:#9CA3AF;font-size:11px">—</td>
       <td style="padding:8px 12px;white-space:nowrap;display:flex;gap:6px;align-items:center"><button class="edit-payout-btn" style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #3B7A68;background:#EEF6F3;color:#3B7A68;cursor:pointer" onclick="openEditPayOut('${r.id}')">✏️ 编辑</button><button class="delete-payout-btn" style="font-size:10px;padding:3px 7px;border-radius:4px;border:1.5px solid #DC2626;background:#FEF2F2;color:#DC2626;cursor:pointer" onclick="deletePayOut('${r.id}','${r.orders?.order_no||''}')">🗑️ 删除</button></td>
@@ -4732,6 +4732,15 @@ async function loadPayOuts() {
   document.getElementById('payout-tfoot-foreign').textContent = fmt(totalForeign);
   document.getElementById('payout-tfoot-rm').textContent = fmt(totalRM);
   document.getElementById('payout-tfoot-charges').textContent = fmt(totalCharges);
+}
+
+function filterPayOuts() {
+  const q = (document.getElementById('payout-search')?.value || '').toLowerCase().trim();
+  document.querySelectorAll('#payout-tbody tr[data-order]').forEach(row => {
+    if (!q) { row.style.display = ''; return; }
+    const match = (row.dataset.order||'').includes(q) || (row.dataset.supplier||'').includes(q) || (row.dataset.invoice||'').includes(q);
+    row.style.display = match ? '' : 'none';
+  });
 }
 
 /* ── BANK SETTINGS ── */
@@ -7397,6 +7406,7 @@ async function submitPayOut() {
     orderId = ord.id;
   }
 
+  const invoiceName = document.getElementById('po-invoice-name')?.value.trim() || null;
   const { error } = await sb.from('payouts').insert({
     order_id: orderId, supplier_id: supplierId, date, currency,
     amount_foreign: foreign, exchange_rate: rate,
@@ -7405,7 +7415,8 @@ async function submitPayOut() {
     finance_note: notes,
     receipt_url: receiptUrl,
     invoice_url: invoiceUrl,
-    transfer_proof_url: transferUrl
+    transfer_proof_url: transferUrl,
+    invoice_name: invoiceName
   });
   if (error) { showToast('❌ 提交失败: ' + error.message); return; }
   // Trigger 5: notify Finance of the payout
@@ -7560,6 +7571,8 @@ async function openEditPayOut(id) {
   document.getElementById('epo-transfer-file').value = '';
   document.getElementById('epo-invoice-fname').textContent  = '替换 Supplier Invoice（JPG · PNG · PDF）';
   document.getElementById('epo-transfer-fname').textContent = '替换转账凭证（JPG · PNG · PDF）';
+  const epoInvName = document.getElementById('epo-invoice-name');
+  if (epoInvName) epoInvName.value = r.invoice_name || '';
   document.getElementById('modal-edit-payout').classList.add('open');
 }
 async function submitEditPayOut() {
@@ -7583,9 +7596,11 @@ async function submitEditPayOut() {
     transferUrl = await uploadToStorage(transferFile, 'receipts');
     if (!transferUrl) return;
   }
+  const invoiceName = document.getElementById('epo-invoice-name')?.value.trim() || null;
   const upd = { date, currency: document.getElementById('epo-currency').value, amount_foreign: foreign, exchange_rate: rate, amount_rm: rm, bank_charges_rm: charges, finance_note: notes };
   if (invoiceUrl)  upd.invoice_url        = invoiceUrl;
   if (transferUrl) upd.transfer_proof_url = transferUrl;
+  if (invoiceName !== null) upd.invoice_name = invoiceName;
   const { error } = await sb.from('payouts').update(upd).eq('id', _editPayOutId);
   if (error) { showToast('❌ 更新失败: ' + error.message); return; }
   closeModal('modal-edit-payout');
@@ -8020,7 +8035,7 @@ async function submitEditPayOut() {
     <!-- Filters -->
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
       <div class="compact-filter" style="margin-bottom:0;flex:1;min-width:0">
-        <input type="text" placeholder="搜索订单号 / Supplier…"/>
+        <input type="text" id="payout-search" placeholder="搜索订单号 / Supplier / Invoice…" oninput="filterPayOuts()"/>
         <select><option>全部状态</option><option>待确认</option><option>已确认</option><option>有问题 🔴</option></select>
         <select><option>全部 Supplier</option><option>华侨旅游</option><option>欢乐旅游</option></select>
         <select><option>全部月份</option><option>2026-08</option><option>2026-07</option><option>2026-06</option><option>2026-05</option></select>
@@ -8247,6 +8262,10 @@ async function submitEditPayOut() {
             <input type="url" id="po-transfer-link" placeholder="或粘贴链接" style="flex:1;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:11px"/>
           </div>
         </div>
+      </div>
+      <div class="mf-group">
+        <label>Supplier Invoice Name <span style="font-size:10px;color:#9CA3AF;font-weight:400">（可选，方便搜索）</span></label>
+        <input type="text" id="po-invoice-name" placeholder="如：EC-INV-2026-001"/>
       </div>
       <div class="mf-group">
         <label>备注</label>
@@ -8727,6 +8746,10 @@ async function submitEditPayOut() {
           <span id="epo-transfer-fname">替换转账凭证（JPG · PNG · PDF）</span>
           <input type="file" id="epo-transfer-file" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="document.getElementById('epo-transfer-fname').textContent=this.files[0]?.name||'替换转账凭证'"/>
         </label>
+      </div>
+      <div class="mf-group">
+        <label>Supplier Invoice Name <span style="font-size:10px;color:#9CA3AF;font-weight:400">（可选，方便搜索）</span></label>
+        <input type="text" id="epo-invoice-name" placeholder="如：EC-INV-2026-001"/>
       </div>
       <div class="mf-group">
         <label>备注</label>
