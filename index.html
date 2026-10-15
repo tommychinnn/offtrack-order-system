@@ -2900,9 +2900,9 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             <th style="text-align:center">人数</th>
             <th style="text-align:right">总售价 (RM)</th>
             <th style="text-align:right">总底价 (RM)</th>
-            <th style="text-align:right">预计利润 (RM)</th>
             <th style="text-align:right">已收 (RM)</th>
             <th style="text-align:right">已付 (RM)</th>
+            <th style="text-align:right">预计利润 (RM)</th>
             <th style="text-align:right">实际利润 (RM)</th>
           </tr>
         </thead>
@@ -4510,9 +4510,9 @@ async function loadReport() {
         <td style="padding:8px 12px;text-align:center">${pax}</td>
         <td style="padding:8px 12px;text-align:right;font-weight:700">${fmtN(revenue)}</td>
         <td style="padding:8px 12px;text-align:right;color:#7C3AED">${fmtN(cost)}</td>
-        <td style="padding:8px 12px;text-align:right;color:#3B7A68;font-weight:700">${fmtN(estProfit)}</td>
         <td style="padding:8px 12px;text-align:right;color:#059669">${fmtN(paid)}</td>
         <td style="padding:8px 12px;text-align:right;color:#DC2626">${fmtN(paidOut)}</td>
+        <td style="padding:8px 12px;text-align:right;color:#3B7A68;font-weight:700">${fmtN(estProfit)}</td>
         <td style="padding:8px 12px;text-align:right;font-weight:800;color:${actC}">${fmtN(actProfit)}</td>
       </tr>`;
     }).join('') +
@@ -4520,9 +4520,9 @@ async function loadReport() {
       <td colspan="5" style="padding:8px 12px">合计 ${completedOrders.length} 单</td>
       <td style="padding:8px 12px;text-align:right">${fmtN(sumRev)}</td>
       <td style="padding:8px 12px;text-align:right;color:#7C3AED">${fmtN(sumCost)}</td>
-      <td style="padding:8px 12px;text-align:right;color:#3B7A68">${fmtN(sumEst)}</td>
       <td style="padding:8px 12px;text-align:right;color:#059669">${fmtN(sumPaid)}</td>
       <td style="padding:8px 12px;text-align:right;color:#DC2626">${fmtN(sumOut)}</td>
+      <td style="padding:8px 12px;text-align:right;color:#3B7A68">${fmtN(sumEst)}</td>
       <td style="padding:8px 12px;text-align:right;color:${sumAct>=sumEst?'#059669':sumAct>=0?'#D97706':'#DC2626'};font-weight:800">${fmtN(sumAct)}</td>
     </tr>`;
   }
