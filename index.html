@@ -788,6 +788,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
     <div class="nav-item" data-role="master operation td finance" data-page="files-global" onclick="showPage('files-global')"><span class="icon">📁</span>文件与行程</div>
     <div class="nav-item" data-role="master operation" data-page="anomaly" onclick="showPage('anomaly')"><span class="icon">⚠️</span>异常中心<span class="badge" style="background:#EF4444">5</span></div>
     <div class="nav-item" data-role="master" data-page="report" onclick="showPage('report')"><span class="icon">📈</span>报表</div>
+    <div class="nav-item" data-role="master" data-page="activity-log" onclick="showPage('activity-log')"><span class="icon">📋</span>操作记录</div>
     <div class="nav-section" data-role="master operation">设置</div>
     <div class="nav-item" data-role="master" data-page="user-mgmt" onclick="showPage('user-mgmt')"><span class="icon">👥</span>员工管理</div>
     <div class="nav-item" data-role="master operation" data-page="supplier-settings" onclick="showPage('supplier-settings')"><span class="icon">🏢</span>Supplier 设置</div>
@@ -2945,6 +2946,43 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════
+     PAGE: ACTIVITY LOG
+═══════════════════════════════════════════ -->
+<div class="page" id="page-activity-log">
+  <div class="topbar">
+    <div><div class="page-title">操作记录</div><div class="breadcrumb">Master · Activity Log</div></div>
+    <div class="spacer"></div>
+  </div>
+  <div class="content">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <label style="font-size:12px;font-weight:700;color:#6B7280">从</label>
+      <input type="date" id="log-date-from" style="padding:6px 10px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:13px">
+      <label style="font-size:12px;font-weight:700;color:#6B7280">到</label>
+      <input type="date" id="log-date-to" style="padding:6px 10px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:13px">
+      <button class="tb-btn btn-primary" onclick="loadActivityLog()">查询</button>
+      <button class="tb-btn" onclick="document.getElementById('log-date-from').value='';document.getElementById('log-date-to').value='';loadActivityLog()">重置</button>
+    </div>
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>时间</th>
+            <th>操作人</th>
+            <th>动作</th>
+            <th>关联</th>
+            <th>备注</th>
+          </tr>
+        </thead>
+        <tbody id="activity-log-tbody">
+          <tr><td colspan="6" style="text-align:center;padding:40px;color:#9CA3AF">⏳ 加载中...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -3176,6 +3214,7 @@ function showPage(p) {
     'req-shipping': 'page-req-shipping',
     'user-mgmt': 'page-user-mgmt',
     'alert-rules': 'page-alert-rules',
+    'activity-log': 'page-activity-log',
   };
   const id = coreMap[p] || 'page-orders';
   document.getElementById(id).classList.add('active');
@@ -3198,6 +3237,7 @@ function showPage(p) {
   if (p === 'notifications') { loadNotifications(); }
   if (p === 'user-mgmt') { loadUserMgmt(); }
   if (p === 'finance-ledger') { loadFinanceLedger(); }
+  if (p === 'activity-log') { loadActivityLog(); }
   if (p === 'supplier-settings') { loadSuppliers(); }
   if (p === 'bank-settings') { loadBankSettings(); }
   if (p === 'regions') { loadRegions(); loadSources(); loadKols(); }
@@ -5206,12 +5246,15 @@ function showToast(msg) {
 // ── FINANCE CHECK & REMARK ──
 async function cycleFinanceCheck(orderId, btn) {
   const cur = btn.textContent.trim();
-  const next = cur === '❗' ? 'approved' : cur === '✅' ? 'rejected' : null;
+  const next = (cur === '✗' || cur === '❗') ? 'approved' : cur === '✅' ? 'rejected' : null;
   const { error } = await sb.from('orders').update({ finance_check: next }).eq('id', orderId);
   if (error) { showToast('❌ 更新失败'); return; }
-  btn.textContent = next === 'approved' ? '✅' : next === 'rejected' ? '❌' : '❗';
+  btn.textContent = next === 'approved' ? '✅' : next === 'rejected' ? '⛔' : '✗';
   const row = btn.closest('tr');
   if (row) row.dataset.financeCheck = next || '';
+  const orderNo = row?.querySelector('td span.mono')?.textContent || orderId;
+  const label = next === 'approved' ? '✅ 已核对' : next === 'rejected' ? '⛔ 有问题' : '✗ 撤销核对';
+  logActivity('财务核对', 'order', orderNo, label);
 }
 
 async function editFinanceRemark(orderId, span) {
@@ -7358,6 +7401,7 @@ async function submitPayIn() {
   if (receiptUrl) row.receipt_url = receiptUrl;
   const { error } = await sb.from('payins').insert(row);
   if (error) { showToast('❌ 提交失败: ' + error.message); return; }
+  logActivity('新增入账', 'payin', orderNo, `RM ${amt.toFixed(2)} (${type})`);
   // Trigger 2: notify Finance to check and issue invoice
   await sendNotif('pay_in', `收到入账 ${orderNo}（RM ${amt.toFixed(2)}）— 请 check 并开 Invoice`, orderNo, orderId, 'finance', null);
   closeModal('modal-pay-in');
@@ -7422,6 +7466,7 @@ async function submitPayOut() {
     invoice_name: invoiceName
   });
   if (error) { showToast('❌ 提交失败: ' + error.message); return; }
+  logActivity('新增出账', 'payout', orderNo, `RM ${(rm||(foreign&&rate?Math.round(foreign*rate*100)/100:0)).toFixed(2)}`);
   // Trigger 5: notify Finance of the payout
   await sendNotif('pay_out', `出账已录入（${orderNo}）— Finance 请知悉`, orderNo, orderId, 'finance', null);
   closeModal('modal-pay-out');
@@ -7470,8 +7515,10 @@ function cycleCheck(btn) {
 
 async function deletePayIn(id) {
   if (!confirm('确定要删除这笔入账记录吗？此操作无法撤销。')) return;
+  const { data: pi } = await sb.from('payins').select('amount_rm,orders(order_no)').eq('id', id).maybeSingle();
   const { error } = await sb.from('payins').delete().eq('id', id);
   if (error) { showToast('❌ 删除失败: ' + error.message); return; }
+  logActivity('删除入账', 'payin', pi?.orders?.order_no || id, `RM ${pi?.amount_rm || ''}`);
   showToast('✅ 入账记录已删除');
   loadDetailPayins();
 }
@@ -7540,7 +7587,48 @@ async function submitEditPayIn() {
   } catch(e) {}
   closeModal('modal-edit-payin');
   showToast('✅ 入账记录已更新');
+  logActivity('编辑入账', 'payin', newOrderNo || '', `RM ${amt}`);
   loadPayIns();
+}
+
+/* ── ACTIVITY LOG ── */
+async function logActivity(action, entityType, entityRef, details = '') {
+  try {
+    await sb.from('activity_logs').insert({
+      user_name: currentUser?.name || currentUser?.email || '未知',
+      action,
+      entity_type: entityType,
+      entity_ref: entityRef || '',
+      details: details || ''
+    });
+  } catch(e) {}
+}
+
+async function loadActivityLog() {
+  const tbody = document.getElementById('activity-log-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#9CA3AF">⏳ 加载中...</td></tr>';
+  const from = document.getElementById('log-date-from')?.value || '';
+  const to   = document.getElementById('log-date-to')?.value   || '';
+  let query = sb.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(500);
+  if (from) query = query.gte('created_at', from + 'T00:00:00');
+  if (to)   query = query.lte('created_at', to   + 'T23:59:59');
+  const { data, error } = await query;
+  if (error) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#DC2626">加载失败: ' + error.message + '</td></tr>'; return; }
+  if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#9CA3AF">暂无记录</td></tr>'; return; }
+  tbody.innerHTML = data.map(r => {
+    const dt = new Date(r.created_at);
+    const dateStr = dt.toLocaleDateString('zh-CN', {year:'numeric',month:'2-digit',day:'2-digit'});
+    const timeStr = dt.toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    return `<tr style="border-bottom:1px solid #F0F2F7">
+      <td style="padding:8px 12px;white-space:nowrap;font-size:12px;color:#374151;font-weight:600">${dateStr}</td>
+      <td style="padding:8px 12px;white-space:nowrap;font-size:12px;color:#6B7280">${timeStr}</td>
+      <td style="padding:8px 12px;font-size:12px;font-weight:700;color:#1C2132">${r.user_name||'—'}</td>
+      <td style="padding:8px 12px;font-size:12px"><span style="padding:2px 8px;border-radius:4px;background:#EEF6F3;color:#059669;font-weight:700;font-size:11px">${r.action||'—'}</span></td>
+      <td style="padding:8px 12px;font-size:12px;font-weight:700;color:#3B7A68;font-family:monospace">${r.entity_ref||'—'}</td>
+      <td style="padding:8px 12px;font-size:11px;color:#6B7280">${r.details||'—'}</td>
+    </tr>`;
+  }).join('');
 }
 
 /* ── Edit pay-out ── */
@@ -7550,6 +7638,7 @@ async function deletePayOut(id, orderNo) {
   const { error } = await sb.from('payouts').delete().eq('id', id);
   if (error) { showToast('❌ 删除失败: ' + error.message); return; }
   showToast('🗑️ 已删除出账记录');
+  logActivity('删除出账', 'payout', orderNo || id, '');
   loadPayOuts();
 }
 
@@ -7608,6 +7697,8 @@ async function submitEditPayOut() {
   if (error) { showToast('❌ 更新失败: ' + error.message); return; }
   closeModal('modal-edit-payout');
   showToast('✅ 出账记录已更新');
+  const epoOrderNo = document.getElementById('epo-order')?.value || '';
+  logActivity('编辑出账', 'payout', epoOrderNo, `RM ${rm?.toFixed(2) || '?'}`);
   loadPayOuts();
 }
 
@@ -9326,6 +9417,7 @@ async function updateReqStatus(type, id, status, createdBy, orderNo, orderId) {
   if (error) { showToast('❌ 更新失败'); return; }
   showToast(status === 'done' ? '✅ 已标记完成' : '↩️ 已撤回');
   const typeLabel = { refund:'退款申请', payout:'出账申请', shipping:'寄货申请' }[type];
+  logActivity(status === 'done' ? `完成${typeLabel}` : `撤回${typeLabel}`, type, orderNo || '', '');
   const notifMsg = status === 'done' ? `${typeLabel}已完成 ${orderNo||''}` : `${typeLabel}已撤回 ${orderNo||''}`;
   await _sendReqNotif(type + (status === 'done' ? '_done' : '_reverted'), notifMsg, orderNo||null, orderId||null, createdBy||null);
   if (type === 'refund') loadReqRefund();
