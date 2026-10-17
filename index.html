@@ -533,6 +533,17 @@ body[data-active-role="operation"] .ord-stats-admin,
 body[data-active-role="finance"] .ord-stats-admin{display:grid}
 body[data-active-role="td"] .ord-stats-td{display:grid}
 body[data-active-role="ce"] .ord-stats-td{display:grid}
+/* Master-only metrics panels */
+.master-metrics-panel{display:none}
+body[data-active-role="master"] .master-metrics-panel{display:flex}
+.master-metrics-panel .mm-section{flex:1;min-width:0}
+.master-metrics-panel .mm-divider{width:1px;background:#E5E7EB;margin:0 20px;flex-shrink:0;align-self:stretch}
+.master-metrics-panel .mm-label{font-size:9px;font-weight:900;color:#9CA3AF;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.master-metrics-panel .mm-grid{display:grid;gap:10px}
+.master-metrics-panel .mm-item .label{font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.master-metrics-panel .mm-item .val{font-size:18px;font-weight:900;color:#2D2926}
+.master-metrics-panel .mm-item .val.green{color:#3B7A68}
+.master-metrics-panel .mm-item .val.small{font-size:14px}
 /* Hide top filter bar for TD/CE (they use column filters instead) */
 body[data-active-role="td"] .orders-top-filterbar{display:none}
 body[data-active-role="ce"] .orders-top-filterbar{display:none}
@@ -834,6 +845,27 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
       <div class="stat-card warn"><div class="label">顾客尾款未付</div><div class="val" id="ords-bal-count">—</div><div class="sub" id="ords-bal-sub">总 RM —</div></div>
       <div class="stat-card warn"><div class="label">Supplier尾款未付</div><div class="val" id="ords-sup-bal">—</div><div class="sub">待付款</div></div>
       <div class="stat-card danger"><div class="label">资料不完整</div><div class="val" id="ords-incomplete">—</div><div class="sub">需要立即处理</div></div>
+    </div>
+    <!-- Master metrics: 未出发的团 + 全部团 -->
+    <div class="master-metrics-panel" style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:14px 18px;margin-bottom:12px">
+      <div class="mm-section">
+        <div class="mm-label">✈️ 未出发的团</div>
+        <div class="mm-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="mm-item"><div class="label">单数</div><div class="val" id="ords-m-up-count">—</div></div>
+          <div class="mm-item"><div class="label">总人数</div><div class="val" id="ords-m-up-pax">—</div></div>
+          <div class="mm-item"><div class="label">总售价 (RM)</div><div class="val small" id="ords-m-up-total">—</div></div>
+          <div class="mm-item"><div class="label">预计利润 (RM)</div><div class="val small green" id="ords-m-up-profit">—</div></div>
+        </div>
+      </div>
+      <div class="mm-divider"></div>
+      <div class="mm-section" style="flex:0.75">
+        <div class="mm-label">📋 全部团（在册）</div>
+        <div class="mm-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="mm-item"><div class="label">总单数</div><div class="val" id="ords-m-all-count">—</div></div>
+          <div class="mm-item"><div class="label">总人数</div><div class="val" id="ords-m-all-pax">—</div></div>
+          <div class="mm-item"><div class="label">总售价 (RM)</div><div class="val small" id="ords-m-all-total">—</div></div>
+        </div>
+      </div>
     </div>
     <!-- Stats: TD view (my orders only) -->
     <div class="stats-row ord-stats-td" style="grid-template-columns:repeat(4,1fr)">
@@ -2351,6 +2383,27 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
       <div class="stat-card danger"><div class="label">保险待处理</div><div class="val" id="dash-ins">—</div><div class="sub">无保险记录</div></div>
       <div class="stat-card danger"><div class="label">顾客尾款未付</div><div class="val" id="dash-balance">—</div><div class="sub" id="dash-balance-sub">35天内 + 行程结束</div></div>
     </div>
+    <!-- Master metrics: 未出发的团 + 全部团 -->
+    <div class="master-metrics-panel" style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:14px 18px;margin-bottom:12px">
+      <div class="mm-section">
+        <div class="mm-label">✈️ 未出发的团</div>
+        <div class="mm-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="mm-item"><div class="label">单数</div><div class="val" id="dash-m-up-count">—</div></div>
+          <div class="mm-item"><div class="label">总人数</div><div class="val" id="dash-m-up-pax">—</div></div>
+          <div class="mm-item"><div class="label">总售价 (RM)</div><div class="val small" id="dash-m-up-total">—</div></div>
+          <div class="mm-item"><div class="label">预计利润 (RM)</div><div class="val small green" id="dash-m-up-profit">—</div></div>
+        </div>
+      </div>
+      <div class="mm-divider"></div>
+      <div class="mm-section" style="flex:0.75">
+        <div class="mm-label">📋 全部团（在册）</div>
+        <div class="mm-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="mm-item"><div class="label">总单数</div><div class="val" id="dash-m-all-count">—</div></div>
+          <div class="mm-item"><div class="label">总人数</div><div class="val" id="dash-m-all-pax">—</div></div>
+          <div class="mm-item"><div class="label">总售价 (RM)</div><div class="val small" id="dash-m-all-total">—</div></div>
+        </div>
+      </div>
+    </div>
     <!-- TD-only stats: current month orders, departure pax, total managed pax -->
     <div class="stats-row" data-role="td" style="grid-template-columns:repeat(3,1fr)">
       <div class="stat-card good"><div class="label">当月订单</div><div class="val" id="dash-td-month">—</div><div class="sub">本月出发单数</div></div>
@@ -3849,6 +3902,28 @@ function filterOrders() {
   setEl('ords-td-month', allRows.length ? Array.from(allRows).filter(tr=>tr.dataset.month===thisMonthPfx).length : 0);
   setEl('ords-td-bal', sBalCount);
   setEl('ords-td-bal-sub', '总 RM '+fmtRM(sBalTotal));
+  // Master metrics: 未出发的团 + 全部团
+  let mUpCnt=0,mUpPax=0,mUpTotal=0,mUpProfit=0,mAllCnt=0,mAllPax=0,mAllTotal=0;
+  allRows.forEach(tr => {
+    const st = tr.dataset.status||'';
+    const dep = tr.dataset.depart||'';
+    const endD = tr.dataset.end||'';
+    const pax = parseInt(tr.dataset.pax)||0;
+    const tot = parseFloat(tr.dataset.total)||0;
+    const pft = parseFloat(tr.dataset.profit)||0;
+    if (st==='退团') return;
+    mAllCnt++; mAllPax+=pax; mAllTotal+=tot;
+    const ended = endD && endD < todayStr;
+    if (!ended && (dep===''||dep>=todayStr)) { mUpCnt++; mUpPax+=pax; mUpTotal+=tot; mUpProfit+=pft; }
+  });
+  const fmtN = v => Math.round(v).toLocaleString('en-MY');
+  setEl('ords-m-up-count', mUpCnt);
+  setEl('ords-m-up-pax', mUpPax);
+  setEl('ords-m-up-total', fmtN(mUpTotal));
+  setEl('ords-m-up-profit', fmtN(mUpProfit));
+  setEl('ords-m-all-count', mAllCnt);
+  setEl('ords-m-all-pax', mAllPax);
+  setEl('ords-m-all-total', fmtN(mAllTotal));
 }
 
 function _parseOrdNum(cell) {
@@ -4232,6 +4307,30 @@ async function loadDashboard() {
     return s+(total-paid);
   },0);
   document.getElementById('dash-balance-sub').textContent = `总 RM ${fmt(totalBalance)}`;
+
+  // Master metrics: 未出发的团 + 全部团
+  const todayStr2 = today.toISOString().slice(0,10);
+  const notYetDep = orders.filter(o => {
+    if (o.status === 'cancelled') return false;
+    if (o.end_date && o.end_date < todayStr2) return false;
+    if (o.date_tbd || !o.depart_date) return true;
+    return o.depart_date >= todayStr2;
+  });
+  const allNonCanc = orders.filter(o => o.status !== 'cancelled');
+  const fmtN2 = v => Math.round(v).toLocaleString('en-MY');
+  const setEl2 = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  const mUpPax2 = notYetDep.reduce((s,o)=>s+(parseInt(o.pax_total)||0),0);
+  const mUpTotal2 = notYetDep.reduce((s,o)=>s+(parseFloat(o.selling_price)||0),0);
+  const mUpProfit2 = notYetDep.reduce((s,o)=>s+(parseFloat(o.selling_price)||0)-(parseFloat(o.cost_rm)||0)-(parseFloat(o.insurance_total)||0),0);
+  const mAllPax2 = allNonCanc.reduce((s,o)=>s+(parseInt(o.pax_total)||0),0);
+  const mAllTotal2 = allNonCanc.reduce((s,o)=>s+(parseFloat(o.selling_price)||0),0);
+  setEl2('dash-m-up-count', notYetDep.length);
+  setEl2('dash-m-up-pax', mUpPax2);
+  setEl2('dash-m-up-total', fmtN2(mUpTotal2));
+  setEl2('dash-m-up-profit', fmtN2(mUpProfit2));
+  setEl2('dash-m-all-count', allNonCanc.length);
+  setEl2('dash-m-all-pax', mAllPax2);
+  setEl2('dash-m-all-total', fmtN2(mAllTotal2));
 
   // TD-specific stats
   const monthEnd = new Date(today.getFullYear(), today.getMonth()+1, 0).toISOString().slice(0,10);
