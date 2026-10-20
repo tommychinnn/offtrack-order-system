@@ -1890,7 +1890,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             </div>
             <div class="form-group" style="margin-top:8px">
               <label>订单备注</label>
-              <textarea id="det-notes" class="editable-field" readonly style="width:100%;min-height:56px;box-sizing:border-box;resize:vertical;font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;padding:7px 10px;border-radius:6px;border:1.5px solid #F0F2F7;background:#FAFBFC;color:#374151;outline:none"></textarea>
+              <textarea id="det-notes" class="editable-field" readonly onblur="autoSaveNotes()" style="width:100%;min-height:56px;box-sizing:border-box;resize:vertical;font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;padding:7px 10px;border-radius:6px;border:1.5px solid #F0F2F7;background:#FAFBFC;color:#374151;outline:none"></textarea>
             </div>
             <div class="form-group" style="margin-top:8px">
               <label>顾客电话 <span style="font-size:10px;font-weight:600;color:#9CA3AF">（保存后同步到顾客资料及总表）</span></label>
@@ -3422,9 +3422,13 @@ async function openOrder(uuid) {
   document.getElementById('notes-display').textContent = custNotes;
   document.getElementById('special-notes-box').style.display = custNotes ? '' : 'none';
 
-  // Order special notes (editable in basic tab)
+  // Order special notes — always editable, auto-saves on blur
   const notes = o.special_notes || '';
-  document.getElementById('det-notes').value = notes;
+  const detNotesEl = document.getElementById('det-notes');
+  detNotesEl.value = notes;
+  detNotesEl.removeAttribute('readonly');
+  detNotesEl.style.background = '';
+  detNotesEl.style.borderColor = '';
   const orderNoInput = document.getElementById('det-order-no');
   if (orderNoInput) orderNoInput.value = o.order_no || '';
 
@@ -4065,6 +4069,17 @@ function onDetailSupplierChange() {
   _loadDetailSalespersons(supplierId, null);
 }
 
+async function autoSaveNotes() {
+  if (!_currentOrder) return;
+  const el = document.getElementById('det-notes');
+  const newVal = el.value.trim() || null;
+  const oldVal = (_currentOrder.special_notes || '').trim() || null;
+  if (newVal === oldVal) return;
+  const { error } = await sb.from('orders').update({ special_notes: newVal }).eq('id', _currentOrder.id);
+  if (!error) { _currentOrder.special_notes = newVal || ''; showToast('✅ 备注已保存'); }
+  else showToast('❌ 保存备注失败');
+}
+
 let _detDateTbd = false;
 function toggleDetailDateTbd() {
   _detDateTbd = !_detDateTbd;
@@ -4161,6 +4176,7 @@ function cancelEditMode() {
   editMode = false;
   _detDateTbd = _currentOrder?.date_tbd || false;
   document.querySelectorAll('#tab-basic .editable-field').forEach(f => {
+    if (f.id === 'det-notes') return; // always editable, auto-saves independently
     if (f.tagName === 'SELECT') { f.disabled = true; f.style.background = ''; f.style.borderColor = ''; f.style.cursor = 'default'; }
     else { f.setAttribute('readonly', ''); f.style.background = ''; f.style.borderColor = ''; f.style.opacity = ''; }
   });
