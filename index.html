@@ -5362,8 +5362,9 @@ function showToast(msg) {
 async function cycleFinanceCheck(orderId, btn) {
   const cur = btn.textContent.trim();
   const next = (cur === '✗' || cur === '❗') ? 'approved' : cur === '✅' ? 'rejected' : null;
-  const { error } = await sb.from('orders').update({ finance_check: next }).eq('id', orderId);
-  if (error) { showToast('❌ 更新失败'); return; }
+  const { data: updated, error } = await sb.from('orders').update({ finance_check: next }).eq('id', orderId).select('id');
+  if (error) { showToast('❌ 更新失败: ' + error.message); return; }
+  if (!updated?.length) { showToast('❌ 保存失败 — 请到 Supabase → orders 表开放 UPDATE 权限'); return; }
   btn.textContent = next === 'approved' ? '✅' : next === 'rejected' ? '⛔' : '✗';
   const row = btn.closest('tr');
   if (row) row.dataset.financeCheck = next || '';
