@@ -548,6 +548,8 @@ body[data-active-role="master"] .master-metrics-panel{display:flex}
 body[data-active-role="td"] .orders-top-filterbar{display:none}
 /* Hide payin summary totals from TD */
 body[data-active-role="td"] .payin-summary-bar{display:none!important}
+/* Hide Supplier 报价单 from CE */
+body[data-active-role="ce"] .supplier-quote-section{display:none!important}
 body[data-active-role="ce"] .orders-top-filterbar{display:none}
 body[data-active-role="td"] #btn-show-archived{display:none!important}
 body[data-active-role="ce"] #btn-show-archived{display:none!important}
@@ -1635,7 +1637,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
           <div class="form-section">
             <div class="form-section-title">报价单上传 <span style="font-size:10px;font-weight:400;color:#9CA3AF">（可选，提交后上传也可以）</span></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div>
+              <div class="supplier-quote-section">
                 <div style="font-size:11px;font-weight:700;color:#6B7280;margin-bottom:6px">Supplier 报价单</div>
                 <label class="file-upload-zone" style="margin-top:0;cursor:pointer;display:block">
                   <input type="file" id="cr-supplier-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="crFileSelected('supplier_quote',this)"/>
@@ -2221,7 +2223,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
             <input type="file" id="det-file-input" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" onchange="handleDetFileSelected(this)"/>
 
             <!-- A: Supplier 报价单 -->
-            <div class="file-section">
+            <div class="file-section supplier-quote-section">
               <div class="file-section-hd">
                 <span>📋 Supplier 报价单</span>
                 <button class="file-btn dl" style="font-size:11px" onclick="uploadOrderFile('supplier_quote')">＋ 上传</button>
