@@ -546,6 +546,8 @@ body[data-active-role="master"] .master-metrics-panel{display:flex}
 .master-metrics-panel .mm-item .val.small{font-size:14px}
 /* Hide top filter bar for TD/CE (they use column filters instead) */
 body[data-active-role="td"] .orders-top-filterbar{display:none}
+/* Hide payin summary totals from TD */
+body[data-active-role="td"] .payin-summary-bar{display:none}
 body[data-active-role="ce"] .orders-top-filterbar{display:none}
 body[data-active-role="td"] #btn-show-archived{display:none!important}
 body[data-active-role="ce"] #btn-show-archived{display:none!important}
@@ -4076,7 +4078,7 @@ async function autoSaveNotes() {
   const oldVal = (_currentOrder.special_notes || '').trim() || null;
   if (newVal === oldVal) return;
   const { error } = await sb.from('orders').update({ special_notes: newVal }).eq('id', _currentOrder.id);
-  if (!error) { _currentOrder.special_notes = newVal || ''; showToast('✅ 备注已保存'); }
+  if (!error) { _currentOrder.special_notes = newVal || ''; showToast('✅ 备注已保存'); logActivity('修改备注', 'order', _currentOrder.order_no, newVal||'（已清空）'); }
   else showToast('❌ 保存备注失败');
 }
 
@@ -4166,6 +4168,15 @@ async function saveEditMode() {
     await sb.from('customers').update({ notes: custNotes, phone: custPhone || null }).eq('id', _currentOrder.customer_id);
   }
 
+  // Log what changed
+  const orderNoForLog = newOrderNo || _currentOrder.order_no;
+  const logParts = [];
+  if (sellingPrice !== null && sellingPrice !== (parseFloat(_currentOrder.selling_price)||null)) logParts.push(`售价 RM ${sellingPrice?.toFixed(2)}`);
+  if (costRM !== null && costRM !== (parseFloat(_currentOrder.cost_rm)||null)) logParts.push(`底价 RM ${costRM?.toFixed(2)}`);
+  if (notes !== (_currentOrder.special_notes?.trim()||null) && notes !== null) logParts.push(`备注已改`);
+  if (status !== _currentOrder.status) logParts.push(`状态→${status}`);
+  if (depart !== _currentOrder.depart_date) logParts.push(`出发日期→${depart||'TBD'}`);
+  logActivity('编辑订单', 'order', orderNoForLog, logParts.length ? logParts.join('，') : '资料更新');
   showToast('✅ 资料已保存');
   cancelEditMode();
   loadOrders(); // refresh orders table in background
@@ -6055,6 +6066,7 @@ async function submitOrder() {
     await sendNotif('order_task', `订单 ${orderNo} 已创建 — 请发合同、收定金、收护照`, orderNo, orderId, null, _tdIdForNotif);
   }
 
+  logActivity('新建订单', 'order', orderNo, `RM ${sellingPrice?.toFixed(2)||'0'} · ${custName}`);
   alert('✅ 订单 ' + orderNo + ' 已创建成功！');
   await loadOrders();
   showPage('orders');
@@ -8166,8 +8178,8 @@ async function submitEditPayOut() {
   </div>
   <div class="content-area">
 
-    <!-- Summary -->
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    <!-- Summary — hidden from TD -->
+    <div class="payin-summary-bar" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
       <div style="background:#EEF6F3;border:1px solid #BBF7D0;border-radius:10px;padding:12px 20px;min-width:130px">
         <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">本月入账</div>
         <div style="font-size:20px;font-weight:900;color:#059669" id="payin-stat-month">RM —</div>
