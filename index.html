@@ -550,6 +550,19 @@ body[data-active-role="td"] .orders-top-filterbar{display:none}
 body[data-active-role="td"] .payin-summary-bar{display:none!important}
 /* Hide Supplier 报价单 from CE */
 body[data-active-role="ce"] .supplier-quote-section{display:none!important}
+/* TD/CE 出发前待办 checklist panel */
+.dep-checklist-panel{display:none}
+body[data-active-role="td"] .dep-checklist-panel,
+body[data-active-role="ce"] .dep-checklist-panel{display:block}
+.dep-month-tab{padding:5px 16px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;background:#F3F4F6;color:#6B7280;border:1.5px solid transparent;transition:all .15s}
+.dep-month-tab.active{background:#3B7A68;color:#fff;border-color:#3B7A68}
+.chk-btn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:5px;border:1.5px solid #D1D5DB;background:#fff;cursor:pointer;font-size:12px;transition:all .1s;line-height:1}
+.chk-btn.done{background:#3B7A68;border-color:#3B7A68;color:#fff}
+.ins-badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap}
+.ins-badge.none{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}
+.ins-badge.bought{background:#EEF6F3;color:#059669;border:1px solid #A7F3D0}
+.ins-badge.na{background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB}
+body[data-active-role="td"] .dep-td-col{display:none}
 body[data-active-role="ce"] .orders-top-filterbar{display:none}
 body[data-active-role="td"] #btn-show-archived{display:none!important}
 body[data-active-role="ce"] #btn-show-archived{display:none!important}
@@ -2457,6 +2470,44 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
         </div>
       </div>
     </div>
+
+    <!-- TD/CE 出发前待办 Checklist -->
+    <div class="dep-checklist-panel" style="margin-top:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;font-weight:900;color:#2D2926;letter-spacing:-.2px">📋 出发前待办</div>
+        <div style="display:flex;gap:6px">
+          <div class="dep-month-tab" data-offset="-1" onclick="switchDashMonth(-1)">上个月</div>
+          <div class="dep-month-tab active" data-offset="0" onclick="switchDashMonth(0)">本月</div>
+          <div class="dep-month-tab" data-offset="1" onclick="switchDashMonth(1)">下个月</div>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #E5E7EB;border-radius:10px;overflow:hidden">
+        <div style="overflow-x:auto">
+          <table class="tbl" style="margin:0;min-width:760px">
+            <thead>
+              <tr>
+                <th style="white-space:nowrap">出发日期</th>
+                <th style="white-space:nowrap">结束</th>
+                <th class="dep-td-col" style="white-space:nowrap">TD</th>
+                <th>订单号</th>
+                <th>地区</th>
+                <th>联系方式</th>
+                <th style="text-align:center">人数</th>
+                <th style="text-align:right;white-space:nowrap">尾款余额(RM)</th>
+                <th style="text-align:center;white-space:nowrap">合同签回</th>
+                <th style="text-align:center;white-space:nowrap">发礼物</th>
+                <th style="text-align:center;white-space:nowrap">保险</th>
+                <th style="text-align:center;white-space:nowrap">司机Call</th>
+                <th style="text-align:center;white-space:nowrap">Wechat群</th>
+              </tr>
+            </thead>
+            <tbody id="dep-checklist-tbody">
+              <tr><td colspan="13" style="text-align:center;padding:24px;color:#9CA3AF;font-size:11px">⏳ 加载中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3310,6 +3361,94 @@ function showPage(p) {
     updateStepUI();
     initCreateForm();
   }
+}
+
+// ── DASHBOARD DEP-CHECKLIST ───────────────────────────────────────────────
+let _dashOrders = [];
+let _dashMonthOffset = 0;
+function switchDashMonth(offset) {
+  _dashMonthOffset = offset;
+  document.querySelectorAll('.dep-month-tab').forEach(t => t.classList.toggle('active', parseInt(t.dataset.offset) === offset));
+  renderDepChecklist(_dashOrders, offset);
+}
+function renderDepChecklist(orders, offset) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const y = today.getFullYear(), m = today.getMonth() + offset;
+  const mStart = new Date(y, m, 1).toISOString().slice(0,10);
+  const mEnd   = new Date(y, m+1, 0).toISOString().slice(0,10);
+  const filtered = orders.filter(o => {
+    const dep = o.depart_date || '';
+    return dep >= mStart && dep <= mEnd && o.status !== 'cancelled';
+  }).sort((a,b) => (a.depart_date||'').localeCompare(b.depart_date||''));
+  const isCE = currentUser.roleKey === 'ce';
+  const cols = 13 - (isCE ? 0 : 1);
+  const tbody = document.getElementById('dep-checklist-tbody');
+  if (!tbody) return;
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;padding:24px;color:#9CA3AF;font-size:11px">暂无此月出发单</td></tr>`;
+    return;
+  }
+  const fD = d => { if (!d) return '—'; const dt = new Date(d+'T00:00:00'); return dt.toLocaleDateString('zh-MY',{month:'2-digit',day:'2-digit'}); };
+  const fmt2 = v => v.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+  tbody.innerHTML = filtered.map(o => {
+    const total = parseFloat(o.selling_price)||0;
+    const paid = (o.payins||[]).reduce((s,p)=>s+(parseFloat(p.amount_rm)||0),0);
+    const bal = total - paid;
+    const balTxt = bal <= 0
+      ? `<span style="color:#059669;font-weight:700;font-size:11px">✓ 付清</span>`
+      : `<span style="color:#DC2626;font-weight:800;font-size:12px">RM ${fmt2(bal)}</span>`;
+    const cl = o.checklist || {};
+    const chk = key => {
+      const done = !!cl[key];
+      return `<button class="chk-btn${done?' done':''}" onclick="toggleDashChecklist('${o.id}','${key}')">${done?'✓':''}</button>`;
+    };
+    const insDone = !!cl.insurance_done, insNa = !!cl.insurance_na;
+    const insBadge = insNa
+      ? `<span class="ins-badge na" onclick="cycleDashInsurance('${o.id}')">不需要</span>`
+      : insDone
+        ? `<span class="ins-badge bought" onclick="cycleDashInsurance('${o.id}')">买了 ✓</span>`
+        : `<span class="ins-badge none" onclick="cycleDashInsurance('${o.id}')">未处理</span>`;
+    const tdCell = isCE ? `<td class="dep-td-col" style="font-size:11px;color:#6B7280;font-weight:600;white-space:nowrap">${o.users?.name||'—'}</td>` : '';
+    return `<tr>
+      <td style="font-size:11px;font-weight:700;white-space:nowrap">${fD(o.depart_date)}</td>
+      <td style="font-size:11px;color:#9CA3AF;white-space:nowrap">${fD(o.end_date)}</td>
+      ${tdCell}
+      <td><span style="font-family:monospace;font-weight:800;font-size:12px">${o.order_no}</span></td>
+      <td style="font-size:11px">${o.regions?.city||'—'}</td>
+      <td style="font-size:11px;color:#6B7280">${o.customers?.phone||'—'}</td>
+      <td style="text-align:center;font-weight:700">${o.pax_total||'—'}</td>
+      <td style="text-align:right">${balTxt}</td>
+      <td style="text-align:center">${chk('contract')}</td>
+      <td style="text-align:center">${chk('gift')}</td>
+      <td style="text-align:center">${insBadge}</td>
+      <td style="text-align:center">${chk('driver')}</td>
+      <td style="text-align:center">${chk('service_group')}</td>
+    </tr>`;
+  }).join('');
+}
+async function toggleDashChecklist(orderId, key) {
+  const order = _dashOrders.find(o => o.id === orderId);
+  if (!order) return;
+  const cl = { ...(order.checklist||{}) };
+  cl[key] = !cl[key];
+  const { error } = await sb.from('orders').update({ checklist: cl }).eq('id', orderId);
+  if (error) { showToast('❌ 保存失败'); return; }
+  order.checklist = cl;
+  renderDepChecklist(_dashOrders, _dashMonthOffset);
+  if (_currentOrder?.id === orderId) { _currentOrder.checklist = cl; syncTodoList(); }
+}
+async function cycleDashInsurance(orderId) {
+  const order = _dashOrders.find(o => o.id === orderId);
+  if (!order) return;
+  const cl = { ...(order.checklist||{}) };
+  if (!cl.insurance_done && !cl.insurance_na) { cl.insurance_done=true; cl.insurance_na=false; }
+  else if (cl.insurance_done) { cl.insurance_done=false; cl.insurance_na=true; }
+  else { cl.insurance_done=false; cl.insurance_na=false; }
+  const { error } = await sb.from('orders').update({ checklist: cl }).eq('id', orderId);
+  if (error) { showToast('❌ 保存失败'); return; }
+  order.checklist = cl;
+  renderDepChecklist(_dashOrders, _dashMonthOffset);
+  if (_currentOrder?.id === orderId) { _currentOrder.checklist = cl; syncTodoList(); }
 }
 
 // ── ORDER DETAIL LOADER ──────────────────────────────────────────────────
@@ -4226,7 +4365,7 @@ function toggleInsuranceMode() {
   document.querySelectorAll('.ins-col').forEach(el => el.style.display = _insOn ? '' : 'none');
 }
 const CHECKLIST_ITEMS = [
-  { key: 'contract',        label: '合同' },
+  { key: 'contract',        label: '合同签回' },
   { key: 'passport',        label: '收护照' },
   { key: 'itinerary_sent',  label: '发顾客初步行程确认单' },
   { key: 'supplier_group',  label: '和 Supplier 开群通知成交' },
@@ -4237,20 +4376,40 @@ const CHECKLIST_ITEMS = [
   { key: 'receipt2',        label: '发收据（第二笔）' },
   { key: 'balance',         label: '尾款' },
   { key: 'receipt_balance', label: '发收据（尾款）' },
-  { key: 'service_group',   label: '行程前开服务群' },
+  { key: 'driver',          label: '司机 Call 了' },
+  { key: 'service_group',   label: 'Wechat 出发群开了' },
 ];
 function renderChecklist(containerId, checklist, clickable) {
   const el = document.getElementById(containerId); if (!el) return;
   const c = checklist || {};
   const done = CHECKLIST_ITEMS.filter(i => c[i.key]).length;
+  const isDetail = containerId === 'detail-checklist-body';
+  const insDone = !!c.insurance_done, insNa = !!c.insurance_na;
+  const insLabel = insNa ? '不需要' : insDone ? '买了 ✓' : '未处理';
+  const insClass = insNa ? '' : insDone ? 'todo-done' : '';
+  const insIcon = insNa ? '—' : insDone ? '✓' : '☐';
+  const insClick = clickable && isDetail ? `onclick="toggleDetailInsurance()"` : '';
+  const insRow = `<div class="todo-row ${insClass} ${clickable?'todo-clickable':''}" ${insClick}>
+    <div class="td-icon">${insIcon}</div><span>保险 <span style="font-size:10px;font-weight:700;opacity:.75">${insLabel}</span></span>
+  </div>`;
   el.innerHTML = `<div style="font-size:10px;color:#9CA3AF;padding:4px 14px 6px;font-weight:600">${done} / ${CHECKLIST_ITEMS.length} 已完成</div>`
     + CHECKLIST_ITEMS.map(item => {
       const isDone = !!c[item.key];
-      const onclick = clickable ? `onclick="${containerId==='detail-checklist-body'?'toggleChecklist':'toggleCreateChecklist'}('${item.key}')"` : '';
+      const onclick = clickable ? `onclick="${isDetail?'toggleChecklist':'toggleCreateChecklist'}('${item.key}')"` : '';
       return `<div class="todo-row ${isDone?'todo-done':''} ${clickable?'todo-clickable':''}" ${onclick}>
         <div class="td-icon">${isDone?'✓':'☐'}</div><span>${item.label}</span>
       </div>`;
-    }).join('');
+    }).join('') + insRow;
+}
+async function toggleDetailInsurance() {
+  if (!_currentOrder) return;
+  const cl = { ...(_currentOrder.checklist || {}) };
+  if (!cl.insurance_done && !cl.insurance_na) { cl.insurance_done = true; cl.insurance_na = false; }
+  else if (cl.insurance_done) { cl.insurance_done = false; cl.insurance_na = true; }
+  else { cl.insurance_done = false; cl.insurance_na = false; }
+  const { error } = await sb.from('orders').update({ checklist: cl }).eq('id', _currentOrder.id);
+  if (!error) { _currentOrder.checklist = cl; syncTodoList(); }
+  else showToast('❌ 保存失败');
 }
 let _createChecklist = {};
 function toggleCreateChecklist(key) {
@@ -4281,12 +4440,16 @@ async function loadDashboard() {
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0,10);
 
   let dashQuery = sb.from('orders')
-    .select('id,order_no,status,depart_date,end_date,date_tbd,selling_price,cost_rm,pax_total,customers(name),regions(city),payins(amount_rm,gsh_check)')
+    .select('id,order_no,status,depart_date,end_date,date_tbd,selling_price,cost_rm,pax_total,checklist,customers(name,phone),regions(city),users!td_id(name),payins(amount_rm,gsh_check)')
     .order('depart_date', { ascending: true });
   if (currentUser.roleKey === 'td' && currentUser.id) dashQuery = dashQuery.eq('td_id', currentUser.id);
   if (currentUser.roleKey === 'ce' && currentUser.id) dashQuery = dashQuery.eq('ce_id', currentUser.id);
   const { data: orders } = await dashQuery;
   if (!orders) return;
+  _dashOrders = orders;
+  _dashMonthOffset = 0;
+  document.querySelectorAll('.dep-month-tab').forEach(t => t.classList.toggle('active', t.dataset.offset === '0'));
+  renderDepChecklist(orders, 0);
 
   const isActiveDash = o => {
     if (o.status === 'cancelled') return false;
