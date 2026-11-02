@@ -9272,12 +9272,15 @@ async function submitEditPayOut() {
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">日期</th>
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">订单号</th>
           <th style="padding:10px 12px;text-align:right;font-weight:800;white-space:nowrap">金额 (RM)</th>
+          <th style="padding:10px 12px;text-align:right;font-weight:800;white-space:nowrap">外币金额</th>
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">原因</th>
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">备注</th>
+          <th style="padding:10px 12px;text-align:center;font-weight:800;white-space:nowrap">Receipt</th>
+          <th style="padding:10px 12px;text-align:center;font-weight:800;white-space:nowrap">Payment Advice</th>
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">提交人</th>
           <th style="padding:10px 12px;text-align:left;font-weight:800;white-space:nowrap">操作</th>
         </tr></thead>
-        <tbody id="refund-req-tbody"><tr><td colspan="8" style="padding:20px;text-align:center;color:#9CA3AF">加载中…</td></tr></tbody>
+        <tbody id="refund-req-tbody"><tr><td colspan="11" style="padding:20px;text-align:center;color:#9CA3AF">加载中…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -9355,7 +9358,7 @@ async function submitEditPayOut() {
 
 <!-- ── MODAL: 申请退款 ── -->
 <div class="modal-overlay" id="modal-req-refund" onclick="if(event.target===this)closeModal('modal-req-refund')">
-  <div class="modal-box" style="max-width:480px">
+  <div class="modal-box" style="max-width:520px">
     <div class="modal-hd"><span class="modal-hd-title">申请退款</span><button class="modal-close" onclick="closeModal('modal-req-refund')">✕</button></div>
     <div class="modal-body">
       <div class="mf-group"><label>订单号 *</label>
@@ -9364,11 +9367,48 @@ async function submitEditPayOut() {
       <div class="mf-group"><label>退款金额 (RM) *</label>
         <input type="number" id="rr-amount" placeholder="0.00" step="0.01" min="0"/>
       </div>
+      <div class="mf-group" style="display:flex;gap:8px">
+        <div style="flex:0 0 140px">
+          <label>外币货币（可选）</label>
+          <select id="rr-currency" style="width:100%">
+            <option value="">— 无 —</option>
+            <option value="CNY">CNY 人民币</option>
+            <option value="SGD">SGD 新加坡元</option>
+            <option value="JPY">JPY 日元</option>
+            <option value="USD">USD 美元</option>
+            <option value="THB">THB 泰铢</option>
+            <option value="EUR">EUR 欧元</option>
+            <option value="GBP">GBP 英镑</option>
+            <option value="AUD">AUD 澳元</option>
+            <option value="KRW">KRW 韩元</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label>外币金额</label>
+          <input type="number" id="rr-amount-foreign" placeholder="0.00" step="0.01" min="0"/>
+        </div>
+      </div>
       <div class="mf-group"><label>原因 *</label>
         <input type="text" id="rr-reason" placeholder="退款原因…"/>
       </div>
       <div class="mf-group"><label>备注</label>
         <textarea id="rr-notes" rows="2" placeholder="其他备注…"></textarea>
+      </div>
+      <div class="mf-group">
+        <label>Receipt（顾客退款收据）</label>
+        <input type="file" id="rr-receipt-file" style="display:none" accept=".pdf,.jpg,.jpeg,.png" onchange="rrFileSelected('receipt',this)"/>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button type="button" class="tb-btn btn-ghost" style="font-size:11px" onclick="document.getElementById('rr-receipt-file').click()">📎 上传文件</button>
+          <span id="rr-receipt-name" style="font-size:11px;color:#6B7280">未选择</span>
+        </div>
+      </div>
+      <div class="mf-group">
+        <label>Payment Advice（退款凭证）</label>
+        <input type="file" id="rr-advice-file" style="display:none" accept=".pdf,.jpg,.jpeg,.png" onchange="rrFileSelected('advice',this)"/>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button type="button" class="tb-btn btn-ghost" style="font-size:11px" onclick="document.getElementById('rr-advice-file').click()">📎 上传文件</button>
+          <span id="rr-advice-name" style="font-size:11px;color:#6B7280">未选择</span>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -9498,6 +9538,14 @@ function openReqModal(type, record) {
     document.getElementById('rr-amount').value = isEdit ? (record.amount||'') : '';
     document.getElementById('rr-reason').value = isEdit ? (record.reason||'') : '';
     document.getElementById('rr-notes').value  = isEdit ? (record.notes||'') : '';
+    document.getElementById('rr-currency').value = isEdit ? (record.currency||'') : '';
+    document.getElementById('rr-amount-foreign').value = isEdit ? (record.amount_foreign||'') : '';
+    _rrReceiptUrl = isEdit ? (record.receipt_url||null) : null;
+    _rrAdviceUrl  = isEdit ? (record.payment_advice_url||null) : null;
+    const rName = document.getElementById('rr-receipt-name');
+    const aName = document.getElementById('rr-advice-name');
+    if (rName) rName.textContent = (isEdit && record.receipt_url) ? '✅ 已有文件（重新上传可替换）' : '未选择';
+    if (aName) aName.textContent = (isEdit && record.payment_advice_url) ? '✅ 已有文件（重新上传可替换）' : '未选择';
     _loadOrderDropdown(selId, isEdit ? record.order_id : null);
   } else if (type === 'payout') {
     document.getElementById('rp-currency').value = isEdit ? (record.currency||'MYR') : 'MYR';
@@ -9547,9 +9595,23 @@ function _reqActionBtns(type, r) {
 
 // ── REFUND REQUESTS ──────────────────────────────────────────────────────
 
+let _rrReceiptUrl = null, _rrAdviceUrl = null;
+
+async function rrFileSelected(type, input) {
+  const file = input.files[0]; if (!file) return;
+  const nameId = type === 'receipt' ? 'rr-receipt-name' : 'rr-advice-name';
+  const nameEl = document.getElementById(nameId);
+  if (nameEl) nameEl.textContent = '⏳ 上传中...';
+  const url = await uploadToStorage(file, 'refund-files');
+  if (!url) { if (nameEl) nameEl.textContent = '❌ 上传失败'; return; }
+  if (type === 'receipt') _rrReceiptUrl = url;
+  else _rrAdviceUrl = url;
+  if (nameEl) nameEl.textContent = '✅ ' + file.name;
+}
+
 async function loadReqRefund() {
   let q = sb.from('refund_requests')
-    .select('id,order_id,order_no,amount,reason,notes,status,created_at,created_by,users(name)')
+    .select('id,order_id,order_no,amount,reason,notes,status,created_at,created_by,currency,amount_foreign,receipt_url,payment_advice_url,users(name)')
     .order('created_at', { ascending: false });
   if (_reqIsCreator() && currentUser.id) q = q.eq('created_by', currentUser.id);
   const { data } = await q;
@@ -9570,7 +9632,7 @@ function _renderReqTable(type) {
     _reqStatCard('已完成', done, '#ECFDF5') +
     _reqStatCard('共计', rows.length, '#F0F9FF');
 
-  const colspan = type === 'shipping' ? 6 : 9;
+  const colspan = type === 'shipping' ? 6 : type === 'refund' ? 11 : 9;
   if (!rows.length) { tbody.innerHTML = `<tr><td colspan="${colspan}" style="padding:24px;text-align:center;color:#9CA3AF">暂无申请记录</td></tr>`; return; }
 
   if (type === 'shipping') {
@@ -9598,16 +9660,27 @@ function _renderReqTable(type) {
       </tr>`;
     }).join('');
   } else {
-    tbody.innerHTML = rows.map(r => `<tr data-id="${r.id}" data-no="${r.order_no||''}" data-status="${r.status}" style="border-bottom:1px solid #F3F4F6">
-      <td style="padding:10px 12px">${_reqStatChip(r.status)}</td>
-      <td style="padding:10px 12px;color:#6B7280;font-size:11px">${(r.created_at||'').slice(0,10)}</td>
-      <td style="padding:10px 12px"><span class="mono">${r.order_no||'—'}</span></td>
-      <td style="padding:10px 12px;text-align:right;font-weight:700">RM ${parseFloat(r.amount||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-      <td style="padding:10px 12px;color:#374151">${r.reason||'—'}</td>
-      <td style="padding:10px 12px;color:#6B7280;font-size:11px;max-width:160px">${r.notes||'—'}</td>
-      <td style="padding:10px 12px;color:#6B7280;font-size:11px">${r.users?.name||'—'}</td>
-      <td style="padding:10px 12px;white-space:nowrap">${_reqActionBtns(type, r)}</td>
-    </tr>`).join('');
+    const fileBtn = url => url
+      ? `<a href="${url}" target="_blank" rel="noopener"><button class="tb-btn btn-ghost" style="font-size:10px;padding:3px 8px">📎 查看</button></a>`
+      : '<span style="color:#D1D5DB">—</span>';
+    tbody.innerHTML = rows.map(r => {
+      const foreignAmt = r.currency && r.amount_foreign
+        ? `<span style="font-weight:700">${r.currency} ${parseFloat(r.amount_foreign).toLocaleString('en-MY',{minimumFractionDigits:2})}</span>`
+        : '<span style="color:#D1D5DB">—</span>';
+      return `<tr data-id="${r.id}" data-no="${r.order_no||''}" data-status="${r.status}" style="border-bottom:1px solid #F3F4F6">
+        <td style="padding:10px 12px">${_reqStatChip(r.status)}</td>
+        <td style="padding:10px 12px;color:#6B7280;font-size:11px">${(r.created_at||'').slice(0,10)}</td>
+        <td style="padding:10px 12px"><span class="mono">${r.order_no||'—'}</span></td>
+        <td style="padding:10px 12px;text-align:right;font-weight:700">RM ${parseFloat(r.amount||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td style="padding:10px 12px;text-align:right">${foreignAmt}</td>
+        <td style="padding:10px 12px;color:#374151">${r.reason||'—'}</td>
+        <td style="padding:10px 12px;color:#6B7280;font-size:11px;max-width:160px">${r.notes||'—'}</td>
+        <td style="padding:10px 12px;text-align:center">${fileBtn(r.receipt_url)}</td>
+        <td style="padding:10px 12px;text-align:center">${fileBtn(r.payment_advice_url)}</td>
+        <td style="padding:10px 12px;color:#6B7280;font-size:11px">${r.users?.name||'—'}</td>
+        <td style="padding:10px 12px;white-space:nowrap">${_reqActionBtns(type, r)}</td>
+      </tr>`;
+    }).join('');
   }
 }
 
@@ -9629,7 +9702,14 @@ async function submitReqRefund() {
   if (!orderId && !editing) { showToast('❌ 请选择订单'); return; }
   if (!amount || amount <= 0) { showToast('❌ 请填写金额'); return; }
   if (!reason) { showToast('❌ 请填写原因'); return; }
-  const payload = { amount, reason, notes: notes||null };
+  const currency = document.getElementById('rr-currency')?.value || null;
+  const amtForeign = parseFloat(document.getElementById('rr-amount-foreign')?.value) || null;
+  const payload = {
+    amount, reason, notes: notes||null,
+    currency: currency||null, amount_foreign: amtForeign||null,
+    ...(_rrReceiptUrl !== null ? { receipt_url: _rrReceiptUrl } : {}),
+    ...(_rrAdviceUrl  !== null ? { payment_advice_url: _rrAdviceUrl } : {}),
+  };
   let error;
   if (editing) {
     ({ error } = await sb.from('refund_requests').update(payload).eq('id', editing.id));
