@@ -565,6 +565,12 @@ body[data-active-role="operation"] .dep-checklist-panel{display:block}
 .ins-badge.bought{background:#EEF6F3;color:#059669;border:1px solid #A7F3D0}
 .ins-badge.na{background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB}
 body[data-active-role="td"] .dep-td-col{display:none}
+/* TD/CE compact filter bar */
+.orders-td-filterbar{display:none;margin-bottom:10px}
+body[data-active-role="td"] .orders-td-filterbar,
+body[data-active-role="ce"] .orders-td-filterbar{display:block}
+.td-month-pill{padding:5px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;background:#F3F4F6;color:#6B7280;border:1.5px solid transparent;white-space:nowrap;transition:all .15s}
+.td-month-pill.active{background:#3B7A68;color:#fff;border-color:#3B7A68}
 body[data-active-role="ce"] .orders-top-filterbar{display:none}
 body[data-active-role="td"] #btn-show-archived{display:none!important}
 body[data-active-role="ce"] #btn-show-archived{display:none!important}
@@ -892,6 +898,19 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
       <div class="stat-card warn"><div class="label">14天内出发</div><div class="val" id="ords-td-14d">—</div><div class="sub">需立即准备</div></div>
       <div class="stat-card"><div class="label">本月成交单</div><div class="val" id="ords-td-month">—</div><div class="sub">本月新增</div></div>
       <div class="stat-card danger"><div class="label">顾客尾款未付</div><div class="val" id="ords-td-bal">—</div><div class="sub" id="ords-td-bal-sub">总 RM —</div></div>
+    </div>
+    <!-- TD/CE departure month filter bar -->
+    <div class="orders-td-filterbar">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:11px;font-weight:800;color:#6B7280;white-space:nowrap">出发月份:</span>
+        <div id="td-month-pills" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        <input type="text" id="td-search" placeholder="搜索订单号、顾客…" style="min-width:160px;padding:5px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;margin-left:8px" oninput="tdSearchSync()"/>
+        <select id="td-status-filter" style="padding:5px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px" onchange="tdStatusSync()">
+          <option value="">所有状态</option>
+          <option>已付定金</option><option>准备中</option><option>出发准备</option><option>旅途中</option><option>行程结束</option><option>退团</option>
+        </select>
+        <button class="tb-btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="clearTDFilter()">✕ 清除</button>
+      </div>
     </div>
     <!-- Filters -->
     <div class="orders-top-filterbar">
@@ -3178,6 +3197,7 @@ async function loadOrders() {
   tbody.innerHTML = orders.map(buildOrderRow).join('');
   // Keep live cache for order-search dropdowns (入账/出账/保险)
   _ordersCache = orders.map(o => ({ id: o.order_no, uuid: o.id, name: o.customers?.name || '' }));
+  initTDMonthPills();
   filterOrders();
 }
 
@@ -4100,6 +4120,10 @@ function toggleOrderChip(key, el) {
 }
 
 function clearOrderFilters() {
+  _tdActiveMonth = null;
+  document.querySelectorAll('.td-month-pill').forEach(p => p.classList.remove('active'));
+  const ts = document.getElementById('td-search'); if (ts) ts.value = '';
+  const tf = document.getElementById('td-status-filter'); if (tf) tf.value = '';
   document.getElementById('ord-search').value       = '';
   document.getElementById('ord-filter-status').value = '';
   document.getElementById('ord-filter-region').value = '';
@@ -7809,6 +7833,94 @@ function orderSearch(input, dropId) {
 }
 function orderHide(dropId){ const d=document.getElementById(dropId); if(d) d.classList.remove('open'); }
 
+/* ── Req modal order search (uses _ordersCache uuid) ── */
+function reqOrderSearch(input, dropId, hiddenUuidId, hiddenNoId) {
+  const drop = document.getElementById(dropId);
+  const q = input.value.toUpperCase().trim();
+  const matches = q
+    ? _ordersCache.filter(o => o.id.toUpperCase().startsWith(q) || o.id.toUpperCase().includes(q) || (o.name||'').toUpperCase().includes(q))
+    : _ordersCache.slice(0, 50);
+  drop.innerHTML = '';
+  if (q && matches.length === 0) {
+    const d = document.createElement('div');
+    d.className = 'order-drop-none';
+    d.textContent = '❌ 订单不存在，请先在订单管理新建';
+    drop.appendChild(d);
+  } else {
+    matches.forEach(o => {
+      const d = document.createElement('div');
+      d.className = 'order-drop-item';
+      d.innerHTML = '<strong>' + o.id + '</strong>' + (o.name ? ' — ' + o.name : '');
+      d.onmousedown = () => {
+        input.value = o.id;
+        document.getElementById(hiddenUuidId).value = o.uuid;
+        document.getElementById(hiddenNoId).value = o.id;
+        drop.classList.remove('open');
+      };
+      drop.appendChild(d);
+    });
+  }
+  drop.classList.add('open');
+}
+
+/* ── TD/CE departure month filter ── */
+let _tdActiveMonth = null;
+
+function initTDMonthPills() {
+  const container = document.getElementById('td-month-pills');
+  if (!container) return;
+  const today = new Date();
+  const pills = [];
+  for (let i = -1; i <= 4; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    const key = d.toISOString().slice(0, 7);
+    const mon = d.getMonth() + 1;
+    const label = mon + '月' + (i === -1 ? '（上月）' : i === 0 ? '（本月）' : '');
+    pills.push({ key, label });
+  }
+  container.innerHTML = pills.map(p =>
+    `<div class="td-month-pill" data-key="${p.key}" onclick="setTDMonth('${p.key}',this)">${p.label}</div>`
+  ).join('');
+  _tdActiveMonth = null;
+}
+
+function setTDMonth(key, el) {
+  if (_tdActiveMonth === key) {
+    _tdActiveMonth = null;
+    document.querySelectorAll('.td-month-pill').forEach(p => p.classList.remove('active'));
+    document.getElementById('ord-date-from').value = '';
+    document.getElementById('ord-date-to').value = '';
+    filterOrders();
+    return;
+  }
+  _tdActiveMonth = key;
+  document.querySelectorAll('.td-month-pill').forEach(p => p.classList.toggle('active', p.dataset.key === key));
+  const [y, m] = key.split('-').map(Number);
+  document.getElementById('ord-date-from').value = new Date(y, m - 1, 1).toISOString().slice(0, 10);
+  document.getElementById('ord-date-to').value   = new Date(y, m, 0).toISOString().slice(0, 10);
+  filterOrders();
+}
+
+function tdSearchSync() {
+  const v = document.getElementById('td-search')?.value || '';
+  document.getElementById('ord-search').value = v;
+  filterOrders();
+}
+
+function tdStatusSync() {
+  const v = document.getElementById('td-status-filter')?.value || '';
+  document.getElementById('ord-filter-status').value = v;
+  filterOrders();
+}
+
+function clearTDFilter() {
+  _tdActiveMonth = null;
+  document.querySelectorAll('.td-month-pill').forEach(p => p.classList.remove('active'));
+  const ts = document.getElementById('td-search'); if (ts) ts.value = '';
+  const tf = document.getElementById('td-status-filter'); if (tf) tf.value = '';
+  clearOrderFilters();
+}
+
 /* ── 检查 toggle ── */
 function cycleCheck(btn) {
   const states=[
@@ -9361,8 +9473,16 @@ async function submitEditPayOut() {
   <div class="modal-box" style="max-width:520px">
     <div class="modal-hd"><span class="modal-hd-title">申请退款</span><button class="modal-close" onclick="closeModal('modal-req-refund')">✕</button></div>
     <div class="modal-body">
-      <div class="mf-group"><label>订单号 *</label>
-        <select id="rr-order-id"><option value="">— 选择订单 —</option></select>
+      <div class="mf-group"><label>订单号 * <span style="font-size:10px;color:#9CA3AF;font-weight:400">（输入搜索）</span></label>
+        <div class="order-search-box">
+          <input type="text" id="rr-order-txt" placeholder="输入订单号，如 YD001" autocomplete="off"
+            oninput="reqOrderSearch(this,'rr-order-drop','rr-order-id','rr-order-no')"
+            onfocus="reqOrderSearch(this,'rr-order-drop','rr-order-id','rr-order-no')"
+            onblur="setTimeout(()=>orderHide('rr-order-drop'),200)"
+            style="width:100%"/>
+          <div class="order-drop" id="rr-order-drop"></div>
+        </div>
+        <input type="hidden" id="rr-order-id"/><input type="hidden" id="rr-order-no"/>
       </div>
       <div class="mf-group"><label>退款金额 (RM) *</label>
         <input type="number" id="rr-amount" placeholder="0.00" step="0.01" min="0"/>
@@ -9423,8 +9543,16 @@ async function submitEditPayOut() {
   <div class="modal-box" style="max-width:480px">
     <div class="modal-hd"><span class="modal-hd-title">申请出账</span><button class="modal-close" onclick="closeModal('modal-req-payout')">✕</button></div>
     <div class="modal-body">
-      <div class="mf-group"><label>订单号 *</label>
-        <select id="rp-order-id"><option value="">— 选择订单 —</option></select>
+      <div class="mf-group"><label>订单号 * <span style="font-size:10px;color:#9CA3AF;font-weight:400">（输入搜索）</span></label>
+        <div class="order-search-box">
+          <input type="text" id="rp-order-txt" placeholder="输入订单号，如 YD001" autocomplete="off"
+            oninput="reqOrderSearch(this,'rp-order-drop','rp-order-id','rp-order-no')"
+            onfocus="reqOrderSearch(this,'rp-order-drop','rp-order-id','rp-order-no')"
+            onblur="setTimeout(()=>orderHide('rp-order-drop'),200)"
+            style="width:100%"/>
+          <div class="order-drop" id="rp-order-drop"></div>
+        </div>
+        <input type="hidden" id="rp-order-id"/><input type="hidden" id="rp-order-no"/>
       </div>
       <div class="mf-group" style="display:flex;gap:8px">
         <div style="flex:0 0 130px">
@@ -9463,8 +9591,16 @@ async function submitEditPayOut() {
   <div class="modal-box" style="max-width:480px">
     <div class="modal-hd"><span class="modal-hd-title">申请寄货</span><button class="modal-close" onclick="closeModal('modal-req-shipping')">✕</button></div>
     <div class="modal-body">
-      <div class="mf-group"><label>订单号 *</label>
-        <select id="rs-order-id"><option value="">— 选择订单 —</option></select>
+      <div class="mf-group"><label>订单号 * <span style="font-size:10px;color:#9CA3AF;font-weight:400">（输入搜索）</span></label>
+        <div class="order-search-box">
+          <input type="text" id="rs-order-txt" placeholder="输入订单号，如 YD001" autocomplete="off"
+            oninput="reqOrderSearch(this,'rs-order-drop','rs-order-id','rs-order-no')"
+            onfocus="reqOrderSearch(this,'rs-order-drop','rs-order-id','rs-order-no')"
+            onblur="setTimeout(()=>orderHide('rs-order-drop'),200)"
+            style="width:100%"/>
+          <div class="order-drop" id="rs-order-drop"></div>
+        </div>
+        <input type="hidden" id="rs-order-id"/><input type="hidden" id="rs-order-no"/>
       </div>
       <div class="mf-group"><label>备注（收件地址 / 物品 / 说明）*</label>
         <textarea id="rs-notes" rows="4" placeholder="请填写收件人姓名、地址、联系电话、寄送物品说明…"></textarea>
@@ -9528,11 +9664,24 @@ async function _loadOrderDropdown(selectId, preselect) {
     (data || []).map(o => `<option value="${o.id}" data-no="${o.order_no}"${o.id===preselect?' selected':''}>${o.order_no}${o.customers?.name ? ' · ' + o.customers.name : ''}</option>`).join('');
 }
 
+function _reqFillOrderSearch(txtId, hiddenUuidId, hiddenNoId, record) {
+  const txt = document.getElementById(txtId);
+  const hid = document.getElementById(hiddenUuidId);
+  const hno = document.getElementById(hiddenNoId);
+  if (!txt || !hid || !hno) return;
+  if (record) {
+    txt.value = record.order_no || '';
+    hid.value = record.order_id || '';
+    hno.value = record.order_no || '';
+  } else {
+    txt.value = ''; hid.value = ''; hno.value = '';
+  }
+}
+
 function openReqModal(type, record) {
   const modalId = 'modal-req-' + type;
   _editingReq[type] = record || null;
   const isEdit = !!record;
-  const selId = { refund: 'rr-order-id', payout: 'rp-order-id', shipping: 'rs-order-id' }[type];
 
   if (type === 'refund') {
     document.getElementById('rr-amount').value = isEdit ? (record.amount||'') : '';
@@ -9546,16 +9695,16 @@ function openReqModal(type, record) {
     const aName = document.getElementById('rr-advice-name');
     if (rName) rName.textContent = (isEdit && record.receipt_url) ? '✅ 已有文件（重新上传可替换）' : '未选择';
     if (aName) aName.textContent = (isEdit && record.payment_advice_url) ? '✅ 已有文件（重新上传可替换）' : '未选择';
-    _loadOrderDropdown(selId, isEdit ? record.order_id : null);
+    _reqFillOrderSearch('rr-order-txt','rr-order-id','rr-order-no', isEdit ? record : null);
   } else if (type === 'payout') {
     document.getElementById('rp-currency').value = isEdit ? (record.currency||'MYR') : 'MYR';
     document.getElementById('rp-amount').value   = isEdit ? (record.amount||'') : '';
     document.getElementById('rp-reason').value   = isEdit ? (record.reason||'') : '';
     document.getElementById('rp-notes').value    = isEdit ? (record.notes||'') : '';
-    _loadOrderDropdown(selId, isEdit ? record.order_id : null);
+    _reqFillOrderSearch('rp-order-txt','rp-order-id','rp-order-no', isEdit ? record : null);
   } else if (type === 'shipping') {
     document.getElementById('rs-notes').value = isEdit ? (record.notes||'') : '';
-    _loadOrderDropdown(selId, isEdit ? record.order_id : null);
+    _reqFillOrderSearch('rs-order-txt','rs-order-id','rs-order-no', isEdit ? record : null);
   }
 
   // Update modal title
@@ -9695,7 +9844,7 @@ function _updateReqBadge(type) {
 async function submitReqRefund() {
   const editing = _editingReq.refund;
   const orderId = document.getElementById('rr-order-id').value;
-  const orderNo = document.getElementById('rr-order-id').selectedOptions[0]?.dataset?.no || (editing?.order_no||'');
+  const orderNo = document.getElementById('rr-order-no').value || (editing?.order_no||'');
   const amount  = parseFloat(document.getElementById('rr-amount').value);
   const reason  = document.getElementById('rr-reason').value.trim();
   const notes   = document.getElementById('rr-notes').value.trim();
@@ -9740,7 +9889,7 @@ async function loadReqPayout() {
 async function submitReqPayout() {
   const editing  = _editingReq.payout;
   const orderId  = document.getElementById('rp-order-id').value;
-  const orderNo  = document.getElementById('rp-order-id').selectedOptions[0]?.dataset?.no || (editing?.order_no||'');
+  const orderNo  = document.getElementById('rp-order-no').value || (editing?.order_no||'');
   const currency = document.getElementById('rp-currency').value;
   const amount   = parseFloat(document.getElementById('rp-amount').value);
   const reason   = document.getElementById('rp-reason').value.trim();
@@ -9779,7 +9928,7 @@ async function loadReqShipping() {
 async function submitReqShipping() {
   const editing = _editingReq.shipping;
   const orderId = document.getElementById('rs-order-id').value;
-  const orderNo = document.getElementById('rs-order-id').selectedOptions[0]?.dataset?.no || (editing?.order_no||'');
+  const orderNo = document.getElementById('rs-order-no').value || (editing?.order_no||'');
   const notes   = document.getElementById('rs-notes').value.trim();
   if (!orderId && !editing) { showToast('❌ 请选择订单'); return; }
   if (!notes) { showToast('❌ 请填写备注（地址）'); return; }
