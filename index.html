@@ -565,6 +565,14 @@ body[data-active-role="operation"] .dep-checklist-panel{display:block}
 .ins-badge.bought{background:#EEF6F3;color:#059669;border:1px solid #A7F3D0}
 .ins-badge.na{background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB}
 body[data-active-role="td"] .dep-td-col{display:none}
+/* Help / Tutorial page */
+.help-role-block{display:none;margin-bottom:32px}
+.help-role-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:900;letter-spacing:.3px;margin-bottom:16px}
+.help-section{margin-bottom:20px;background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:16px 20px}
+.help-section-title{font-size:13px;font-weight:900;color:#1F2937;margin-bottom:10px}
+.help-list{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.help-list li{font-size:12px;color:#374151;line-height:1.6}
+.help-list ul{margin-top:6px;padding-left:16px;display:flex;flex-direction:column;gap:5px}
 /* TD/CE compact filter bar */
 .orders-td-filterbar{display:none;margin-bottom:10px}
 body[data-active-role="td"] .orders-td-filterbar,
@@ -822,6 +830,7 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
     <div class="nav-item" data-role="master operation td finance" data-page="req-shipping" onclick="showPage('req-shipping')"><span class="icon">📦</span>申请寄货<span class="badge req-shipping-badge" style="display:none"></span></div>
     <div class="nav-item" data-role="master operation td finance" data-page="notifications" onclick="showPage('notifications')"><span class="icon">🔔</span>通知<span class="badge" id="notif-badge">7</span></div>
     <div class="nav-item" data-role="master operation td finance" data-page="files-global" onclick="showPage('files-global')"><span class="icon">📁</span>文件与行程</div>
+    <div class="nav-item" data-role="td ce finance" data-page="help" onclick="showPage('help')"><span class="icon">📖</span>使用指南</div>
     <div class="nav-item" data-role="master operation" data-page="anomaly" onclick="showPage('anomaly')"><span class="icon">⚠️</span>异常中心<span class="badge" style="background:#EF4444">5</span></div>
     <div class="nav-item" data-role="master" data-page="report" onclick="showPage('report')"><span class="icon">📈</span>报表</div>
     <div class="nav-item" data-role="master" data-page="activity-log" onclick="showPage('activity-log')"><span class="icon">📋</span>操作记录</div>
@@ -2625,6 +2634,169 @@ body[data-active-role="master"] .role-finance-only{display:inline-block!importan
 </div>
 
 <!-- ═══════════════════════════════════════════
+     PAGE: HELP / TUTORIAL
+═══════════════════════════════════════════ -->
+<div class="page" id="page-help">
+  <div class="topbar">
+    <div><div class="page-title">📖 使用指南</div><div class="breadcrumb">Staff Portal 操作手册</div></div>
+  </div>
+  <div class="content" style="max-width:760px">
+
+    <!-- TD GUIDE -->
+    <div class="help-role-block" data-roles="td">
+      <div class="help-role-badge" style="background:#EEF6F3;color:#3B7A68">TD · 旅游顾问</div>
+
+      <div class="help-section">
+        <div class="help-section-title">📋 Dashboard（主页）</div>
+        <ul class="help-list">
+          <li>登录后默认显示 Dashboard，显示你负责的订单汇总数字。</li>
+          <li><strong>出发前待办</strong> — 表格列出本月出发的团，每列代表一个需要在出发前完成的任务：
+            <ul>
+              <li>合同签回、发礼物、司机Call、Wechat群、确认接机/司机 — 点击方块 tick/untick，自动保存。</li>
+              <li>保险 — 有三个状态：<span style="color:#DC2626;font-weight:700">未处理</span> → <span style="color:#059669;font-weight:700">买了✓</span> → <span style="color:#6B7280;font-weight:700">不需要</span>，循环点击切换。</li>
+              <li>行李数量 — 直接在格子里输入数字，失焦自动保存。</li>
+              <li>尾款余额 — 系统自动计算，不用手动填。</li>
+            </ul>
+          </li>
+          <li>上方有<strong>上个月 / 本月 / 下个月</strong>切换，查看不同月份出发的团。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">📂 订单管理</div>
+        <ul class="help-list">
+          <li>只显示你负责的订单（以 TD 字段关联）。</li>
+          <li>顶部<strong>出发月份筛选栏</strong>：点击月份 pill 可快速过滤该月出发的团；再点一次取消。</li>
+          <li>搜索框输入订单号或顾客名字即可实时过滤。</li>
+          <li>点击任一行进入<strong>订单详情</strong>，可以查看顾客信息、编辑备注、上传文件。</li>
+          <li>订单详情右侧有 <strong>Todo List</strong>，tick 完成的项目后自动记录。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">🔄 申请退款</div>
+        <ul class="help-list">
+          <li>点击"＋ 新建申请" → 搜索订单号（输入单号前几位会出现下拉选项）→ 填写金额和原因 → 提交。</li>
+          <li>如有外币金额（如 CNY、JPY），选择货币并填入外币金额。</li>
+          <li>可上传 Receipt（顾客退款收据）和 Payment Advice（退款凭证）。</li>
+          <li>提交后状态为"⏳ 待处理"，等 Finance / Operation 处理后会变为"✅ 已完成"。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">📤 申请出账 &nbsp;/&nbsp; 📦 申请寄货</div>
+        <ul class="help-list">
+          <li>申请出账：填订单号、货币、金额和原因，提交后等 Finance 审批。</li>
+          <li>申请寄货：填订单号和完整收件地址（收件人姓名、地址、电话、物品说明），提交后 Operation 会处理。</li>
+          <li>两者都支持搜索订单号，输入前几位字符即可看到匹配选项。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">⚠️ 注意事项</div>
+        <ul class="help-list">
+          <li>申请提交后如需修改，在列表找到该申请，点"编辑"（只有状态为"待处理"才能编辑）。</li>
+          <li>成本价和 Supplier 信息不会显示在你的界面。</li>
+          <li>所有 tick 和输入操作都是实时保存，不需要额外点"保存"按钮。</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- CE GUIDE -->
+    <div class="help-role-block" data-roles="ce">
+      <div class="help-role-badge" style="background:#EFF6FF;color:#1D4ED8">CE · 客户体验</div>
+
+      <div class="help-section">
+        <div class="help-section-title">📋 Dashboard（主页）</div>
+        <ul class="help-list">
+          <li><strong>出发前待办</strong> — 显示所有你参与的团，包含 TD 是谁，便于协调跟进。</li>
+          <li>各检查项目和 TD 共用同一套记录，双方都能看到和修改 checklist。</li>
+          <li>上方月份切换：上个月 / 本月 / 下个月。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">📂 订单管理</div>
+        <ul class="help-list">
+          <li>只显示你负责的订单（CE 字段关联到你）。</li>
+          <li>顶部有月份 pill 筛选和搜索栏，用法与 TD 相同。</li>
+          <li>点击订单行进入详情，可查看顾客信息、备注、文件。</li>
+          <li>供应商报价单不显示在你的界面（财务内部权限）。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">🔄 申请退款 &nbsp;/&nbsp; 📤 申请出账 &nbsp;/&nbsp; 📦 申请寄货</div>
+        <ul class="help-list">
+          <li>操作方式与 TD 完全相同：搜索订单号 → 填写资料 → 提交。</li>
+          <li>提交后由 Finance / Operation 审批处理。</li>
+          <li>搜索框只会显示你负责的订单。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">⚠️ 注意事项</div>
+        <ul class="help-list">
+          <li>Checklist 和申请记录 TD 和 CE 双方都能看到，改了会影响同一条数据。</li>
+          <li>所有操作实时保存，不需要额外点"保存"。</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- FINANCE GUIDE -->
+    <div class="help-role-block" data-roles="finance">
+      <div class="help-role-badge" style="background:#FFF7ED;color:#C2410C">Finance · 财务</div>
+
+      <div class="help-section">
+        <div class="help-section-title">💰 入账（Pay-In）</div>
+        <ul class="help-list">
+          <li>点击"＋ 新增入账"开始录入。</li>
+          <li>搜索订单号（输入前几个字符自动出现选项）。</li>
+          <li>选择货币并填入金额；如非 MYR，填入汇率后系统自动换算 RM 金额。</li>
+          <li><strong>GSH Check</strong> — 勾选代表已核对 GSH；<strong>Invoice 状态</strong> — 选择是否已开 Invoice。</li>
+          <li>付款方式选 TNG / Bank Transfer / Cash 等。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">📤 出账（Pay-Out）</div>
+        <ul class="help-list">
+          <li>点击"＋ 新增出账"，填写订单号、供应商、金额和付款方式。</li>
+          <li>出账记录后会自动计入对应订单的成本。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">📋 申请审批（退款 / 出账 / 寄货）</div>
+        <ul class="help-list">
+          <li>左侧导航"申请退款""申请出账""申请寄货"可看到所有待处理申请。</li>
+          <li>橙色"⏳ 待处理"代表还没处理；点击行末"✅ 完成"按钮标记为已处理。</li>
+          <li>申请退款可查看附件（Receipt、Payment Advice），点"📎 查看"打开文件。</li>
+          <li>有问题的申请可以点"编辑"修改，或"删除"删除。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">📊 Finance Ledger</div>
+        <ul class="help-list">
+          <li>显示所有入账出账记录，可按订单号、日期、银行筛选。</li>
+          <li>上方汇总显示总入账、总出账、净额。</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-title">⚠️ 注意事项</div>
+        <ul class="help-list">
+          <li>入账金额填错，在列表里找到该记录点"编辑"修改，不要重复录入。</li>
+          <li>汇率填写要用入账当天的实际汇率，系统不自动获取汇率。</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
      PAGE: FILES & ITINERARIES
 ═══════════════════════════════════════════ -->
 <div class="page" id="page-files-global">
@@ -3333,6 +3505,7 @@ function showPage(p) {
     'insurance-global': 'page-insurance-global',
     notifications: 'page-notifications',
     'files-global': 'page-files-global',
+    help: 'page-help',
     'supplier-settings': 'page-supplier-settings',
     'bank-settings': 'page-bank-settings',
     regions: 'page-regions',
@@ -3366,6 +3539,7 @@ function showPage(p) {
   if (p === 'req-shipping') { loadReqShipping(); }
   if (p === 'report') { loadReport(); }
   if (p === 'files-global') { loadGlobalFiles(); }
+  if (p === 'help') { renderHelpPage(); }
   if (p === 'notifications') { loadNotifications(); }
   if (p === 'user-mgmt') { loadUserMgmt(); }
   if (p === 'finance-ledger') { loadFinanceLedger(); }
@@ -7832,6 +8006,14 @@ function orderSearch(input, dropId) {
   drop.classList.add('open');
 }
 function orderHide(dropId){ const d=document.getElementById(dropId); if(d) d.classList.remove('open'); }
+
+function renderHelpPage() {
+  const role = currentUser?.roleKey || '';
+  document.querySelectorAll('.help-role-block').forEach(el => {
+    const roles = (el.dataset.roles || '').split(' ');
+    el.style.display = roles.includes(role) ? 'block' : 'none';
+  });
+}
 
 /* ── Req modal order search (uses _ordersCache uuid) ── */
 function reqOrderSearch(input, dropId, hiddenUuidId, hiddenNoId) {
